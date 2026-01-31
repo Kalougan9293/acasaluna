@@ -1,0 +1,16 @@
+{
+  "name": "french-sommelier",
+  "version": "1.0.0",
+  "description": "Mon Sommelier IA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@mistralai/mistralai": "^1.11.0",
+    "dotenv": "^17.2.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "restaurant_name": "A Casa Luna",
+  "cuisine_type": "Corse Gastronomique",
+  "carte_des_vins": {
+    "Rouges": [
+      { "nom": "Patrimonio – Domaine San Quilico", "prix": "46,50 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine Gentile", "prix": "58,50 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine Orenga de Gaffory", "prix": "48,50 €", "region": "Corse" },
+      { "nom": "Ajaccio – Domaine Comte Peraldi", "prix": "52,50 €", "region": "Corse" },
+      { "nom": "Sartène – Domaine San Micheli", "prix": "47,50 €", "region": "Corse" },
+      { "nom": "Sartène – Domaine Fiumicicoli", "prix": "48,50 €", "region": "Corse" },
+      { "nom": "Porto Vecchio – Domaine Torraccia", "prix": "47,50 €", "region": "Corse" },
+      { "nom": "Ajaccio – Clos Capitoro", "prix": "48,50 €", "region": "Corse" },
+      { "nom": "Calvi – Columbu Tradition", "prix": "47,50 €", "region": "Corse" },
+      { "nom": "Calvi – Clos Columbu Prestige", "prix": "58,50 €", "region": "Corse" },
+      { "nom": "Coteaux du Cap – Domaine Pieretti 'Vieilles Vignes'", "prix": "63,50 €", "region": "Corse" }
+    ],
+    "Rouges_Prestige": [
+      { "nom": "Patrimonio – Domaine Yves Leccia 'E Croce'", "prix": "82,00 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine Orenga de Gaffory 'Cuvée des Gouverneurs'", "prix": "69,00 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine Gentile 'Grande Expression'", "prix": "98,00 €", "region": "Corse" },
+      { "nom": "Porto Vecchio – Domaine Torraccia 'Oriu'", "prix": "90,00 €", "region": "Corse" },
+      { "nom": "Ajaccio – Domaine Comte Peraldi 'Clos du Cardinal'", "prix": "144,00 €", "region": "Corse" },
+      { "nom": "Ajaccio – Domaine Vaccelli 'Graniti'", "prix": "220,00 €", "region": "Corse" },
+      { "nom": "Casalabriva – Domaine Abbatucci 'Ministre Impérial'", "prix": "290,00 €", "region": "Corse" }
+    ],
+    "Roses": [
+      { "nom": "Sartène – Domaine Fiumicicoli", "prix": "48,50 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine San Quilico", "prix": "46,50 €", "region": "Corse" },
+      { "nom": "Ajaccio – Domaine Comte Peraldi", "prix": "52,50 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine Orenga de Gaffory", "prix": "48,50 €", "region": "Corse" }
+    ],
+    "Blancs": [
+      { "nom": "Patrimonio – Domaine Gentile", "prix": "58,50 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine San Quilico", "prix": "46,50 €", "region": "Corse" },
+      { "nom": "Ajaccio – Domaine Comte Peraldi", "prix": "52,50 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine Orenga de Gaffory", "prix": "48,50 €", "region": "Corse" },
+      { "nom": "Morosaglia – Clos Venturi 'Chiesa Nera'", "prix": "225,00 €", "region": "Corse" },
+      { "nom": "Patrimonio – Domaine Gentile 'Grande Expression'", "prix": "92,00 €", "region": "Corse" }
+    ],
+    "Verre_Carafe": [
+      { "nom": "Niellucciu (Rouge) - Carafe", "prix": "29,50 €", "type": "Carafe" },
+      { "nom": "Sciaccarellu (Rosé) - Carafe", "prix": "27,50 €", "type": "Carafe" },
+      { "nom": "Vermentinu (Blanc) - Carafe", "prix": "27,50 €", "type": "Carafe" },
+      { "nom": "Niellucciu (Rouge) - Verre", "prix": "11,00 €", "type": "Verre" },
+      { "nom": "Sciaccarellu (Rosé) - Verre", "prix": "9,50 €", "type": "Verre" },
+      { "nom": "Vermentinu (Blanc) - Verre", "prix": "11,00 €", "type": "Verre" },
+      { "nom": "Patrimonio San Quilico (R/Rs/B) - Verre", "prix": "11,50 €", "type": "Verre" },
+      { "nom": "Patrimonio Orenga de Gaffory (R/Rs/B) - Verre", "prix": "12,50 €", "type": "Verre" }
+    ]
+  },
+  "carte_des_plats": {
+    "Entrees": [
+      "Tapenade Givrée", "Huile d’Olive à Tartiner", "Terrine de Figatellu", 
+      "Foie Gras au Cap Corse", "Loup Effiloché et Agrumes", "Crudo de Daurade et Cédrat au Sel",
+      "Carpaccio d’Artichaut et Condiments Corses", "Tartare de Bœuf au Cap Corse", "Bouillon de Soupe Corse"
+    ],
+    "Plats": [
+      "Loup à la Calvaise", "Daurade à la Boutargue", "Stufatu de Veau aux Olives",
+      "Civet de Sanglier au Sciaccarellu", "Agneau en Croûte d’Herbes",
+      "Cochon laqué au Miel de Châtaigne", "Saint-Pierre en Croûte d’Herbes", "Cannelloni au Brocciu"
+    ],
+    "Fromages_Desserts": [
+      "Fromages Corses (Tomme, Montatimu, Capraltu)", "Brocciu Trompe l’œil", "Fiadone Caramélisé",
+      "Canistrelli Noisette", "Mille-Feuille de Pannetonne", "Châtaigne Clémentine"
+    ]
+  }
+}
