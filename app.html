@@ -14,167 +14,214 @@
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://french-sommelier.com/">
-    <meta property="og:title" content="A Casa Luna - Accords Mets-Vins">
-    <meta property="og:description" content="L'expert vin de votre restaurant.">
+    <meta property="og:title" content="Le Restaurant Étoilé - Démo">
+    <meta property="og:description" content="Démonstration : L'accord parfait selon vos plats et vos envies.">
     <meta property="og:image" content="https://french-sommelier.com/sommelier.png">
 
     <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/0edc491f3fd98d681d2d2bd990d55812/script.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>A Casa Luna</title>
+    
+    <title>Le Restaurant Étoilé - Démo</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍷</text></svg>">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;600&family=Cinzel:wght@400;700&display=swap');
+        /* Polices Premium */
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap');
         
-        /* THEME LUXE A CASA LUNA */
-        :root {
-            --color-bg-dark: #1a0f0a;
-            --color-bg-medium: #2c1a12;
-            --color-bg-accent: #3a1c14;
-            --color-text-gold-light: #f3e7c8;
-            --color-text-gold-dark: #bfa37c;
-            --color-btn-brown: #5d3a2e;
-            --color-text-brown-dark: #4a2c20;
-        }
-
         body { transition: background 0.8s ease; font-family: 'Playfair Display', serif; }
         
+        /* Thèmes de fond */
         body.theme-wine { 
-            background: linear-gradient(135deg, var(--color-bg-accent) 0%, var(--color-bg-medium) 50%, var(--color-bg-dark) 100%);
+            background: radial-gradient(circle at 50% 0%, #5a091e 0%, #2a0303 60%, #0f0202 100%);
             background-attachment: fixed;
         }
-        body.theme-dark { background: linear-gradient(135deg, #2a2a2a 0%, #000000 100%); }
+        body.theme-dark { background: radial-gradient(circle at top, #1a1a1a 0%, #000000 100%); }
         
-        .text-gradient-gold {
-            background: linear-gradient(to right, var(--color-text-gold-light), var(--color-text-gold-dark), var(--color-text-gold-light));
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 5s linear infinite;
+        /* Or Doré Luxe */
+        .gold-gradient { 
+            background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            background-clip: text;
+            color: transparent;
         }
-        @keyframes shine { to { background-position: 200% center; } }
-
-        .gold-btn { background: linear-gradient(to bottom, #d4af37, #8a6e2f); box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: all 0.5s ease; color: white; border: 1px solid #fbf5e6; }
-        .gold-btn:active { transform: scale(0.98); }
         
+        .gold-btn { background: linear-gradient(to bottom, #d4af37, #996515); box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: all 0.4s ease; border: 1px solid #fbf5e6; }
+        .gold-btn:active { transform: scale(0.98); }
+        .gold-btn.minimized { padding: 0.5rem; height: 3.5rem; flex-direction: row; gap: 1rem; }
+        .gold-btn.minimized svg { width: 1.5rem; height: 1.5rem; }
+        .gold-btn.minimized span { font-size: 1rem; letter-spacing: 0.15em; }
+        
+        /* --- STYLE AVATAR --- */
         .avatar-wrapper { position: relative; width: 12rem; height: 12rem; margin: 0 auto; transition: transform 0.3s; cursor: pointer; z-index: 10; }
         .avatar-wrapper:hover { transform: scale(1.02); }
-        .avatar-circle { width: 100%; height: 100%; border-radius: 50%; border: 3px solid #d4c5a5; overflow: hidden; position: relative; z-index: 20; background: var(--color-bg-medium); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .avatar-circle { width: 100%; height: 100%; border-radius: 50%; border: 2px solid #d4af37; overflow: hidden; position: relative; z-index: 20; background: #2a0303; box-shadow: 0 0 40px rgba(212, 175, 55, 0.3); }
         
         .sommelier-banner {
             position: absolute;
             bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
-            background: linear-gradient(to right, #d4af37, #8a6e2f);
-            color: #2c1a12;
+            width: 115%;
+            background: linear-gradient(to right, #4c0519, #2a0303, #4c0519);
+            border: 1px solid #d4af37;
+            color: #d4af37;
             font-family: 'Cinzel', serif;
             font-weight: 700;
-            font-size: 0.75rem;
-            padding: 4px 0;
+            font-size: 0.7rem;
+            padding: 6px 0;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.2em;
             z-index: 25;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.6);
             border-radius: 2px;
+            text-align: center;
         }
 
-        .pulse-gold { animation: pulseAura 2s infinite; }
-        @keyframes pulseAura { 0% { box-shadow: 0 0 20px rgba(212, 197, 165, 0.3); } 50% { box-shadow: 0 0 60px rgba(212, 197, 165, 0.7); } 100% { box-shadow: 0 0 20px rgba(212, 197, 165, 0.3); } }
+        .pulse-gold { animation: pulseAura 2.5s infinite; }
+        @keyframes pulseAura { 0% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); } 50% { box-shadow: 0 0 60px rgba(212, 175, 55, 0.6); } 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); } }
         
         .wine-fill { animation: fillGlass 2s infinite alternate; }
         @keyframes fillGlass { 0% { height: 0%; } 100% { height: 75%; } }
         
         .main-card {
-            background: #fdfbf7;
-            border: 1px solid rgba(212, 197, 165, 0.3);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            padding-bottom: 10px; 
+            background: rgba(255, 252, 245, 0.98);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
-        #response-card { 
-            max-height: 0; 
-            overflow: hidden; 
-            transition: max-height 0.8s ease-out, opacity 0.5s ease; 
-            opacity: 0; 
-            color: #4a2c20; 
-        }
-        #response-card.visible { max-height: 4000px; opacity: 1; margin-top: 1.5rem; border-top: 2px solid rgba(74, 44, 32, 0.1); padding-top: 1.5rem; }
+        #response-card { max-height: 0; overflow: hidden; transition: max-height 0.8s ease-out, opacity 0.5s ease; opacity: 0; }
+        #response-card.visible { max-height: 4000px; opacity: 1; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.1); }
         
-        .fade-in-line { animation: fadeIn 0.5s ease forwards; opacity: 0; transform: translateY(10px); }
+        .fade-in-line { animation: fadeIn 0.6s ease forwards; opacity: 0; transform: translateY(10px); }
         @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
-
-        .response-box {
-            color: #4a2c20 !important;
-            background-color: #fffefc;
-            border-left: 4px solid #4a2c20;
-        }
-        .response-box h3 { color: #4a2c20; font-family: 'Cinzel', serif; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-        .response-box p, .response-box li { font-family: 'Montserrat', sans-serif; color: #4a2c20; }
-
+        
         .lang-menu:hover .lang-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
         .lang-dropdown { opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; }
 
-        .switch-btn { background: var(--color-btn-brown); border: 1px solid #d4af37; color: #fdfbf7; font-size: 0.8rem; font-weight: 600; padding: 0.6rem 1rem; border-radius: 9999px; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: inline-block; cursor: pointer; font-family: 'Montserrat', sans-serif; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .switch-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(212, 175, 55, 0.3); background: #6b4235; }
-        .switch-container { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #eee; }
+        .switch-btn { background: #3e2723; border: 1px solid #d4af37; color: #f3e7c8; font-size: 0.75rem; font-weight: 500; padding: 0.6rem 1rem; border-radius: 999px; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Montserrat', sans-serif; }
+        .switch-btn:hover { background: #5d4037; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(212, 175, 55, 0.2); }
+        .switch-container { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-top: 1.5rem; }
         
-        .glass-icon { width: 16px; height: 16px; margin-right: 2px; }
+        .glass-icon { width: 14px; height: 14px; margin-right: 2px; }
+        .tag-btn { font-size: 0.7rem; padding: 0.5rem 0.3rem; border: 1px solid #e5e7eb; border-radius: 12px; background: white; color: #2a0303; cursor: pointer; transition: all 0.2s; font-family: 'Montserrat', sans-serif; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tag-btn:hover { background: #fdf2f8; border-color: #d4af37; color: #b8860b; transform: translateY(-1px); }
         
-        .tag-btn { font-size: 0.65rem; padding: 0.5rem 0.2rem; border: 1px solid #e5e7eb; border-radius: 12px; background: white; color: #4a2c20; cursor: pointer; transition: all 0.2s; font-family: 'Montserrat', sans-serif; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .tag-btn:hover { background: #fdf2f8; border-color: #d4af37; transform: translateY(-1px); }
+        .feedback-btn { font-size: 1.3rem; padding: 0.5rem; cursor: pointer; transition: transform 0.2s; opacity: 0.7; }
+        .feedback-btn:hover { transform: scale(1.2); opacity: 1; }
+        .feedback-btn.selected { transform: scale(1.2); pointer-events: none; opacity: 1; }
         
-        .feedback-btn { font-size: 1.2rem; padding: 0.5rem; cursor: pointer; transition: transform 0.2s; }
-        .feedback-btn.selected { transform: scale(1.2); pointer-events: none; opacity: 0.5; }
+        .modal-overlay { background-color: rgba(15, 2, 2, 0.95); backdrop-filter: blur(5px); }
         
-        .modal-overlay { background-color: rgba(26, 15, 10, 0.97); backdrop-filter: blur(8px); }
-        
-        .menu-category { margin-bottom: 1.5rem; }
-        .menu-category h3 { color: #d4af37; font-family: 'Cinzel', serif; font-size: 1.3rem; border-bottom: 2px solid #d4af37; padding-bottom: 0.5rem; margin-bottom: 1rem; font-weight: 700; letter-spacing: 0.05em; }
-        .menu-item { display: flex; align-items: center; padding: 0.8rem; border-bottom: 1px solid #3d2419; cursor: pointer; transition: background 0.2s; }
-        .menu-item:hover { background: linear-gradient(to right, rgba(212, 175, 55, 0.15), transparent); }
-        .menu-item input { margin-right: 15px; accent-color: #d4af37; transform: scale(1.4); }
-        .menu-item span { font-family: 'Montserrat', sans-serif; font-size: 1rem; color: #f3e7c8; }
+        .menu-category h3 { color: #d4af37; font-family: 'Cinzel', serif; font-size: 1.2rem; border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding-bottom: 0.4rem; margin-bottom: 1rem; font-weight: 700; letter-spacing: 0.1em; }
+        .menu-item { display: flex; align-items: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.3s; }
+        .menu-item:hover { background: linear-gradient(90deg, rgba(212, 175, 55, 0.1), transparent); }
+        .menu-item input { margin-right: 15px; accent-color: #d4af37; transform: scale(1.3); }
+        .menu-item span { font-family: 'Montserrat', sans-serif; font-size: 0.95rem; color: #f3e7c8; font-weight: 300; }
+
+        .demo-banner {
+            position: fixed; top: 0; left: 0; width: 100%;
+            background: linear-gradient(to right, #b8860b, #eec153, #b8860b);
+            color: #2a0303; text-align: center;
+            font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.65rem;
+            text-transform: uppercase; letter-spacing: 0.2em; padding: 4px 0;
+            z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Styles pour la barre de démo du bas */
+        .demo-footer-bar {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+        .demo-footer-link {
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+        .demo-footer-link:hover {
+            color: #d4af37;
+            border-bottom: 1px solid #d4af37;
+            opacity: 1;
+        }
+
+        /* Style pour les cartes du dashboard admin fake */
+        .admin-card {
+            background: #fff;
+            color: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .admin-stat-big { font-size: 1.8rem; font-weight: bold; color: #4c0519; }
+        .admin-label { font-size: 0.7rem; text-transform: uppercase; color: #666; font-weight: 600; }
+        .progress-bar-bg { background: #eee; height: 8px; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: #d4af37; }
     </style>
 </head>
-<body class="theme-wine text-white min-h-screen flex flex-col items-center p-6 text-center relative">
+<body class="theme-wine text-white min-h-screen flex flex-col items-center p-6 text-center relative pt-12">
 
-    <div class="absolute top-6 left-6 z-50">
+    <div class="demo-banner">
+        Démonstration • Restaurant Fictif
+    </div>
+
+    <div class="absolute top-10 left-6 z-50">
         <div class="relative lang-menu">
-            <button id="current-lang-btn" class="w-10 h-10 rounded-full border border-[#d4c5a5]/50 bg-black/30 flex items-center justify-center text-xl hover:bg-[#d4c5a5]/20 transition-colors">🇫🇷</button>
-            <div class="lang-dropdown absolute top-12 left-0 bg-[#2c1a12] border border-[#d4c5a5] rounded-xl overflow-hidden shadow-xl w-12 flex flex-col">
-                <button onclick="setLanguage('fr')" class="h-10 w-full hover:bg-[#d4c5a5]/20 text-xl flex items-center justify-center">🇫🇷</button>
-                <button onclick="setLanguage('en')" class="h-10 w-full hover:bg-[#d4c5a5]/20 text-xl flex items-center justify-center">🇺🇸</button>
+            <button id="current-lang-btn" class="w-10 h-10 rounded-full border border-[#d4af37]/50 bg-black/20 flex items-center justify-center text-xl hover:bg-[#d4af37]/20 transition-colors">🇫🇷</button>
+            <div class="lang-dropdown absolute top-12 left-0 bg-[#2c1a12] border border-[#d4af37] rounded-xl overflow-hidden shadow-xl w-12 flex flex-col">
+                <button onclick="setLanguage('fr')" class="h-10 w-full hover:bg-[#d4af37]/20 text-xl flex items-center justify-center">🇫🇷</button>
+                <button onclick="setLanguage('en')" class="h-10 w-full hover:bg-[#d4af37]/20 text-xl flex items-center justify-center">🇺🇸</button>
+                <button onclick="setLanguage('es')" class="h-10 w-full hover:bg-[#d4af37]/20 text-xl flex items-center justify-center">🇪🇸</button>
             </div>
         </div>
     </div>
 
-    <div class="absolute top-6 right-6 z-50">
-        <button onclick="toggleTheme()" class="w-10 h-10 rounded-full border border-[#d4c5a5]/50 text-[#d4c5a5] bg-black/30 flex items-center justify-center hover:bg-[#d4c5a5] hover:text-black transition-colors">
+    <div class="absolute top-10 right-6 z-50">
+        <button onclick="toggleTheme()" class="w-10 h-10 rounded-full border border-[#d4af37]/50 text-[#d4af37] bg-black/20 flex items-center justify-center hover:bg-[#d4af37] hover:text-black transition-colors">
             <span id="theme-icon">🌙</span>
         </button>
     </div>
 
-    <header class="mt-8 mb-8 relative px-4">
-        <h1 id="main-title" class="text-3xl md:text-5xl font-bold text-gradient-gold uppercase tracking-[0.15em] mb-2 leading-tight font-[Cinzel] drop-shadow-sm whitespace-nowrap">A CASA LUNA</h1>
-        <h2 id="subtitle" class="text-sm md:text-2xl text-[#d4c5a5] font-bold tracking-[0.25em] uppercase mb-3 font-[Cinzel]">ACCORDS METS-VINS</h2>
-        <p class="text-xs md:text-sm text-[#d4c5a5]/80 font-light tracking-widest italic font-serif">Le French Sommelier</p>
+    <header class="mt-6 mb-8 relative px-4">
+        <h1 id="main-title" class="text-3xl md:text-5xl font-bold gold-gradient uppercase tracking-[0.15em] mb-3 leading-tight font-[Cinzel] drop-shadow-sm whitespace-nowrap">
+            LE RESTAURANT ÉTOILÉ
+        </h1>
+        <div class="inline-block border-b border-[#d4af37]/40 pb-2 mb-3">
+            <p id="subtitle" class="text-xs md:text-sm text-[#d4af37] font-bold tracking-[0.35em] uppercase font-[Cinzel]">
+                ACCORDS METS-VINS
+            </p>
+        </div>
+        <p id="tagline" class="text-sm md:text-base text-[#f3e7c8]/90 font-light tracking-widest italic font-serif">
+            L'accord parfait selon vos plats et vos envies.
+        </p>
     </header>
 
-    <div class="mb-8 relative group z-30">
+    <div class="mb-10 relative group z-30">
         <div class="avatar-wrapper" onclick="handleAvatarClick()">
             <div id="avatar-circle" class="avatar-circle">
-                <img src="casalunaa.png" alt="Sommelier" class="w-full h-full object-cover">
+                <img src="sommelier.png" alt="Sommelier" class="w-full h-full object-cover">
             </div>
-            <div class="sommelier-banner">French Sommelier</div>
+            <div class="sommelier-banner">
+                French Sommelier
+            </div>
         </div>
     </div>
 
-    <div class="w-full max-w-md main-card rounded-[2rem] px-6 pt-6 relative z-20">
+    <div class="w-full max-w-md main-card rounded-[2rem] px-6 pt-6 pb-4 relative z-20 text-gray-800">
         
         <div class="relative mb-2">
-            <input type="text" id="search-bar" placeholder="Ou écrivez ici..." class="w-full border-2 border-[#4a2c20]/20 rounded-2xl p-4 pr-12 focus:outline-none focus:border-[#d4af37] transition-colors text-lg font-sans bg-white text-[#4a2c20] placeholder-[#4a2c20]/40 shadow-inner">
+            <input type="text" id="search-bar" placeholder="" class="w-full border border-[#d4af37]/30 rounded-2xl p-4 pr-12 focus:outline-none focus:border-[#d4af37] transition-colors text-lg font-sans bg-white text-[#4a2c20] placeholder-[#4a2c20]/40 shadow-inner">
             <div id="clear-btn" onclick="clearInput()" class="absolute right-12 top-5 cursor-pointer text-gray-400 hover:text-[#4a2c20] hidden font-bold text-xl px-2">✕</div>
             <div onclick="demanderIA()" class="absolute right-4 top-5 cursor-pointer text-[#4a2c20] hover:text-[#d4af37] transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -190,51 +237,58 @@
             <p id="loader-text" class="text-[#4a2c20] text-xs mt-3 font-bold uppercase tracking-widest">Recherche...</p>
         </div>
 
-        <button onclick="openMenuModal()" id="photo-btn" class="gold-btn w-full py-5 rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 cursor-pointer shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        <button onclick="openMenuModal()" id="photo-btn" class="gold-btn w-full py-5 rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 cursor-pointer shadow-lg mt-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#2a0303] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span id="photo-label" class="text-white font-bold text-lg md:text-xl uppercase tracking-[0.15em] font-[Cinzel]">Ouvrir la Carte</span>
+            <span id="photo-label" class="text-[#2a0303] font-bold text-lg md:text-xl uppercase tracking-[0.15em] font-[Cinzel]">OUVRIR LA CARTE</span>
         </button>
 
         <div id="response-card" class="text-left space-y-5">
             <div id="response-content"></div>
             
             <div id="switch-buttons" class="switch-container hidden fade-in-line">
-                <button onclick="relancerIA('rouge')" class="switch-btn">🍷 Plutôt Rouge</button>
-                <button onclick="relancerIA('blanc')" class="switch-btn">🥂 Plutôt Blanc</button>
-                <button onclick="relancerIA('similaire')" class="switch-btn">♻️ Similaire</button>
-                <button onclick="relancerIA('surprends_moi')" class="switch-btn">🎲 Surprenez-moi</button>
+                <button id="btn-sw-rouge" onclick="relancerIA('rouge')" class="switch-btn">🍷 Plutôt Rouge</button>
+                <button id="btn-sw-blanc" onclick="relancerIA('blanc')" class="switch-btn">🥂 Plutôt Blanc</button>
+                <button id="btn-sw-similaire" onclick="relancerIA('similaire')" class="switch-btn">♻️ Autre Suggestion</button>
+                <button id="btn-sw-surprends" onclick="relancerIA('prestige')" class="switch-btn" style="border: 1px solid #d4af37; background: linear-gradient(45deg, #2a0303, #4c0519);">💎 Version Prestige</button>
             </div>
 
-            <div id="feedback-container" class="hidden flex flex-col items-center mt-8 fade-in-line pt-4 border-t border-gray-100/50">
-                <p class="text-[10px] text-gray-400 italic mb-3 uppercase tracking-widest">Avis ?</p>
+            <div id="feedback-container" class="hidden flex flex-col items-center mt-4 fade-in-line">
+                <p id="feedback-label" class="text-[10px] text-gray-400 italic mb-2 uppercase tracking-widest">Avis ?</p>
                 <div class="flex gap-8">
-                    <button onclick="sendFeedback('down')" id="btn-down" class="feedback-btn opacity-60 hover:opacity-100 transition-all" title="Je n'aime pas">❌</button>
-                    <button onclick="sendFeedback('up')" id="btn-up" class="feedback-btn scale-110 hover:scale-125 transition-all" title="J'apprécie">✅</button>
+                    <button onclick="sendFeedback('down')" id="btn-down" class="feedback-btn" title="Je n'aime pas">❌</button>
+                    <button onclick="sendFeedback('up')" id="btn-up" class="feedback-btn" title="J'apprécie">✅</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="mt-16 mb-8 space-y-3">
-        <p class="text-gradient-gold text-lg md:text-xl font-serif italic mb-4 font-semibold">L'art de vivre à la corse.</p>
-        <p class="text-[#d4c5a5]/60 text-[10px] uppercase tracking-[0.2em] font-sans">© 2026 Powered by French Sommelier. Tous droits réservés.</p>
-        <p class="text-[#d4c5a5]/40 text-[9px] uppercase tracking-widest font-sans mt-4">L'abus d'alcool est dangereux pour la santé, à consommer avec modération.</p>
-        <div class="mt-8 flex justify-center gap-6 text-[11px] text-[#d4c5a5] tracking-[0.2em] font-bold">
-            <button onclick="toggleLegalModal()" class="hover:text-white border-b border-[#d4c5a5]/50 hover:border-white transition-all pb-1">mentions légales</button>
+    <footer class="mt-12 mb-8 space-y-4">
+        <p id="footer-quote" class="gold-gradient text-sm md:text-base font-[Cinzel] uppercase tracking-[0.2em] mb-4 font-bold opacity-90">L'excellence, sans la complexité.</p>
+        
+        <p id="copyright-text" class="text-[#d4c5a5]/60 text-[10px] uppercase tracking-[0.2em] font-sans">© 2026 Powered by French Sommelier. Tous droits réservés.</p>
+        <p id="legal-warning" class="text-[#d4c5a5]/40 text-[9px] uppercase tracking-widest font-sans mt-4">L'abus d'alcool est dangereux pour la santé, à consommer avec modération.</p>
+        
+        <div class="flex flex-col items-center gap-3 mt-4">
+            <button id="legal-btn" onclick="toggleLegalModal()" class="text-[11px] text-[#d4c5a5] tracking-[0.2em] font-bold hover:text-white transition-all pb-1 border-b border-transparent hover:border-[#d4af37]">mentions légales</button>
+            
+            <div class="demo-footer-bar">
+                <a onclick="toggleFakeAdmin()" class="demo-footer-link">ADMIN (DÉMO)</a>
+                <a onclick="togglePresentation()" class="demo-footer-link">PRÉSENTATION</a>
+            </div>
         </div>
     </footer>
 
     <div id="menu-modal" class="hidden fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 modal-overlay">
-        <div class="bg-[#2c1a12] border-2 border-[#d4c5a5] rounded-2xl w-full max-w-md h-[85vh] flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.8)]">
-            <div class="p-5 border-b-2 border-[#d4c5a5]/50 flex justify-between items-center bg-[#1a0f0a] rounded-t-xl">
-                <h2 class="text-gradient-gold font-bold uppercase tracking-[0.2em] text-xl font-[Cinzel]">Votre Repas</h2>
-                <button onclick="closeMenuModal()" class="text-[#d4c5a5] text-3xl hover:text-white transition-colors">&times;</button>
+        <div class="bg-[#2c1a12] border-2 border-[#d4af37] rounded-2xl w-full max-w-md h-[85vh] flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+            <div class="p-5 border-b-2 border-[#d4af37]/30 flex justify-between items-center bg-[#1a0f0a] rounded-t-xl">
+                <h2 id="modal-title" class="gold-gradient font-bold uppercase tracking-[0.2em] text-xl font-[Cinzel]">Votre Repas</h2>
+                <button onclick="closeMenuModal()" class="text-[#d4af37] text-3xl hover:text-white transition-colors">&times;</button>
             </div>
             <div id="menu-content" class="flex-1 overflow-y-auto p-6 text-left bg-[#2c1a12]"></div>
-            <div class="p-5 border-t-2 border-[#d4c5a5]/50 bg-[#1a0f0a] rounded-b-xl">
-                <button onclick="validerMenu()" class="gold-btn w-full py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-lg shadow-lg font-[Cinzel]">
+            <div class="p-5 border-t-2 border-[#d4af37]/30 bg-[#1a0f0a] rounded-b-xl">
+                <button id="modal-validate" onclick="validerMenu()" class="gold-btn w-full py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-lg shadow-lg font-[Cinzel] text-white">
                     Trouver le Vin Idéal
                 </button>
             </div>
@@ -242,51 +296,194 @@
     </div>
 
     <div id="legal-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 modal-overlay">
-        <div class="bg-[#2c1a12] border-2 border-[#d4c5a5] rounded-xl p-8 max-w-sm w-full relative shadow-[0_0_40px_rgba(0,0,0,0.6)] text-left">
-            <button onclick="toggleLegalModal()" class="absolute top-4 right-5 text-[#d4c5a5] text-2xl hover:text-white transition-colors">&times;</button>
-            <h3 class="text-gradient-gold font-bold text-center uppercase tracking-[0.2em] mb-8 border-b-2 border-[#d4c5a5]/30 pb-4 font-[Cinzel] text-lg">Mentions Légales</h3>
+        <div class="bg-[#2c1a12] border border-[#d4af37] rounded-xl p-8 max-w-sm w-full relative shadow-[0_0_40px_rgba(0,0,0,0.6)] text-left">
+            <button onclick="toggleLegalModal()" class="absolute top-4 right-5 text-[#d4af37] text-2xl hover:text-white transition-colors">&times;</button>
+            <h3 id="legal-title" class="gold-gradient font-bold text-center uppercase tracking-[0.2em] mb-8 border-b border-[#d4af37]/30 pb-4 font-[Cinzel] text-lg">Mentions Légales</h3>
             <div class="space-y-6 text-sm text-[#f3e7c8] font-sans">
                 <div>
-                    <p class="text-[#d4c5a5] font-bold uppercase mb-2 tracking-wider text-xs">Éditeur</p>
+                    <p id="legal-editor" class="text-[#d4af37] font-bold uppercase mb-2 tracking-wider text-xs">Éditeur</p>
                     <p class="leading-relaxed">Jonathan Seroussi<br>119 rue Jules Parent<br>92500 Rueil Malmaison</p>
                 </div>
                 <div>
-                    <p class="text-[#d4c5a5] font-bold uppercase mb-2 tracking-wider text-xs">Contact</p>
+                    <p id="legal-contact" class="text-[#d4af37] font-bold uppercase mb-2 tracking-wider text-xs">Contact</p>
                     <a href="mailto:contact@french-sommelier.com" class="underline hover:text-white transition-colors">contact@french-sommelier.com</a>
                 </div>
                 <div>
-                    <p class="text-[#d4c5a5] font-bold uppercase mb-2 tracking-wider text-xs">Hébergement</p>
+                    <p id="legal-host" class="text-[#d4af37] font-bold uppercase mb-2 tracking-wider text-xs">Hébergement</p>
                     <p class="leading-relaxed">Render<br>525 Brannan St, San Francisco, CA 94107, USA</p>
                 </div>
-                <div class="pt-4 border-t border-[#d4c5a5]/30">
-                    <p class="italic text-xs opacity-70">Ce site utilise Google Analytics à des fins de mesure d'audience anonyme.</p>
+                <div class="pt-4 border-t border-[#d4af37]/30">
+                    <p id="legal-analytics" class="italic text-xs opacity-70">Ce site utilise Google Analytics à des fins de mesure d'audience anonyme.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-modal" class="hidden fixed inset-0 z-[150] flex flex-col items-center justify-center p-4 modal-overlay">
+        <div class="bg-[#f0f0f0] border-4 border-[#2c1a12] rounded-xl w-full max-w-md h-[80vh] flex flex-col relative shadow-2xl text-gray-800">
+            <div class="p-4 bg-[#2c1a12] text-white flex justify-between items-center rounded-t-lg">
+                <h2 class="font-bold uppercase tracking-widest text-sm">Tableau de Bord (Démo)</h2>
+                <button onclick="toggleFakeAdmin()" class="text-[#d4af37] text-2xl hover:text-white">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div class="flex gap-2">
+                    <div class="admin-card flex-1 text-center">
+                        <div class="admin-stat-big">452</div>
+                        <div class="admin-label">Clients Conseillés (30j)</div>
+                    </div>
+                    <div class="admin-card flex-1 text-center">
+                        <div class="admin-stat-big text-green-600">+18%</div>
+                        <div class="admin-label">Taux Upsell Prestige</div>
+                    </div>
+                </div>
+                
+                <div class="admin-card">
+                    <h3 class="font-bold text-sm mb-3 uppercase tracking-wider text-[#2a0303]">Tendances du Mois</h3>
+                    <div class="mb-2">
+                        <div class="flex justify-between text-xs font-bold mb-1"><span>Vin Rouge</span><span>65%</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 65%; background:#800020;"></div></div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="flex justify-between text-xs font-bold mb-1"><span>Vin Blanc</span><span>25%</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 25%; background:#f1c40f;"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1"><span>Rosé</span><span>10%</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 10%; background:#ffafcc;"></div></div>
+                    </div>
+                </div>
+
+                <div class="admin-card border-l-4 border-yellow-500 bg-yellow-50">
+                    <h3 class="font-bold text-sm mb-2 uppercase tracking-wider text-[#b8860b]">🏆 Top 3 des Recherches</h3>
+                    <ol class="list-decimal pl-4 text-xs space-y-1">
+                        <li><strong>Vin Blanc Sec</strong> (32%)</li>
+                        <li><strong>Côtes du Rhône</strong> (21%)</li>
+                        <li><strong>Saint-Émilion</strong> (15%)</li>
+                    </ol>
+                </div>
+
+                <div class="admin-card text-left">
+                    <h3 class="font-bold text-sm mb-2 uppercase tracking-wider text-[#2a0303]">Mouchard Live</h3>
+                    <ul class="text-xs space-y-2 font-mono bg-gray-100 p-2 rounded">
+                        <li>[20:42] "Vin pour Entrecôte" ➔ St-Emilion</li>
+                        <li>[20:40] "Vin sucré dessert" ➔ Sauternes</li>
+                        <li>[20:38] "Vin pas cher poisson" ➔ Chardonnay</li>
+                        <li>[20:35] "Vin rouge léger" ➔ Pinot Noir</li>
+                        <li class="text-red-600 font-bold">[20:32] "Coca Cola" ➔ REFUSÉ (Hors carte)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="presentation-modal" class="hidden fixed inset-0 z-[150] flex flex-col items-center justify-center p-4 modal-overlay">
+        <div class="bg-white border-2 border-[#d4af37] rounded-xl w-full max-w-md max-h-[85vh] flex flex-col relative shadow-2xl text-[#2a0303]">
+            <div class="p-6 overflow-y-auto">
+                <button onclick="togglePresentation()" class="absolute top-2 right-4 text-3xl text-gray-400 hover:text-black">&times;</button>
+                
+                <h2 class="text-2xl font-bold uppercase font-[Cinzel] text-center mb-2 text-[#4c0519]">NE LAISSEZ PLUS LE HASARD FAIRE VOTRE C.A.</h2>
+                <p class="text-center text-xs italic text-red-700 font-bold mb-6">Combien de clients ont pris le "vin le moins cher" ce soir, juste parce que le serveur n'avait pas le temps de conseiller ?</p>
+
+                <div class="space-y-6 text-sm font-sans leading-relaxed">
+                    <div>
+                        <h3 class="font-bold uppercase text-[#d4af37] mb-1 tracking-wider">🤖 VOTRE NOUVEAU MEILLEUR VENDEUR</h3>
+                        <p>Vos serveurs courent partout. Le French Sommelier, lui, est assis à chaque table.</p>
+                        <ul class="list-none space-y-1 text-xs mt-2">
+                            <li>✅ <strong>Il connaît votre cave par cœur</strong> (mieux que personne).</li>
+                            <li>✅ <strong>Il parle 3 langues</strong> (Français, Anglais, Espagnol).</li>
+                            <li>✅ <strong>Il ne se fatigue jamais</strong> et propose systématiquement l'accord parfait.</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-[#fffbeb] p-4 rounded-lg border border-[#d4af37]">
+                        <h3 class="font-bold uppercase text-[#b8860b] mb-2 text-center">💎 L'EFFET "UPSELL" IMMÉDIAT</h3>
+                        <p class="text-xs">Vous avez vu le bouton <strong>"Version Prestige"</strong> ? C'est notre arme secrète. L'IA est programmée pour tenter, avec élégance, de monter en gamme.</p>
+                        <p class="mt-2 text-xs font-bold">👉 Résultat : Vous vendez vos bouteilles à forte marge, celles qui dorment en cave, sans aucun effort commercial humain.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold uppercase text-[#d4af37] mb-1 tracking-wider">PRATIQUE & SANS RISQUE</h3>
+                        <ul class="list-disc pl-4 space-y-1 text-xs">
+                            <li>📱 <strong>Zéro Application :</strong> Juste un QR Code élégant sur la table.</li>
+                            <li>🎨 <strong>Marque Blanche :</strong> Votre logo, vos couleurs, votre carte.</li>
+                            <li>🚀 <strong>Installation Express :</strong> Votre carte digitalisée en 7 jours.</li>
+                        </ul>
+                    </div>
+
+                    <div class="text-center border-t pt-4 border-gray-200">
+                        <h3 class="font-bold uppercase text-[#4c0519] mb-1 tracking-wider text-lg">PRIX DU MARCHÉ</h3>
+                        <p>Un Sommelier : <strong>3 500€ / mois</strong>.</p>
+                        <p>French Sommelier : À partir de <strong>29€ / mois</strong>.</p>
+                        <p class="text-[10px] italic text-gray-500">(Soit le prix d'une demi-bouteille vendue)</p>
+                        
+                        <div class="mt-4 bg-green-100 text-green-800 p-2 rounded font-bold text-xs border border-green-300">
+                            🎁 OFFRE DÉMO :<br>Installation offerte (300€) + 1er mois GRATUIT.<br>Aucun engagement. Testez, encaissez, décidez.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 text-center">
+                    <button onclick="togglePresentation()" class="bg-[#2a0303] text-white px-6 py-3 rounded-full font-bold uppercase text-xs tracking-widest shadow-lg hover:bg-[#4c0519] transition-colors">Je signe</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // MENU AVEC PREFERENCES
+        // --- DONNEES DU SITE (DEMO) ---
         const menuPlats = {
-            "🫒 Entrées": [
-                "Tapenade Givrée", "Huile d’Olive à Tartiner", "Terrine de Figatellu", 
-                "Foie Gras au Cap Corse", "Loup Effiloché et Agrumes", "Crudo de Daurade et Cédrat au Sel",
-                "Carpaccio d’Artichaut", "Tartare de Bœuf au Cap Corse", "Bouillon de Soupe Corse"
-            ],
-            "🍽️ Plats": [
-                "Loup à la Calvaise", "Daurade à la Boutargue", "Stufatu de Veau aux Olives",
-                "Veau aux Olives", "Civet de Sanglier au Sciaccarellu", "Agneau en Croûte d’Herbes",
-                "Cochon laqué au Miel de Châtaigne", "Saint-Pierre en Croûte d’Herbes", "Cannelloni au Brocciu"
-            ],
-            "🧀 Desserts": [
-                "Assiette de Fromages Corses", "Brocciu Trompe l’œil", "Brin d’Amour Trompe l’œil",
-                "Pomelos", "Monte Cinto", "Fruits Confits", "Mille-Feuille de Pannetonne",
-                "Tarte Pomelos", "Chocolat Noisette", "Fiadone Caramélisé", "Châtaigne Clémentine"
-            ],
-            "🍷 Mes Préférences (Facultatif)": [
-                "Je préfère le Vin Rouge", "Je préfère le Vin Blanc", "Je préfère le Rosé",
-                "J'aime les vins Doux/Sucrés", "J'aime les vins Puissants", "J'aime les vins Légers"
-            ]
+            fr: {
+                "🫒 Entrées": ["Oeuf Mayo", "Planche de Charcuterie", "Escargots de Bourgogne", "Salade de Chèvre Chaud"],
+                "🍽️ Plats": ["Entrecôte Frites", "Tartare de Boeuf", "Blanquette de Veau", "Pavé de Saumon", "Burger du Chef"],
+                "🧀 Desserts": ["Mi-cuit au Chocolat", "Tarte Tatin", "Crème Brûlée", "Café Gourmand"],
+                "🍷 Mes Préférences": ["Je préfère le Vin Rouge", "Je préfère le Vin Blanc", "Je préfère le Rosé", "J'aime les vins Doux/Sucrés", "J'aime les vins Puissants", "J'aime les vins Légers", "Je vous laisse choisir"]
+            },
+            en: {
+                "🫒 Starters": ["Egg Mayo", "Charcuterie Board", "Snails", "Goat Cheese Salad"],
+                "🍽️ Main Courses": ["Steak & Chips", "Beef Tartare", "Veal Stew", "Salmon Steak", "Chef's Burger"],
+                "🧀 Desserts": ["Chocolate Lava Cake", "Apple Tart", "Crème Brûlée", "Gourmet Coffee"],
+                "🍷 My Preferences": ["I prefer Red Wine", "I prefer White Wine", "I prefer Rosé", "I like Sweet Wines", "I like Powerful Wines", "I like Light Wines", "I let you choose"]
+            },
+            es: {
+                "🫒 Entradas": ["Huevo Mayo", "Tabla de Embutidos", "Caracoles", "Ensalada de Cabra"],
+                "🍽️ Platos Principales": ["Entrecot con Patatas", "Tartar de Ternera", "Guiso de Ternera", "Salmón", "Hamburguesa"],
+                "🧀 Postres": ["Coulant de Chocolate", "Tarta de Manzana", "Crema Catalana", "Café Gourmand"],
+                "🍷 Mis Preferencias": ["Prefiero Vino Tinto", "Prefiero Vino Blanco", "Prefiero Vino Rosado", "Me gustan los Vinos Dulces", "Me gustan los Vinos Potentes", "Me gustan los Vinos Ligeros", "Dejo que elijas"]
+            }
+        };
+
+        const langData = {
+            fr: {
+                flag: "🇫🇷", main_title: "LE RESTAURANT ÉTOILÉ", subtitle: "ACCORDS METS-VINS", photo_label: "OUVRIR LA CARTE", loader: "Recherche...", footer_quote: "L'excellence, sans la complexité.", copyright: "© 2026 Powered by French Sommelier. Tous droits réservés.", tagline: "L'accord parfait selon vos plats et vos envies.", phrases: ["Entrecôte Frites", "Pavé de Saumon", "Vin Rouge léger", "Blanquette de Veau"],
+                legal_btn: "mentions légales", modal_title: "Votre Repas", modal_validate: "Trouver le Vin Idéal", feedback_label: "Avis ?", sw_rouge: "🍷 Plutôt Rouge", sw_blanc: "🥂 Plutôt Blanc", sw_similaire: "♻️ Autre Suggestion", sw_surprends: "💎 Version Prestige",
+                legal_title: "Mentions Légales", legal_editor: "Éditeur", legal_contact: "Contact", legal_host: "Hébergement", legal_analytics: "Ce site utilise Google Analytics à des fins de mesure d'audience anonyme.",
+                warning: "L'abus d'alcool est dangereux pour la santé, à consommer avec modération.",
+                quick_actions: [ 
+                    { text: "Je cherche un vin Rouge léger", label: "🍷 Rouge Léger" }, 
+                    { text: "Je cherche un vin Blanc Fruité", label: "🥂 Blanc Fruité" }, 
+                    { text: "Je cherche un vin Rosé", label: "🌸 Rosé" },
+                    { text: "Je cherche un vin Rouge Puissant", label: "🍇 Rouge Puissant" },
+                    { text: "Je cherche un vin Doux Sucré", label: "🍯 Vin Doux" },
+                    { text: "Je cherche un vin au Verre", label: "🍷 Au Verre" }
+                ],
+                sections: { '[DEMANDE]': 'Votre repas', '[SUGGESTION]': 'Notre Suggestion', '[EXPLICATION]': "Pourquoi ce choix ?", '[AROMES]': "Au nez & en bouche", '[PROFIL_VIN]': 'Profil', '[DEGRE]': 'Caractère', '[AVIS]': 'Note', '[AVIS_SOMMELIER]': "Le Secret du Sommelier" }
+            },
+            en: {
+                flag: "🇺🇸", main_title: "STARRED RESTAURANT", subtitle: "WINE PAIRING", photo_label: "Open Menu", loader: "Searching...", footer_quote: "Excellence, without complexity.", copyright: "© 2026 Powered by French Sommelier. All rights reserved.", tagline: "The perfect match for your meal and taste.", phrases: ["Steak", "Salmon", "Light Red Wine", "Veal Stew"],
+                legal_btn: "legal notice", modal_title: "Your Meal", modal_validate: "Find the Perfect Wine", feedback_label: "Feedback?", sw_rouge: "🍷 Rather Red", sw_blanc: "🥂 Rather White", sw_similaire: "♻️ Another Suggestion", sw_surprends: "💎 Prestige Version",
+                legal_title: "Legal Notice", legal_editor: "Publisher", legal_contact: "Contact", legal_host: "Hosting", legal_analytics: "This site uses Google Analytics for anonymous audience measurement.",
+                warning: "Alcohol abuse is dangerous for your health, consume in moderation.",
+                quick_actions: [ { text: "Light Red Wine", label: "🍷 Light Red" }, { text: "Fruity White Wine", label: "🥂 Fruity White" }, { text: "Rosé", label: "🌸 Rosé" }, { text: "Powerful Red Wine", label: "🍇 Powerful Red" }, { text: "Sweet Wine", label: "🍯 Sweet Wine" }, { text: "Wine by the glass", label: "🍷 By the Glass" } ],
+                sections: { '[DEMANDE]': 'Your meal', '[SUGGESTION]': 'Our Suggestion', '[EXPLICATION]': "Why this choice?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Profile', '[DEGRE]': 'Character', '[AVIS]': 'Rating', '[AVIS_SOMMELIER]': "Sommelier Secret" }
+            },
+            es: {
+                flag: "🇪🇸", main_title: "RESTAURANTE ESTRELLA", subtitle: "MARIDAJE DE VINOS", photo_label: "Abrir la Carta", loader: "Buscando...", footer_quote: "Excelencia, sin complejidad.", copyright: "© 2026 Powered by French Sommelier. Todos los derechos reservados.", tagline: "El maridaje perfecto para su comida.", phrases: ["Entrecot", "Salmón", "Vino tinto ligero", "Guiso de Ternera"],
+                legal_btn: "avisos legales", modal_title: "Su Comida", modal_validate: "Encontrar el Vino Ideal", feedback_label: "¿Opinión?", sw_rouge: "🍷 Más bien Tinto", sw_blanc: "🥂 Más bien Blanco", sw_similaire: "♻️ Otra Sugerencia", sw_surprends: "💎 Versión Prestigio",
+                legal_title: "Avisos Legales", legal_editor: "Editor", legal_contact: "Contacto", legal_host: "Alojamiento", legal_analytics: "Este sitio utiliza Google Analytics para medir la audiencia de forma anónima.",
+                warning: "El abuso de alcohol es peligroso para la salud, consumir con moderación.",
+                quick_actions: [ { text: "Vino tinto ligero", label: "🍷 Tinto Ligero" }, { text: "Vino blanco frutal", label: "🥂 Blanco Frutal" }, { text: "Rosado", label: "🌸 Rosado" }, { text: "Vino tinto potente", label: "🍇 Tinto Potente" }, { text: "Vino dulce", label: "🍯 Vino Dulce" }, { text: "Vino por copa", label: "🍷 Por Copa" } ],
+                sections: { '[DEMANDE]': 'Su pedido', '[SUGGESTION]': 'Nuestra Sugerencia', '[EXPLICATION]': "¿Por qué esta elección?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Perfil', '[DEGRE]': 'Carácter', '[AVIS]': 'Nota', '[AVIS_SOMMELIER]': "El Secreto del Sommelier" }
+            }
         };
 
         const input = document.getElementById('search-bar');
@@ -301,36 +498,21 @@
         const feedbackContainer = document.getElementById('feedback-container');
         const legalModal = document.getElementById('legal-modal');
         const menuModal = document.getElementById('menu-modal');
+        const adminModal = document.getElementById('admin-modal');
+        const presentationModal = document.getElementById('presentation-modal');
         
         let currentLang = 'fr';
         let lastQuestionAsked = "";
         let currentSession = [];
-        let currentWineName = "";
+        let typewriterInterval;
+        let typewriterTimeout;
 
-        const langData = {
-            fr: {
-                flag: "🇫🇷", main_title: "A CASA LUNA", subtitle: "ACCORDS METS-VINS", photo_label: "Ouvrir la Carte", loader: "Recherche...", footer_quote: "L'art de vivre à la corse.", copyright: "© 2026 Powered by French Sommelier. Tous droits réservés.", phrases: ["Terrine de Figatellu", "Civet de Sanglier", "Fiadone Caramélisé", "Vin corse typique"],
-                quick_actions: [ 
-                    { text: "Je voudrais un Rouge léger", label: "🍷 Rouge Léger" }, 
-                    { text: "Je voudrais un Blanc Fruité", label: "🥂 Blanc Fruité" }, 
-                    { text: "Je voudrais un Rosé Corse", label: "🌸 Rosé Corse" },
-                    { text: "Je voudrais un vin Rouge Puissant", label: "🍇 Rouge Puissant" },
-                    { text: "Je voudrais un Vin Doux / Sucré", label: "🍯 Vin Doux" },
-                    { text: "Je voudrais un vin au Verre", label: "🍷 Au Verre" }
-                ],
-                sections: { '[DEMANDE]': 'Votre repas', '[SUGGESTION]': 'Notre Suggestion', '[EXPLICATION]': "Pourquoi ce choix ?", '[AROMES]': "Au nez & en bouche", '[PROFIL_VIN]': 'Profil', '[DEGRE]': 'Caractère', '[AVIS]': 'Note', '[AVIS_SOMMELIER]': "Le Secret du Sommelier" }
-            },
-            en: {
-                flag: "🇺🇸", main_title: "A CASA LUNA", subtitle: "WINE PAIRING", photo_label: "Open Menu", loader: "Searching...", footer_quote: "Corsican art of living.", copyright: "© 2026 Powered by French Sommelier. All rights reserved.", phrases: ["Wild Boar Stew", "Corsican Cheese", "Veal with Olives"],
-                quick_actions: [ { text: "Light Red Wine", label: "🍷 Light Red" }, { text: "Fruity White Wine", label: "🥂 Fruity White" }, { text: "Corsican Rosé", label: "🌸 Corsican Rosé" }, { text: "Powerful Red Wine", label: "🍇 Powerful Red" }, { text: "Sweet Wine", label: "🍯 Sweet Wine" }, { text: "Wine by the glass", label: "🍷 By the Glass" } ],
-                sections: { '[DEMANDE]': 'Your meal', '[SUGGESTION]': 'Our Suggestion', '[EXPLICATION]': "Why this choice?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Profile', '[DEGRE]': 'Character', '[AVIS]': 'Rating', '[AVIS_SOMMELIER]': "Sommelier Secret" }
-            }
-        };
-
+        // --- INIT & LOGIQUE ---
         function initMenu() {
             const container = document.getElementById('menu-content');
             let html = "";
-            for (const [category, items] of Object.entries(menuPlats)) {
+            const currentMenu = menuPlats[currentLang];
+            for (const [category, items] of Object.entries(currentMenu)) {
                 html += `<div class="menu-category"><h3>${category}</h3>`;
                 items.forEach(item => {
                     html += `<label class="menu-item">
@@ -343,29 +525,15 @@
             if(container) container.innerHTML = html;
         }
 
-        // --- FONCTION FOCUS MENU ---
         function handleMenuSelection(checkbox) {
             const category = checkbox.closest('.menu-category');
             const items = category.querySelectorAll('.menu-item');
-            
-            // Calculer si au moins un élément est coché dans cette catégorie
             let anyChecked = false;
             const inputs = category.querySelectorAll('input');
             inputs.forEach(inp => { if(inp.checked) anyChecked = true; });
-
             items.forEach(item => {
                 const cb = item.querySelector('input');
-                if (anyChecked) {
-                    // Si coché, on cache les autres
-                    if (!cb.checked) {
-                        item.style.display = 'none';
-                    } else {
-                        item.style.display = 'flex';
-                    }
-                } else {
-                    // Si rien coché, on affiche tout
-                    item.style.display = 'flex';
-                }
+                if (anyChecked && !cb.checked) { item.style.display = 'none'; } else { item.style.display = 'flex'; }
             });
         }
 
@@ -379,24 +547,29 @@
             }
         }
 
-        function closeMenuModal() {
-            if(menuModal) menuModal.classList.add('hidden');
+        function closeMenuModal() { if(menuModal) menuModal.classList.add('hidden'); }
+
+        function toggleFakeAdmin() {
+            if (adminModal.classList.contains('hidden')) { adminModal.classList.remove('hidden'); } else { adminModal.classList.add('hidden'); }
+        }
+
+        function togglePresentation() {
+            if (presentationModal.classList.contains('hidden')) { presentationModal.classList.remove('hidden'); } else { presentationModal.classList.add('hidden'); }
         }
 
         function validerMenu() {
             const selected = [];
             document.querySelectorAll('.menu-checkbox:checked').forEach(cb => selected.push(cb.value));
-            
             if (selected.length === 0) {
-                alert("Veuillez sélectionner au moins un plat !");
-                return;
+                const msg = currentLang === 'en' ? "Please select at least one dish!" : currentLang === 'es' ? "¡Por favor seleccione al menos un plato!" : "Veuillez sélectionner au moins un plat !";
+                alert(msg); return;
             }
-            
             closeMenuModal();
             input.value = selected.join(", "); 
-            
             setTimeout(() => {
-                const query = "Je vais manger : " + selected.join(", ") + ". Que me conseilles-tu ?";
+                const prefix = currentLang === 'en' ? "I'm having: " : currentLang === 'es' ? "Voy a comer: " : "Je vais manger : ";
+                const suffix = currentLang === 'en' ? ". What do you recommend?" : currentLang === 'es' ? ". ¿Qué me recomiendas?" : ". Que me conseilles-tu ?";
+                const query = prefix + selected.join(", ") + suffix;
                 demanderIA(null, null, query);
             }, 50);
         }
@@ -404,14 +577,36 @@
         function setLanguage(lang) {
             currentLang = lang;
             const data = langData[lang];
+            
             document.getElementById('current-lang-btn').innerText = data.flag;
             document.getElementById('main-title').innerText = data.main_title;
             document.getElementById('subtitle').innerText = data.subtitle;
-            document.getElementById('bubble').childNodes[0].nodeValue = data.bubble;
             document.getElementById('photo-label').innerText = data.photo_label;
             document.getElementById('loader-text').innerText = data.loader;
+            document.getElementById('legal-btn').innerText = data.legal_btn;
+            document.getElementById('modal-title').innerText = data.modal_title;
+            document.getElementById('modal-validate').innerText = data.modal_validate;
+            document.getElementById('footer-quote').innerText = data.footer_quote;
+            document.getElementById('copyright-text').innerText = data.copyright;
+            document.getElementById('legal-warning').innerText = data.warning;
+            document.getElementById('feedback-label').innerText = data.feedback_label;
+            document.getElementById('btn-sw-rouge').innerText = data.sw_rouge;
+            document.getElementById('btn-sw-blanc').innerText = data.sw_blanc;
+            document.getElementById('btn-sw-similaire').innerText = data.sw_similaire;
+            document.getElementById('btn-sw-surprends').innerText = data.sw_surprends;
+            document.getElementById('legal-title').innerText = data.legal_title;
+            document.getElementById('legal-editor').innerText = data.legal_editor;
+            document.getElementById('legal-contact').innerText = data.legal_contact;
+            document.getElementById('legal-host').innerText = data.legal_host;
+            document.getElementById('legal-analytics').innerText = data.legal_analytics;
+            document.getElementById('tagline').innerText = data.tagline;
+            
+            initMenu();
             renderQuickActions();
+            
             idx = 0; input.placeholder = "";
+            stopTypewriter();
+            typeWriter();
         }
         
         function renderQuickActions() {
@@ -435,27 +630,29 @@
             if (legalModal.classList.contains('hidden')) { legalModal.classList.remove('hidden'); } else { legalModal.classList.add('hidden'); }
         }
 
-        function handleAvatarClick() {
-            window.location.reload();
-        }
+        function handleAvatarClick() { window.location.reload(); }
 
         input.addEventListener('input', () => { clearBtn.style.display = input.value.length > 0 ? 'block' : 'none'; });
         function clearInput() { input.value = ''; clearBtn.style.display = 'none'; input.focus(); }
 
-        async function handlePhotoUpload(inputElement) {
-            const file = inputElement.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = function () { demanderIA(null, reader.result); };
-        }
-
         function relancerIA(type) {
             let complement = "";
-            if (type === 'similaire') complement = " (Propose-moi une autre suggestion dans le même style)";
-            if (type === 'rouge') complement = " (Je préfère un vin Rouge avec ce plat)";
-            if (type === 'blanc') complement = " (Je préfère un vin Blanc avec ce plat)";
-            if (type === 'surprends_moi') complement = " (Surprends-moi avec un style différent ou original)";
+            if (currentLang === 'fr') {
+                if (type === 'similaire') complement = " (Propose-moi une autre suggestion, un Autre choix)";
+                if (type === 'rouge') complement = " (Je préfère un vin Rouge avec ce plat)";
+                if (type === 'blanc') complement = " (Je préfère un vin Blanc avec ce plat)";
+                if (type === 'prestige') complement = " (Je veux une Version Prestige. Propose-moi le meilleur vin, le plus haut de gamme pour ce plat)";
+            } else if (currentLang === 'en') {
+                if (type === 'similaire') complement = " (Give me another suggestion)";
+                if (type === 'rouge') complement = " (I prefer Red wine)";
+                if (type === 'blanc') complement = " (I prefer White wine)";
+                if (type === 'prestige') complement = " (I want a Prestige Version. Recommend the best premium wine)";
+            } else {
+                if (type === 'similaire') complement = " (Dame otra sugerencia)";
+                if (type === 'rouge') complement = " (Prefiero vino Tinto)";
+                if (type === 'blanc') complement = " (Prefiero vino Blanco)";
+                if (type === 'prestige') complement = " (Quiero una Versión Prestigio. Recomienda el mejor vino premium)";
+            }
             demanderIA(null, null, complement);
         }
 
@@ -468,7 +665,7 @@
         }
 
         function getGlassSVG(filled) {
-            if (filled) return `<svg xmlns="http://www.w3.org/2000/svg" class="glass-icon" viewBox="0 0 24 24" fill="#4a2c20" stroke="none"><path d="M19.8 4.2A2.2 2.2 0 0 0 17.6 2h-11a2.2 2.2 0 0 0-2.2 2.2c0 3.8 2.3 7.1 5.6 8.4V18H7a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2h-3v-5.4c3.3-1.3 5.8-4.6 5.8-8.4z"/></svg>`;
+            if (filled) return `<svg xmlns="http://www.w3.org/2000/svg" class="glass-icon" viewBox="0 0 24 24" fill="#4c0519" stroke="none"><path d="M19.8 4.2A2.2 2.2 0 0 0 17.6 2h-11a2.2 2.2 0 0 0-2.2 2.2c0 3.8 2.3 7.1 5.6 8.4V18H7a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2h-3v-5.4c3.3-1.3 5.8-4.6 5.8-8.4z"/></svg>`;
             else return `<svg xmlns="http://www.w3.org/2000/svg" class="glass-icon" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2"><path d="M19.8 4.2A2.2 2.2 0 0 0 17.6 2h-11a2.2 2.2 0 0 0-2.2 2.2c0 3.8 2.3 7.1 5.6 8.4V18H7a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2h-3v-5.4c3.3-1.3 5.8-4.6 5.8-8.4z"/></svg>`;
         }
 
@@ -481,33 +678,21 @@
         }
 
         async function demanderIA(evt, imageBase64 = null, overrideQuery = null) {
-            let question = "";
-            let originalQuery = input.value;
+            let question = overrideQuery ? overrideQuery : input.value;
+            if (!question && !imageBase64) return;
 
-            if (overrideQuery) {
-                question = `${overrideQuery} (IMPORTANT: Réponds UNIQUEMENT en ${currentLang === 'fr' ? 'français' : currentLang === 'en' ? 'anglais' : 'espagnol'})`;
-                originalQuery = overrideQuery;
-            } else if (imageBase64) {
-                // Image logic if needed
-            } else {
-                let rawQuestion = input.value;
-                if (!rawQuestion) return;
-                question = `${rawQuestion} (IMPORTANT: Réponds UNIQUEMENT en ${currentLang === 'fr' ? 'français' : currentLang === 'en' ? 'anglais' : 'espagnol'})`;
-            }
-
-            // RESET UI
             quickActions.classList.add('hidden'); 
             avatarCircle.classList.add('pulse-gold'); loader.classList.remove('hidden'); photoBtn.classList.add('minimized'); contentArea.innerHTML = ""; card.classList.remove('visible'); 
             switchButtons.classList.add('hidden'); feedbackContainer.classList.add('hidden');
             document.getElementById('btn-up').classList.remove('selected'); document.getElementById('btn-down').classList.remove('selected'); document.getElementById('btn-up').style.display = 'block'; document.getElementById('btn-down').style.display = 'block';
 
-            lastQuestionAsked = originalQuery;
+            lastQuestionAsked = question;
 
             try {
                 const res = await fetch('/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: question, image: imageBase64, context: currentSession })
+                    body: JSON.stringify({ question: question, image: imageBase64, context: currentSession, lang: currentLang })
                 });
                 const data = await res.json();
                 
@@ -518,15 +703,16 @@
                 }
 
                 avatarCircle.classList.remove('pulse-gold'); loader.classList.add('hidden'); card.classList.add('visible');
-                
                 if (data.answer.includes("[ERREUR]")) { contentArea.innerHTML = `<div class="p-4 bg-red-50 text-red-900 rounded-xl text-base font-normal leading-snug">${data.answer.replace("[ERREUR]", "").trim()}</div>`; return; }
                 
+                // GESTION DU [STOP] : Affichage rouge et suppression des boutons
                 if (data.answer.startsWith("[STOP]")) {
                     contentArea.innerHTML = `<div class="p-4 bg-red-50 text-red-800 rounded-xl text-base font-bold text-center border border-red-200 shadow-sm">${data.answer.replace("[STOP]", "").trim()}</div>`;
-                    switchButtons.classList.add('hidden'); feedbackContainer.classList.add('hidden');
+                    switchButtons.classList.add('hidden'); // Cache les rebonds
+                    feedbackContainer.classList.add('hidden'); // Cache les avis
                     return;
                 }
-                
+
                 const currentSections = langData[currentLang].sections;
                 const hasTags = Object.keys(currentSections).some(tag => data.answer.includes(tag));
 
@@ -537,47 +723,28 @@
                 }
 
                 let vinSuggere = ""; let delay = 0;
-
                 Object.entries(currentSections).forEach(([tag, label]) => {
                     if (data.answer.includes(tag)) {
                         let rawContent = data.answer.split(tag)[1].split('[')[0];
                         rawContent = rawContent.trim().replace(/^[:\-\*\s]+/, '').trim();
-
                         if (rawContent === "") return;
+                        
                         let formattedContent = "";
-                        let lines = [];
-                        
-                        if (tag === '[AVIS_SOMMELIER]' || tag === '[EXPLICATION]' || tag === '[SUGGESTION]' || tag === '[DEMANDE]') {
-                            lines = rawContent.split('\n').map(l => l.trim());
-                        } else if (!rawContent.includes('\n') && rawContent.includes(',') && tag !== '[AVIS]' && tag !== '[DEGRE]' && tag !== '[PRIX]') {
-                            lines = rawContent.split(',').map(l => l.trim());
-                        } else {
-                            lines = rawContent.split('\n').map(l => l.trim());
-                        }
-                        
-                        while (lines.length > 0) {
-                            let lastLine = lines[lines.length - 1];
-                            let cleanLast = lastLine.replace(/^[-*•]\s*/, '').replace(/\*/g, '').trim();
-                            if (cleanLast === "" || cleanLast === "-" || cleanLast === "--" || cleanLast === "---") { lines.pop(); } else { break; }
-                        }
+                        let lines = rawContent.split('\n').map(l => l.trim()).filter(l => l !== "" && l !== "-" && l !== "--");
                         
                         lines.forEach(line => {
-                            if (line === "") { formattedContent += `<div class="h-6"></div>`; } else {
-                                let cleanLine = line.replace(/^[-*•]\s*/, '').replace(/\*/g, '').trim();
-                                if (cleanLine === "--" || cleanLine === "---" || cleanLine === "-") return;
-                                if (cleanLine === "") return;
-                                if (tag === '[PROFIL_VIN]') {
-                                    const match = cleanLine.match(/(.*?)\s*\((\d)[\/]?5?\)/);
-                                    if (match) {
-                                        const text = match[1].replace(/-/g, '').replace(/\*/g, '').trim();
-                                        const score = parseInt(match[2]);
-                                        formattedContent += `<div class="flex justify-between items-center mb-1 last:mb-0"><span class="text-lg font-normal">${text}</span>${generateWineGlasses(score)}</div>`;
-                                    } else { formattedContent += `<div class="mb-1 text-lg font-normal last:mb-0">${cleanLine.replace(/-/g, '')}</div>`; }
-                                } else {
-                                    let spacing = "mb-1";
-                                    if (tag === '[AVIS_SOMMELIER]') spacing = "mb-4";
-                                    formattedContent += `<div class="${spacing} text-lg font-normal last:mb-0">${cleanLine.replace(/^- /, '')}</div>`;
-                                }
+                            let cleanLine = line.replace(/^[-*•]\s*/, '').replace(/\*/g, '').trim();
+                            if (tag === '[PROFIL_VIN]') {
+                                const match = cleanLine.match(/(.*?)\s*[\(:]?\s*(\d)\s*[\/]?\s*5\s*[\)]?/);
+                                if (match) {
+                                    const text = match[1].replace(/-/g, '').replace(/\*/g, '').replace(/[:\d\.]*$/, '').trim();
+                                    const score = parseInt(match[2]);
+                                    formattedContent += `<div class="flex justify-between items-center mb-1 last:mb-0"><span class="text-lg font-normal">${text}</span>${generateWineGlasses(score)}</div>`;
+                                } else { formattedContent += `<div class="mb-1 text-lg font-normal last:mb-0">${cleanLine.replace(/-/g, '')}</div>`; }
+                            } else {
+                                let spacing = "mb-1";
+                                if (tag === '[AVIS_SOMMELIER]') spacing = "mb-4";
+                                formattedContent += `<div class="${spacing} text-lg font-normal last:mb-0">${cleanLine.replace(/^- /, '')}</div>`;
                             }
                         });
 
@@ -585,12 +752,11 @@
                             vinSuggere = rawContent.replace(/^[-*•]\s*/, '').replace(/\*/g, '').split('\n')[0].trim();
                             currentWineName = vinSuggere;
                         }
-                        
+
                         setTimeout(() => {
-                            // CRÉATION DES BOÎTES DE RÉPONSE AVEC LA CLASSE .response-box
                             const div = document.createElement('div');
-                            div.className = `px-4 pt-3 pb-2 rounded-xl shadow-sm mb-3 response-box fade-in-line`;
-                            div.innerHTML = `<h3 class="text-sm uppercase tracking-widest">${label}</h3>${formattedContent}`;
+                            div.className = `px-4 pt-3 pb-2 bg-[#fffefc] rounded-xl border-l-4 border-[#4c0519] shadow-sm mb-3 fade-in-line`;
+                            div.innerHTML = `<h3 class="text-[13px] uppercase font-bold text-[#4c0519] mb-1 tracking-widest font-[Cinzel]">${label}</h3><div class="text-[#4a2c20] font-sans text-base">${formattedContent}</div>`;
                             contentArea.appendChild(div);
                         }, delay);
                         delay += 300;
@@ -608,18 +774,45 @@
 
         input.addEventListener('keypress', (e) => { if (e.key === 'Enter') demanderIA(); });
         let idx = 0;
-        function typeWriter() {
-            let phrases = langData[currentLang].phrases;
-            let p = phrases[idx % phrases.length], j = 0; input.placeholder = "";
-            let t = setInterval(() => { input.placeholder += p[j++]; if (j === p.length) { clearInterval(t); setTimeout(erase, 1200); } }, 40);
+        
+        function stopTypewriter() {
+            if (typewriterInterval) clearInterval(typewriterInterval);
+            if (typewriterTimeout) clearTimeout(typewriterTimeout);
+            if(input) input.placeholder = "";
         }
+
+        function typeWriter() {
+            stopTypewriter();
+            let phrases = langData[currentLang].phrases;
+            let p = phrases[idx % phrases.length];
+            let j = 0; input.placeholder = "";
+            
+            typewriterInterval = setInterval(() => {
+                input.placeholder += p[j++];
+                if (j === p.length) {
+                    clearInterval(typewriterInterval);
+                    typewriterTimeout = setTimeout(erase, 1200);
+                }
+            }, 40);
+        }
+
         function erase() {
+            if (typewriterInterval) clearInterval(typewriterInterval);
             let c = input.placeholder;
-            let t = setInterval(() => { input.placeholder = c.substring(0, c.length - 1); c = input.placeholder; if (c.length === 0) { clearInterval(t); idx++; setTimeout(typeWriter, 300); } }, 20);
+            typewriterInterval = setInterval(() => {
+                input.placeholder = c.substring(0, c.length - 1);
+                c = input.placeholder;
+                if (c.length === 0) {
+                    clearInterval(typewriterInterval);
+                    idx++;
+                    typewriterTimeout = setTimeout(typeWriter, 300);
+                }
+            }, 20);
         }
         
         initMenu();
-        renderQuickActions(); typeWriter();
+        renderQuickActions(); 
+        typeWriter();
     </script>
 </body>
 </html>
