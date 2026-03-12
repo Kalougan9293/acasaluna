@@ -193,8 +193,8 @@
         </button>
     </div>
 
-    <header class="mt-6 mb-8 relative px-4">
-        <h1 id="main-title" class="text-3xl md:text-5xl font-bold gold-gradient uppercase tracking-[0.15em] mb-3 leading-tight font-[Cinzel] drop-shadow-sm whitespace-nowrap">
+    <header class="mt-6 mb-8 relative px-4 w-full">
+        <h1 id="main-title" class="text-2xl md:text-5xl font-bold gold-gradient uppercase tracking-[0.10em] md:tracking-[0.15em] mb-3 leading-tight font-[Cinzel] drop-shadow-sm whitespace-normal md:whitespace-nowrap px-2">
             LE RESTAURANT ÉTOILÉ
         </h1>
         <div class="inline-block border-b border-[#d4af37]/40 pb-2 mb-3">
@@ -223,7 +223,7 @@
         <div class="relative mb-2">
             <input type="text" id="search-bar" placeholder="" class="w-full border border-[#d4af37]/30 rounded-2xl p-4 pr-12 focus:outline-none focus:border-[#d4af37] transition-colors text-lg font-sans bg-white text-[#4a2c20] placeholder-[#4a2c20]/40 shadow-inner">
             <div id="clear-btn" onclick="clearInput()" class="absolute right-12 top-5 cursor-pointer text-gray-400 hover:text-[#4a2c20] hidden font-bold text-xl px-2">✕</div>
-            <div onclick="demanderIA()" class="absolute right-4 top-5 cursor-pointer text-[#4a2c20] hover:text-[#d4af37] transition-colors">
+            <div id="search-trigger" onclick="demanderIA()" class="absolute right-4 top-5 cursor-pointer text-[#4a2c20] hover:text-[#d4af37] transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
         </div>
@@ -372,6 +372,11 @@
                         <li class="text-red-600 font-bold">[20:32] "Coca Cola" ➔ REFUSÉ (Hors carte)</li>
                     </ul>
                 </div>
+
+                <div id="admin-editor" class="space-y-4 mt-4"></div>
+                <button id="admin-save-btn" onclick="saveAdminMenu()" class="w-full py-3 bg-[#4c0519] text-white font-bold uppercase tracking-wider rounded-lg hover:bg-[#2a0303] transition-colors text-sm mt-2 hidden">
+                    Enregistrer la carte
+                </button>
             </div>
         </div>
     </div>
@@ -506,14 +511,54 @@
         let currentSession = [];
         let typewriterInterval;
         let typewriterTimeout;
+        let cachedMenuData = null;
+        let adminEditingPlats = null;
+        let adminEditingVins = null;
+        let requestInProgress = false;
+
+        const menuCategoryLabels = {
+            fr: { Entrées: "🫒 Entrées", Plats: "🍽️ Plats", Desserts: "🧀 Desserts" },
+            en: { Entrées: "🫒 Starters", Plats: "🍽️ Main Courses", Desserts: "🧀 Desserts" },
+            es: { Entrées: "🫒 Entradas", Plats: "🍽️ Platos Principales", Desserts: "🧀 Postres" }
+        };
+        const prefCategoryKey = { fr: "🍷 Mes Préférences", en: "🍷 My Preferences", es: "🍷 Mis Preferencias" };
+
+        async function fetchMenu() {
+            try {
+                const r = await fetch('/api/menu');
+                if (r.ok) { cachedMenuData = await r.json(); return cachedMenuData; }
+            } catch (e) { console.warn('Menu API non disponible', e); }
+            cachedMenuData = {
+                carte_des_plats: {
+                    Entrées: (menuPlats.fr["🫒 Entrées"] || []).slice(),
+                    Plats: (menuPlats.fr["🍽️ Plats"] || []).slice(),
+                    Desserts: (menuPlats.fr["🧀 Desserts"] || []).slice()
+                },
+                carte_des_vins: {}
+            };
+            return cachedMenuData;
+        }
+
+        function getPlatsForModal() {
+            if (cachedMenuData && cachedMenuData.carte_des_plats)
+                return cachedMenuData.carte_des_plats;
+            return {
+                Entrées: (menuPlats.fr["🫒 Entrées"] || []).slice(),
+                Plats: (menuPlats.fr["🍽️ Plats"] || []).slice(),
+                Desserts: (menuPlats.fr["🧀 Desserts"] || []).slice()
+            };
+        }
 
         // --- INIT & LOGIQUE ---
         function initMenu() {
             const container = document.getElementById('menu-content');
+            if (!container) return;
             let html = "";
-            const currentMenu = menuPlats[currentLang];
-            for (const [category, items] of Object.entries(currentMenu)) {
-                html += `<div class="menu-category"><h3>${category}</h3>`;
+            const plats = getPlatsForModal();
+            const labels = menuCategoryLabels[currentLang] || menuCategoryLabels.fr;
+            for (const [key, label] of Object.entries(labels)) {
+                const items = plats[key] || [];
+                html += `<div class="menu-category"><h3>${label}</h3>`;
                 items.forEach(item => {
                     html += `<label class="menu-item">
                         <input type="checkbox" value="${item}" class="menu-checkbox" onchange="handleMenuSelection(this)">
@@ -522,7 +567,17 @@
                 });
                 html += `</div>`;
             }
-            if(container) container.innerHTML = html;
+            const prefKey = prefCategoryKey[currentLang] || prefCategoryKey.fr;
+            const prefItems = menuPlats[currentLang][prefKey] || [];
+            html += `<div class="menu-category"><h3>${prefKey}</h3>`;
+            prefItems.forEach(item => {
+                html += `<label class="menu-item">
+                    <input type="checkbox" value="${item}" class="menu-checkbox" onchange="handleMenuSelection(this)">
+                    <span>${item}</span>
+                </label>`;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
         }
 
         function handleMenuSelection(checkbox) {
@@ -550,7 +605,135 @@
         function closeMenuModal() { if(menuModal) menuModal.classList.add('hidden'); }
 
         function toggleFakeAdmin() {
-            if (adminModal.classList.contains('hidden')) { adminModal.classList.remove('hidden'); } else { adminModal.classList.add('hidden'); }
+            if (adminModal.classList.contains('hidden')) {
+                adminModal.classList.remove('hidden');
+                loadAdminEditor();
+            } else {
+                adminModal.classList.add('hidden');
+            }
+        }
+
+        async function loadAdminEditor() {
+            await fetchMenu();
+            if (cachedMenuData) {
+                adminEditingPlats = {
+                    Entrées: (cachedMenuData.carte_des_plats.Entrées || []).slice(),
+                    Plats: (cachedMenuData.carte_des_plats.Plats || []).slice(),
+                    Desserts: (cachedMenuData.carte_des_plats.Desserts || []).slice()
+                };
+                adminEditingVins = {};
+                for (const [cat, bottles] of Object.entries(cachedMenuData.carte_des_vins || {})) {
+                    adminEditingVins[cat] = (bottles || []).map(b => ({ ...b }));
+                }
+            }
+            renderAdminEditor();
+            const saveBtn = document.getElementById('admin-save-btn');
+            if (saveBtn) saveBtn.classList.remove('hidden');
+        }
+
+        function renderAdminEditor() {
+            const container = document.getElementById('admin-editor');
+            if (!container || !adminEditingPlats || !adminEditingVins) return;
+            let html = '';
+
+            html += '<div class="admin-card"><h3 class="font-bold text-sm mb-3 uppercase tracking-wider text-[#2a0303]">🍽️ Gérer la carte (plats)</h3>';
+            for (const cat of ['Entrées', 'Plats', 'Desserts']) {
+                const items = adminEditingPlats[cat] || [];
+                html += `<div class="mb-4"><h4 class="text-xs font-bold text-gray-600 mb-2">${cat}</h4><ul class="list-none space-y-1 mb-2">`;
+                items.forEach((name, i) => {
+                    html += `<li class="flex items-center justify-between gap-2 text-sm"><span>${escapeHtml(name)}</span><button type="button" onclick="adminRemovePlat('${cat}', ${i})" class="text-red-600 hover:text-red-800 font-bold px-2" title="Retirer">✕</button></li>`;
+                });
+                html += `</ul><div class="flex gap-2"><input type="text" data-admin-add-plat="${cat}" placeholder="Ajouter..." class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm" onkeypress="if(event.key==='Enter'){event.preventDefault();adminAddPlat('${cat}');}"><button type="button" onclick="adminAddPlat('${cat}')" class="bg-[#4c0519] text-white text-xs px-3 py-1 rounded">Ajouter</button></div></div>`;
+            }
+            html += '</div>';
+
+            html += '<div class="admin-card"><h3 class="font-bold text-sm mb-3 uppercase tracking-wider text-[#2a0303]">🍷 Gérer la carte des vins</h3>';
+            const wineCats = Object.keys(adminEditingVins);
+            if (wineCats.length === 0) {
+                html += '<p class="text-xs text-gray-500">Aucune catégorie de vin. Modifiez menu.json pour en ajouter.</p>';
+            } else {
+                wineCats.forEach(cat => {
+                    const bottles = adminEditingVins[cat] || [];
+                    const catEsc = (cat || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    html += `<div class="mb-4"><h4 class="text-xs font-bold text-gray-600 mb-2">${escapeHtml(cat)}</h4><ul class="list-none space-y-1 mb-2">`;
+                    bottles.forEach((b, i) => {
+                        html += `<li class="flex items-center justify-between gap-2 text-sm"><span>${escapeHtml(b.nom || b)} ${typeof b.prix !== 'undefined' ? '(' + escapeHtml(b.prix) + ')' : ''}</span><button type="button" onclick="adminRemoveBottle('${catEsc}', ${i})" class="text-red-600 hover:text-red-800 font-bold px-2" title="Retirer">✕</button></li>`;
+                    });
+                    html += `</ul><div class="flex flex-wrap gap-2 items-center text-sm" data-admin-wine-row="${escapeHtml(cat)}"><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="nom" placeholder="Nom" class="border border-gray-300 rounded px-2 py-1 w-32"><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="prix" placeholder="Prix (ex: 28€)" class="border border-gray-300 rounded px-2 py-1 w-20"><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="type" placeholder="Type" class="border border-gray-300 rounded px-2 py-1 w-24"><button type="button" onclick="adminAddBottle('${catEsc}')" class="bg-[#4c0519] text-white text-xs px-3 py-1 rounded">Ajouter</button></div></div>`;
+                });
+            }
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        function adminAddPlat(cat) {
+            const input = document.querySelector(`[data-admin-add-plat="${cat}"]`);
+            const v = input && input.value.trim();
+            if (!v) return;
+            adminEditingPlats[cat].push(v);
+            input.value = '';
+            renderAdminEditor();
+        }
+
+        function adminRemovePlat(cat, idx) {
+            adminEditingPlats[cat].splice(idx, 1);
+            renderAdminEditor();
+        }
+
+        function adminAddBottle(cat) {
+            const container = document.getElementById('admin-editor');
+            if (!container) return;
+            const row = Array.from(container.querySelectorAll('[data-admin-wine-field="nom"]')).find(el => el.getAttribute('data-admin-wine-cat') === cat);
+            if (!row) return;
+            const nomEl = row;
+            const wrap = row.closest('[data-admin-wine-row]');
+            const prixEl = wrap ? wrap.querySelector('[data-admin-wine-field="prix"]') : null;
+            const typeEl = wrap ? wrap.querySelector('[data-admin-wine-field="type"]') : null;
+            const nom = (nomEl && nomEl.value || '').trim();
+            const prix = (prixEl && prixEl.value || '').trim();
+            const type = (typeEl && typeEl.value || '').trim();
+            if (!nom) return;
+            if (!adminEditingVins[cat]) adminEditingVins[cat] = [];
+            adminEditingVins[cat].push({ nom: nom, prix: prix || '-', type: type || '-' });
+            renderAdminEditor();
+        }
+
+        function adminRemoveBottle(cat, idx) {
+            adminEditingVins[cat].splice(idx, 1);
+            renderAdminEditor();
+        }
+
+        async function saveAdminMenu() {
+            if (!adminEditingPlats || !adminEditingVins) return;
+            try {
+                const r = await fetch('/api/menu', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic ' + btoa('admin:france')
+                    },
+                    body: JSON.stringify({ carte_des_plats: adminEditingPlats, carte_des_vins: adminEditingVins })
+                });
+                const data = await r.json();
+                if (data.ok) {
+                    await fetchMenu();
+                    initMenu();
+                    alert('Carte enregistrée.');
+                } else {
+                    alert('Erreur: ' + (data.error || 'inconnue'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Erreur de connexion.');
+            }
         }
 
         function togglePresentation() {
@@ -680,6 +863,11 @@
         async function demanderIA(evt, imageBase64 = null, overrideQuery = null) {
             let question = overrideQuery ? overrideQuery : input.value;
             if (!question && !imageBase64) return;
+            if (requestInProgress) return;
+            requestInProgress = true;
+            const searchTrigger = document.getElementById('search-trigger');
+            input.disabled = true;
+            if (searchTrigger) searchTrigger.style.pointerEvents = 'none';
 
             quickActions.classList.add('hidden'); 
             avatarCircle.classList.add('pulse-gold'); loader.classList.remove('hidden'); photoBtn.classList.add('minimized'); contentArea.innerHTML = ""; card.classList.remove('visible'); 
@@ -770,9 +958,19 @@
                 }, delay);
 
             } catch (e) { console.error(e); alert("Erreur de connexion serveur."); avatarCircle.classList.remove('pulse-gold'); loader.classList.add('hidden'); }
+            finally {
+                requestInProgress = false;
+                input.disabled = false;
+                if (searchTrigger) searchTrigger.style.pointerEvents = '';
+            }
         }
 
-        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') demanderIA(); });
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if (requestInProgress) { e.preventDefault(); return; }
+                demanderIA();
+            }
+        });
         let idx = 0;
         
         function stopTypewriter() {
@@ -810,8 +1008,9 @@
             }, 20);
         }
         
+        fetchMenu().then(() => initMenu());
         initMenu();
-        renderQuickActions(); 
+        renderQuickActions();
         typeWriter();
     </script>
 </body>
