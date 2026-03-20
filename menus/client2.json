@@ -1,0 +1,43 @@
+{
+  "config": {
+    "nom_resto": "Atelier des Vins Blancs",
+    "logo_url": "client2_logo.png",
+    "couleur_principale": "#1D4ED8",
+    "admin_user": "patron2",
+    "admin_pass": "blanc2026"
+  },
+  "carte_des_plats": {
+    "Entrées": [
+      "Oeuf Mayo",
+      "Planche de Charcuterie",
+      "Escargots de Bourgogne",
+      "Salade de Chèvre Chaud"
+    ],
+    "Plats": [
+      "Entrecôte Frites",
+      "Tartare de Boeuf",
+      "Blanquette de Veau",
+      "Pavé de Saumon",
+      "Burger du Chef"
+    ],
+    "Desserts": [
+      "Mi-cuit au Chocolat",
+      "Tarte Tatin",
+      "Crème Brûlée",
+      "Café Gourmand"
+    ]
+  },
+  "vins": [
+    { "categorie": "Vins Rouges", "nom": "Bourgogne Pinot Noir - Clos d'Azur", "prix": "44€", "type": "Rouge" },
+    { "categorie": "Vins Rouges", "nom": "Saint-Nicolas de Bourgueil - Pureté", "prix": "29€", "type": "Rouge" },
+    { "categorie": "Vins Rouges", "nom": "Corbières - Terroir Rouge", "prix": "23€", "type": "Rouge" },
+    { "categorie": "Vins Rouges", "nom": "Saint-Emilion - Grand Lot", "prix": "68€", "type": "Rouge" },
+    { "categorie": "Vins Blancs", "nom": "Chablis - Vent du Nord", "prix": "41€", "type": "Blanc" },
+    { "categorie": "Vins Blancs", "nom": "Sancerre - La Colline", "prix": "47€", "type": "Blanc" },
+    { "categorie": "Vins Blancs", "nom": "Riesling - Les Pierres", "prix": "25€", "type": "Blanc" },
+    { "categorie": "Vins Rosés", "nom": "Rosé Frais - Verger Rose", "prix": "26€", "type": "Rosé" },
+    { "categorie": "Vins Rosés", "nom": "Coteaux d'Aix - Soleil du Sud", "prix": "30€", "type": "Rosé" },
+    { "categorie": "Champagnes", "nom": "Champagne Premier Cru - Blanc", "prix": "18€", "type": "Pétillant" },
+    { "categorie": "Champagnes", "nom": "Champagne - Cuvée Brut Rosé", "prix": "102€", "type": "Pétillant" }
+  ]
+}

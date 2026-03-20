@@ -2,6 +2,7 @@
 try { require('dotenv').config(); } catch (e) { console.log("Mode Production"); }
 
 const { Mistral } = require('@mistralai/mistralai');
+const rateLimit = require("express-rate-limit");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -13,28 +14,465 @@ if (!HAS_MISTRAL_KEY) {
     console.warn("⚠️ MISTRAL_API_KEY manquante : /ask renverra 503.");
 }
 
-let menuData = { carte_des_vins: {}, carte_des_plats: {} };
-try {
-    menuData = require('./menu.json');
-    console.log("✅ MENU DEMO CHARGÉ");
-} catch (error) {
-    console.log("⚠️ Menu introuvable, mode dégradé.");
+const MENUS_DIR = path.resolve(path.join(__dirname, "menus"));
+const DEFAULT_MENU_PATH = path.join(MENUS_DIR, "default.json");
+// Stats multi-tenants : un fichier par resto, stocké dans `menus/`.
+// Ex : menus/client1.stats.json, menus/default.stats.json
+const STATS_CACHE = new Map();
+
+const MENU_CACHE = new Map();
+
+function sanitizeRestoId(restoId) {
+    const s = (restoId || "").toString().trim();
+    if (!s) return "";
+    // Anti path traversal: uniquement des caractères sûrs
+    if (!/^[a-zA-Z0-9_-]+$/.test(s)) return "";
+    return s;
 }
+
+function readJsonSafe(filePath) {
+    try {
+        const raw = fs.readFileSync(filePath, "utf8");
+        return JSON.parse(raw);
+    } catch (e) {
+        return null;
+    }
+}
+
+function writeJsonSafe(filePath, obj) {
+    try {
+        fs.writeFileSync(filePath, JSON.stringify(obj, null, 2), "utf8");
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function getStatsFilePath(restoId) {
+    const safeResto = sanitizeRestoId(restoId);
+    const fileName = safeResto ? `${safeResto}.stats.json` : "default.stats.json";
+    return path.join(MENUS_DIR, fileName);
+}
+
+function loadStatsForResto(restoId) {
+    const statsFilePath = getStatsFilePath(restoId);
+    if (STATS_CACHE.has(statsFilePath)) return STATS_CACHE.get(statsFilePath);
+
+    const d = readJsonSafe(statsFilePath);
+    const stats = {
+        chiffre_affaires_euros: d && typeof d.chiffre_affaires_euros === "number" ? d.chiffre_affaires_euros : 0,
+        keyword_counts: d && d.keyword_counts && typeof d.keyword_counts === "object" ? d.keyword_counts : {},
+        suggestion_counts: d && d.suggestion_counts && typeof d.suggestion_counts === "object" ? d.suggestion_counts : {},
+        error_reason_counts: d && d.error_reason_counts && typeof d.error_reason_counts === "object" ? d.error_reason_counts : {},
+        type_counts: d && d.type_counts && typeof d.type_counts === "object" ? d.type_counts : { Rouge: 0, Blanc: 0, "Rosé": 0, Autre: 0 },
+        live_log: d && Array.isArray(d.live_log) ? d.live_log.slice(0, 100) : [],
+        error_log: d && Array.isArray(d.error_log) ? d.error_log.slice(0, 100) : [],
+        daily_clients: d && d.daily_clients && typeof d.daily_clients === "object" ? d.daily_clients : {},
+        daily_ca: d && d.daily_ca && typeof d.daily_ca === "object" ? d.daily_ca : {},
+        last_updated: d && d.last_updated ? d.last_updated : null
+    };
+
+    STATS_CACHE.set(statsFilePath, stats);
+    return stats;
+}
+
+function saveStatsForResto(restoId) {
+    const statsFilePath = getStatsFilePath(restoId);
+    const stats = loadStatsForResto(restoId);
+    stats.last_updated = new Date().toISOString();
+    writeJsonSafe(statsFilePath, stats);
+}
+
+function getDayKey(d = new Date()) {
+    // Buckets journaliers : clé simple et stable (UTC)
+    return d.toISOString().slice(0, 10);
+}
+
+function parsePrixEuros(prixStr) {
+    if (prixStr == null || prixStr === "") return 0;
+    const s = String(prixStr).replace(/\s/g, "").replace(",", ".");
+    const m = s.match(/(\d+(?:\.\d+)?)/);
+    if (!m) return 0;
+    return Math.round(parseFloat(m[1]) * 100) / 100;
+}
+
+function normalizeTypeForStats(type) {
+    const t = normalizeVinName(type || "");
+    if (t.includes("rouge")) return "Rouge";
+    if (t.includes("blanc")) return "Blanc";
+    if (t.includes("rose")) return "Rosé";
+    if (t.includes("petillant") || t.includes("champagne") || t.includes("effervescent")) return "Autre";
+    if (t.includes("autre")) return "Autre";
+    return "Autre";
+}
+
+function normalizeVinName(n) {
+    let s = (n || "").toString().trim().toLowerCase();
+    // Normalisation des caractères fréquents en français
+    s = s.replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/ß/g, "ss");
+    // Suppression des accents (NFD -> caractères combinants)
+    s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    // Retire ponctuation et caractères spéciaux (on garde espaces, ' et -)
+    s = s.replace(/[^a-z0-9\s'\-]/g, " ");
+    return s.replace(/\s+/g, " ").trim();
+}
+
+function tokenize(s) {
+    return normalizeVinName(s).split(" ").filter(Boolean);
+}
+
+function levenshteinDistance(a, b) {
+    const s = a || "";
+    const t = b || "";
+    const n = s.length;
+    const m = t.length;
+    if (n === 0) return m;
+    if (m === 0) return n;
+    const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+    for (let i = 0; i <= n; i++) dp[i][0] = i;
+    for (let j = 0; j <= m; j++) dp[0][j] = j;
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+            dp[i][j] = Math.min(
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + cost
+            );
+        }
+    }
+    return dp[n][m];
+}
+
+function computeWineMatchScore(targetName, candidateName) {
+    const target = normalizeVinName(targetName);
+    const candidate = normalizeVinName(candidateName);
+    if (!target || !candidate) return 0;
+    if (target === candidate) return 1;
+
+    let score = 0;
+    if (target.length >= 4 && candidate.length >= 4 && (target.includes(candidate) || candidate.includes(target))) {
+        score = Math.max(score, 0.88);
+    }
+
+    const targetTokens = tokenize(target);
+    const candidateTokens = tokenize(candidate);
+    const targetSet = new Set(targetTokens);
+    const candidateSet = new Set(candidateTokens);
+    const inter = [...targetSet].filter(x => candidateSet.has(x)).length;
+    const union = new Set([...targetSet, ...candidateSet]).size || 1;
+    const jaccard = inter / union;
+    score = Math.max(score, jaccard * 0.85);
+
+    const maxLen = Math.max(target.length, candidate.length) || 1;
+    const dist = levenshteinDistance(target, candidate);
+    const similarity = 1 - dist / maxLen;
+    score = Math.max(score, similarity * 0.8);
+
+    return Math.max(0, Math.min(1, score));
+}
+
+function findWinePriceInMenu(carte_des_vins, suggestedName) {
+    const target = normalizeVinName(suggestedName);
+    if (!target) return 0;
+    const cats = carte_des_vins && typeof carte_des_vins === "object" ? carte_des_vins : {};
+    let bestScore = 0;
+    let bestPrice = 0;
+    for (const wines of Object.values(cats)) {
+        if (!Array.isArray(wines)) continue;
+        for (const w of wines) {
+            const nom = w && (w.nom || w.name);
+            if (!nom) continue;
+            const score = computeWineMatchScore(suggestedName, nom);
+            if (score > bestScore) {
+                bestScore = score;
+                bestPrice = parsePrixEuros(w.prix_bouteille || w.prixBouteille || w.prix || w.price || w.prix_verre || w.prixVerre);
+            }
+        }
+    }
+    return bestScore >= 0.55 ? bestPrice : 0;
+}
+
+function recordSearchKeywords(question, restoId) {
+    if (!question || typeof question !== "string") return;
+    const statsData = loadStatsForResto(restoId);
+    const words = question.toLowerCase().replace(/[^a-zàâäéèêëïîôùûçœæ0-9'\-\s]/gi, " ").split(/\s+/).filter(w => w.length > 2);
+    const seen = new Set();
+    words.forEach(w => {
+        if (seen.has(w)) return;
+        seen.add(w);
+        statsData.keyword_counts[w] = (statsData.keyword_counts[w] || 0) + 1;
+    });
+}
+
+function isVagueWineName(name) {
+    const n = normalizeVinName(name);
+    if (!n) return true;
+    const tokens = n.split(" ").filter(Boolean);
+    const genericNames = new Set([
+        "beaujolais", "bordeaux", "bourgogne", "chablis", "sancerre", "chardonnay",
+        "merlot", "cabernet", "pinot", "rioja", "chianti", "rose", "rouge", "blanc", "vin"
+    ]);
+    if (tokens.length <= 2 && tokens.every(t => genericNames.has(t))) return true;
+    return false;
+}
+
+function hasDomainAndYear(name) {
+    const n = normalizeVinName(name);
+    const hasYear = /\b(19|20)\d{2}\b/.test(n);
+    const tokens = n.split(" ").filter(Boolean);
+    const hasDomainHint = n.includes("domaine") || n.includes("chateau") || n.includes("clos") || n.includes("cuvee");
+    return hasYear || (hasDomainHint && tokens.length >= 3);
+}
+
+function buildMenuSearchBlobNorm(tenantMenu) {
+    const cats = tenantMenu && tenantMenu.carte_des_vins ? tenantMenu.carte_des_vins : {};
+    const parts = [];
+    for (const wines of Object.values(cats)) {
+        if (!Array.isArray(wines)) continue;
+        for (const w of wines) {
+            if (!w) continue;
+            parts.push(w.nom || "");
+            parts.push(w.domaine || "");
+            parts.push(w.type || "");
+        }
+    }
+    return normalizeVinName(parts.join(" "));
+}
+
+function strictRefusalIfNeeded(question, tenantMenu) {
+    const q = String(question || "");
+    const qLower = q.toLowerCase();
+
+    const menuBlob = buildMenuSearchBlobNorm(tenantMenu);
+
+    // Refus strict uniquement pour demandes vraiment impossibles (et pas pour les mots présents dans les plats)
+
+    // Grossesse / alcool / mineur : refus de conseiller de l'alcool
+    const hasAlcoholRequest = /\bvin\b|\balcool\b|\bboire\b|\bverre\b|\bbouteille\b/i.test(qLower);
+    const isPregnant = /\benceinte\b|\bgrossesse\b/.test(qLower);
+    if (hasAlcoholRequest && isPregnant) {
+        return "[STOP] Désolé, je ne peux pas conseiller de vin ou d'alcool pendant la grossesse. Je peux plutôt vous proposer une alternative sans alcool.";
+    }
+    // Détection simple du "X ans" si X < 18
+    const ageMatch = qLower.match(/\b(\d{1,2})\s*ans?\b/);
+    if (hasAlcoholRequest) {
+        const age = ageMatch ? parseInt(ageMatch[1], 10) : null;
+        if (age !== null && !Number.isNaN(age) && age < 18) {
+            return "[STOP] Désolé, je ne peux pas conseiller d'alcool pour un mineur. Je peux aider avec une alternative sans alcool.";
+        }
+        if (/\bmineur\b/.test(qLower)) {
+            return "[STOP] Désolé, je ne peux pas conseiller d'alcool pour un mineur. Je peux aider avec une alternative sans alcool.";
+        }
+    }
+
+    // 1) Nonsense / personnage
+    if (/\bbatman\b/i.test(qLower)) {
+        return "[STOP] Désolé, je suis là uniquement pour vous conseiller le vin parfait.";
+    }
+
+    // 2) Contradiction "sec" vs "moelleux/doux/liquoreux" (uniquement si le texte parle bien de vin)
+    const hasVinWord = /\bvin\b/i.test(qLower);
+    const hasSec = /\bsec\b/.test(qLower) || /\bdry\b/.test(qLower);
+    const hasMoelleux = /(moelleux|doux|liquoreux|sucr(e|é)|moelleuse)/i.test(qLower);
+    if (hasVinWord && hasSec && hasMoelleux) {
+        return "[STOP] Désolé, votre demande est contradictoire (sec + moelleux/doux).";
+    }
+
+    // 3) Profils "citron/coca" : éviter les faux positifs causés par un plat (ex: "Tarte au citron").
+    // On refuse seulement si le goût est explicitement demandé pour le VIN (goût/saveur/profil + citron/coca),
+    // et si aucun indice correspondant n'existe dans le menu.
+    const wantsCitronWine = /(go[uû]t|saveur|ar[oô]me|profil).{0,25}citron|citron.{0,25}(go[uû]t|saveur|ar[oô]me|profil)/i.test(qLower);
+    const wantsCocaWine = /(go[uû]t|saveur|ar[oô]me|profil).{0,25}coca|coca.{0,25}(go[uû]t|saveur|ar[oô]me|profil)/i.test(qLower);
+    const wantsColaWine = /(go[uû]t|saveur|ar[oô]me|profil).{0,25}cola|cola.{0,25}(go[uû]t|saveur|ar[oô]me|profil)/i.test(qLower);
+    if (hasVinWord && (wantsCitronWine || wantsCocaWine || wantsColaWine)) {
+        const needs = [];
+        if (wantsCitronWine) needs.push("citron");
+        if (wantsCocaWine) needs.push("coca");
+        if (wantsColaWine) needs.push("cola");
+
+        const ok = needs.some(n => {
+            const needle = normalizeVinName(n);
+            return needle && menuBlob.includes(needle);
+        });
+
+        if (!ok) return "[STOP] Désolé, votre demande est trop spécifique pour notre carte.";
+    }
+
+    return null;
+}
+
+function validateMenuPayload(data) {
+    const errors = [];
+    const warnings = [];
+    if (!data || !data.carte_des_plats || !data.carte_des_vins) {
+        errors.push("carte_des_plats et carte_des_vins requis");
+        return { ok: false, errors, warnings };
+    }
+
+    const seen = new Set();
+    const allowed = new Set(["Rouge", "Blanc", "Rosé", "Autre"]);
+    const priceDigitsRegex = /^\d+(?:[.,]\d+)?$/;
+    Object.entries(data.carte_des_vins || {}).forEach(([categorie, wines]) => {
+        if (!Array.isArray(wines)) return;
+        wines.forEach((w, i) => {
+            const nom = (w && (w.nom || w.name || "") || "").trim();
+            const typeRaw = (w && (w.type || "") || "").trim();
+            const normalizedType = normalizeTypeForStats(typeRaw);
+            const type = typeRaw || "";
+            if (!nom) {
+                errors.push(`Nom de vin manquant (${categorie} #${i + 1})`);
+                return;
+            }
+            const normalizedRawType = normalizeVinName(type);
+            const isKnownOther = normalizedRawType.includes("autre") || normalizedRawType.includes("petillant") || normalizedRawType.includes("champagne") || normalizedRawType.includes("effervescent");
+            if (!type || (!allowed.has(type) && normalizedType === "Autre" && !isKnownOther)) {
+                errors.push(`Type manquant ou incohérent pour "${nom}"`);
+            }
+            const key = `${normalizeVinName(nom)}|${normalizedType}`;
+            if (seen.has(key)) errors.push(`Doublon détecté pour "${nom}" (${normalizedType})`);
+            seen.add(key);
+
+            if (isVagueWineName(nom)) {
+                errors.push(`Vin trop vague : "${nom}"`);
+            }
+            if (!hasDomainAndYear(nom)) {
+                warnings.push(`Fortement conseillé: préciser domaine et/ou année pour "${nom}"`);
+            }
+
+            const prixBouteille = (w && (w.prix_bouteille ?? w.prixBouteille ?? "")) ?? "";
+            const prixVerre = (w && (w.prix_verre ?? w.prixVerre ?? "")) ?? "";
+            const prixBouteilleStr = String(prixBouteille).trim();
+            const prixVerreStr = String(prixVerre).trim();
+            if (prixBouteilleStr && !priceDigitsRegex.test(prixBouteilleStr)) {
+                errors.push(`Prix de la bouteille invalide (chiffres uniquement) pour "${nom}"`);
+            }
+            if (prixVerreStr && !priceDigitsRegex.test(prixVerreStr)) {
+                errors.push(`Prix du verre invalide (chiffres uniquement) pour "${nom}"`);
+            }
+        });
+    });
+    return { ok: errors.length === 0, errors, warnings };
+}
+
+function buildMenuResponseFromTenantJson(tenantJson) {
+    const config = tenantJson && tenantJson.config ? tenantJson.config : {};
+    const carte_des_plats = tenantJson && tenantJson.carte_des_plats ? tenantJson.carte_des_plats : {};
+
+    const carte_des_vins = {};
+    if (tenantJson && Array.isArray(tenantJson.vins)) {
+        tenantJson.vins.forEach(w => {
+            const categorie = w && w.categorie ? w.categorie : "";
+            if (!categorie) return;
+            if (!carte_des_vins[categorie]) carte_des_vins[categorie] = [];
+            carte_des_vins[categorie].push({
+                nom: w.nom || "",
+                domaine: w.domaine || "",
+                annee: w.annee || "",
+                prix_bouteille: w.prix_bouteille || w.prixBouteille || "",
+                prix_verre: w.prix_verre || w.prixVerre || "",
+                prix: w.prix || w.prix_bouteille || w.prixBouteille || w.prix_verre || w.prixVerre || "",
+                type: w.type || "",
+                pousser: !!w.pousser
+            });
+        });
+    }
+
+    return { config, carte_des_plats, carte_des_vins };
+}
+
+function normalizePlatsForAi(platsObj) {
+    const out = {};
+    const src = platsObj && typeof platsObj === "object" ? platsObj : {};
+    for (const [cat, items] of Object.entries(src)) {
+        if (!Array.isArray(items)) continue;
+        out[cat] = items
+            .map(it => {
+                if (typeof it === "string") return { nom: it, info: "" };
+                if (!it || typeof it !== "object") return null;
+                const nom = (it.nom || it.name || "").toString();
+                const info = (it.info || it.description || "").toString();
+                if (!nom.trim()) return null;
+                return { nom: nom.trim(), info: info.trim() };
+            })
+            .filter(Boolean);
+    }
+    return out;
+}
+
+function flattenPlatsForClient(aiPlatsObj) {
+    const out = {};
+    const src = aiPlatsObj && typeof aiPlatsObj === "object" ? aiPlatsObj : {};
+    for (const [cat, items] of Object.entries(src)) {
+        if (!Array.isArray(items)) continue;
+        out[cat] = items
+            .map(it => (it && typeof it === "object" ? it.nom : String(it || "")))
+            .map(s => (s || "").trim())
+            .filter(Boolean);
+    }
+    return out;
+}
+
+function getMenuForResto(restoId, mode = "ai") {
+    const safeResto = sanitizeRestoId(restoId);
+    const targetPath = safeResto ? path.join(MENUS_DIR, `${safeResto}.json`) : DEFAULT_MENU_PATH;
+    const finalPath = safeResto && fs.existsSync(targetPath) ? targetPath : DEFAULT_MENU_PATH;
+
+    const cacheKey = `${finalPath}::${mode}`;
+    if (MENU_CACHE.has(cacheKey)) return MENU_CACHE.get(cacheKey);
+
+    const tenantJson = readJsonSafe(finalPath) || readJsonSafe(DEFAULT_MENU_PATH) || {};
+    const menu = buildMenuResponseFromTenantJson(tenantJson);
+
+    // Plats: format legacy (strings) vs nouveau format ({nom, info})
+    const aiPlats = normalizePlatsForAi(menu.carte_des_plats);
+    menu.carte_des_plats = mode === "client" ? flattenPlatsForClient(aiPlats) : aiPlats;
+
+    MENU_CACHE.set(cacheKey, menu);
+    return menu;
+}
+
+// Menu par défaut (fallback)
+const defaultMenu = getMenuForResto(null, "ai");
 
 const client = HAS_MISTRAL_KEY ? new Mistral({ apiKey: process.env.MISTRAL_API_KEY }) : null;
 
-// Auth admin pour POST /api/menu
-const ADMIN_MENU_USER = "admin";
-const ADMIN_MENU_PASS = "france";
+function checkBasicAuth(req) {
+    const restoFromQuery = (() => {
+        try {
+            const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+            return u.searchParams.get("resto");
+        } catch (e) {
+            return null;
+        }
+    })();
 
-function checkBasicAuth(req, user, pass) {
+    // Si jamais le frontend n'envoie pas `?resto=...`, on tente un fallback via body.
+    const restoFromBody = (req._bodyJson && req._bodyJson.resto) ? req._bodyJson.resto : null;
+    const restoId = restoFromQuery || restoFromBody || null;
+
+    const safeResto = sanitizeRestoId(restoId);
+    const targetPath = safeResto ? path.join(MENUS_DIR, `${safeResto}.json`) : DEFAULT_MENU_PATH;
+    const finalPath = safeResto && fs.existsSync(targetPath) ? targetPath : DEFAULT_MENU_PATH;
+
+    const tenantJson = readJsonSafe(finalPath) || {};
+    const config = tenantJson && tenantJson.config ? tenantJson.config : {};
+    const adminUser = config.admin_user;
+    const adminPass = config.admin_pass;
+
+    // Sécurité : si pas de credentials dans le JSON tenant, on refuse.
+    if (!adminUser || !adminPass) return false;
+
     const auth = req.headers["authorization"];
     if (!auth || !auth.startsWith("Basic ")) return false;
     try {
         const b64 = auth.slice(6);
         const decoded = Buffer.from(b64, "base64").toString("utf8");
-        const [u, p] = decoded.split(":");
-        return u === user && p === pass;
+        const idx = decoded.indexOf(":");
+        if (idx === -1) return false;
+        const u = decoded.slice(0, idx);
+        const p = decoded.slice(idx + 1);
+        return u === adminUser && p === adminPass;
     } catch (e) {
         return false;
     }
@@ -45,6 +483,32 @@ function serve503(res, message) {
     res.end(JSON.stringify({ answer: message || "[ERREUR] Service temporairement indisponible." }));
 }
 
+function getClientIp(req) {
+    const xff = req.headers["x-forwarded-for"];
+    if (typeof xff === "string" && xff.trim()) {
+        return xff.split(",")[0].trim();
+    }
+    const xrip = req.headers["x-real-ip"];
+    if (typeof xrip === "string" && xrip.trim()) return xrip.trim();
+    return (req.socket && req.socket.remoteAddress) || req.connection?.remoteAddress || "unknown";
+}
+
+const askRateLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => getClientIp(req),
+    handler: (req, res) => {
+        if (!res.headersSent) {
+            res.writeHead(429, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({
+                answer: "[ERREUR] Le sommelier est très sollicité pour le moment, merci de patienter un instant avant de réessayer."
+            }));
+        }
+    }
+});
+
 const server = http.createServer(async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
@@ -54,34 +518,157 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET") {
 
-        if (req.url === "/api/menu") {
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify(menuData));
-            return;
-        }
-
-        if (req.url === "/admin-secret-stats") {
-            const ADMIN_USER = "admin";
-            const ADMIN_PASS = "demo123";
-            const auth = req.headers["authorization"];
-            if (!auth) {
-                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Demo Admin\"" });
+        // API admin : statistiques (CA + mots-clés)
+        if (req.url.startsWith("/api/admin/stats")) {
+            if (!checkBasicAuth(req)) {
+                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Stats\"" });
                 res.end("Authentification requise.");
                 return;
             }
-            try {
-                const credentials = Buffer.from(auth.split(" ")[1], "base64").toString().split(":");
-                if (credentials[0] === ADMIN_USER && credentials[1] === ADMIN_PASS) {
-                    let journal = "Vide", likes = "0";
-                    try { if (fs.existsSync(path.join(__dirname, "journal_complet.txt"))) journal = fs.readFileSync(path.join(__dirname, "journal_complet.txt"), "utf8"); } catch (e) {}
-                    try { if (fs.existsSync(path.join(__dirname, "total_likes.txt"))) likes = fs.readFileSync(path.join(__dirname, "total_likes.txt"), "utf8"); } catch (e) {}
-                    res.writeHead(200, { "Content-Type": "text/html" });
-                    res.end(`<html><body style="font-family:sans-serif; padding:20px;"><h1>📊 Stats Démo</h1><p>Likes: <b>${likes}</b></p><hr><pre>${journal}</pre></body></html>`);
-                    return;
+            const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+            const restoId = u.searchParams.get("resto");
+            const range = (u.searchParams.get("range") || "last30").toLowerCase();
+            const statsData = loadStatsForResto(restoId);
+            const topNRaw = parseInt(u.searchParams.get("topN") || "3", 10);
+            const topN = [3, 5, 10].includes(topNRaw) ? topNRaw : 3;
+
+            const suggestionEntries = Object.entries(statsData.suggestion_counts || {})
+                .map(([vin, count]) => ({ vin, count: typeof count === "number" ? count : Number(count || 0) }))
+                .sort((a, b) => b.count - a.count);
+            const total_suggestions = suggestionEntries.reduce((acc, it) => acc + (it.count || 0), 0);
+            const top_searches = suggestionEntries.slice(0, topN);
+            // top_live_demands est calculé plus bas, une fois les logs live chargés,
+            // pour pouvoir associer à chaque vin un plat.
+
+            let errorReasonSource = statsData.error_reason_counts && typeof statsData.error_reason_counts === "object" ? statsData.error_reason_counts : {};
+            // Backfill (au cas où error_reason_counts n'a pas encore été initialisé sur les stats existantes)
+            if (Object.keys(errorReasonSource).length === 0 && Array.isArray(statsData.error_log) && statsData.error_log.length > 0) {
+                errorReasonSource = {};
+                for (const it of statsData.error_log) {
+                    const msg = it && it.message ? it.message : null;
+                    if (!msg) continue;
+                    errorReasonSource[msg] = (errorReasonSource[msg] || 0) + 1;
                 }
-            } catch (e) {}
-            res.writeHead(401);
-            res.end("Bad Password");
+            }
+
+            const errorReasonEntries = Object.entries(errorReasonSource)
+                .map(([message, count]) => ({ message, count: typeof count === "number" ? count : Number(count || 0) }))
+                .sort((a, b) => b.count - a.count);
+            const top_error_reasons = errorReasonEntries.slice(0, 5);
+            const total_errors = errorReasonEntries.reduce((acc, it) => acc + (it.count || 0), 0);
+            const types = statsData.type_counts || { Rouge: 0, Blanc: 0, "Rosé": 0, Autre: 0 };
+            const totalType = (types.Rouge || 0) + (types.Blanc || 0) + (types["Rosé"] || 0) + (types.Autre || 0);
+            const tendances = {
+                Rouge: totalType ? Math.round(((types.Rouge || 0) / totalType) * 100) : 0,
+                Blanc: totalType ? Math.round(((types.Blanc || 0) / totalType) * 100) : 0,
+                "Rosé": totalType ? Math.round(((types["Rosé"] || 0) / totalType) * 100) : 0
+            };
+            // "Clients conseillés" = nombre de demandes enregistrées
+            // On se base sur les logs (live + error) pour être cohérent même si les buckets daily n'existent pas.
+            const live = Array.isArray(statsData.live_log) ? statsData.live_log : [];
+            const errors = Array.isArray(statsData.error_log) ? statsData.error_log : [];
+
+            // top_live_demands : les 5 demandes (question) les plus fréquentes dans le Mouchard Live
+            const questionCounts = {};
+            for (const it of live) {
+                if (!it || !it.question) continue;
+                const qStr = String(it.question).trim();
+                if (!qStr) continue;
+                questionCounts[qStr] = (questionCounts[qStr] || 0) + 1;
+            }
+            const top_live_demands = Object.entries(questionCounts)
+                .map(([question, count]) => ({ question, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+
+            let clients_total_range = 0;
+            if (range === "all" || range === "depuis" || range === "all_time") {
+                clients_total_range = live.length + errors.length;
+            } else {
+                // Derniers 30 jours (inclus) : filtre sur ts
+                const end = new Date();
+                const endDayUtc = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate(), 0, 0, 0, 0));
+                const startDayUtc = new Date(endDayUtc);
+                startDayUtc.setUTCDate(endDayUtc.getUTCDate() - 29);
+                const startTs = startDayUtc.getTime();
+
+                const countInRange = (arr) => {
+                    return arr.reduce((acc, it) => {
+                        if (!it || !it.ts) return acc;
+                        const t = Date.parse(it.ts);
+                        if (Number.isNaN(t)) return acc;
+                        return acc + (t >= startTs ? 1 : 0);
+                    }, 0);
+                };
+                clients_total_range = countInRange(live) + countInRange(errors);
+            }
+
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({
+                clients_total_range,
+                top_searches,
+                total_suggestions,
+                top_live_demands,
+                tendances,
+                live_log: Array.isArray(statsData.live_log) ? statsData.live_log.slice(0, 20) : [],
+                error_log: Array.isArray(statsData.error_log) ? statsData.error_log.slice(0, 20) : [],
+                top_error_reasons,
+                total_errors,
+                last_updated: statsData.last_updated || null
+            }));
+            return;
+        }
+
+        // API admin protégée (lecture)
+        if (req.url.startsWith("/api/admin/menu")) {
+            if (!checkBasicAuth(req)) {
+                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Menu\"" });
+                res.end("Authentification requise.");
+                return;
+            }
+            const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+            const restoId = u.searchParams.get("resto");
+            const menu = getMenuForResto(restoId, "admin");
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(menu));
+            return;
+        }
+
+        // API publique de lecture du menu (utilisée par le front client)
+        if (req.url.startsWith("/api/menu")) {
+            const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+            const restoId = u.searchParams.get("resto");
+            const menu = getMenuForResto(restoId, "client");
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(menu));
+            return;
+        }
+
+        const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+
+        // Page d'administration protégée par Basic Auth (admin / france)
+        if (requestUrl.pathname === "/admin.html") {
+            if (!checkBasicAuth(req)) {
+                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Dashboard\"" });
+                res.end("Authentification requise.");
+                return;
+            }
+        }
+
+        // Route courte : /admin (insensible à la casse) -> renvoie admin.html (protégé)
+        if (requestUrl.pathname.toLowerCase() === "/admin") {
+            if (!checkBasicAuth(req)) {
+                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Dashboard\"" });
+                res.end("Authentification requise.");
+                return;
+            }
+
+            const adminFilePath = path.join(PUBLIC_DIR, "admin.html");
+            fs.readFile(adminFilePath, (err, data) => {
+                if (err) { res.writeHead(404); res.end("Not Found"); return; }
+                res.writeHead(200, { "Content-Type": "text/html" });
+                res.end(data);
+            });
             return;
         }
 
@@ -117,25 +704,112 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    if (req.method === "POST" && req.url === "/ask") {
-        if (!HAS_MISTRAL_KEY || !client) {
-            serve503(res);
-            return;
-        }
-        let body = "";
-        req.on("data", chunk => { body += chunk; });
-        req.on("end", async () => {
-            try {
-                let { question, image, context, lang } = JSON.parse(body);
-                if (question && question.length > 500) question = question.substring(0, 500);
-                const targetLang = lang || "fr";
+    if (req.method === "POST" && req.url.startsWith("/ask")) {
+        askRateLimiter(req, res, () => {
+            if (!HAS_MISTRAL_KEY || !client) {
+                serve503(res);
+                return;
+            }
+            let body = "";
+            req.on("data", chunk => { body += chunk; });
+            req.on("end", async () => {
+                try {
+                    let { question, image, context, lang } = JSON.parse(body);
+                    if (question && question.length > 500) question = question.substring(0, 500);
+                    const targetLang = lang || "fr";
 
-                let consigneSpeciale = "";
-                if (question.includes("Version Prestige") || question.includes("Prestige")) {
-                    consigneSpeciale = "CONSIGNE SPÉCIALE : Le client veut se faire plaisir (Version Prestige). Propose EXCLUSIVEMENT le vin le plus HAUT DE GAMME (le plus cher/prestigieux) de la catégorie compatible dans le menu.";
-                }
+                    const askUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+                    const restoId = askUrl.searchParams.get("resto");
+                    const tenantMenu = getMenuForResto(restoId, "ai");
+                    const menuForPrompt = { carte_des_vins: tenantMenu.carte_des_vins, carte_des_plats: tenantMenu.carte_des_plats };
 
-                const promptBase = `Tu es le Sommelier du "Bistrot Français" (DÉMO).
+                    // Refus strict (anti-demande incohérente / vin absent)
+                    const strictStop = strictRefusalIfNeeded(question, tenantMenu);
+                    if (strictStop) {
+                        try {
+                            const tenantStats = loadStatsForResto(restoId);
+                            const dayKey = getDayKey();
+                            const cleanMsg = strictStop.replace(/^\[STOP\]\s*/i, "").trim().slice(0, 220);
+                            tenantStats.daily_clients[dayKey] = (tenantStats.daily_clients[dayKey] || 0) + 1;
+                            tenantStats.error_log = Array.isArray(tenantStats.error_log) ? tenantStats.error_log : [];
+                            tenantStats.error_reason_counts = (tenantStats.error_reason_counts && typeof tenantStats.error_reason_counts === "object") ? tenantStats.error_reason_counts : {};
+                            if (cleanMsg) tenantStats.error_reason_counts[cleanMsg] = (tenantStats.error_reason_counts[cleanMsg] || 0) + 1;
+                            tenantStats.error_log.unshift({
+                                ts: new Date().toISOString(),
+                                question: (question || "").trim().slice(0, 140),
+                                message: cleanMsg
+                            });
+                            if (tenantStats.error_log.length > 60) tenantStats.error_log = tenantStats.error_log.slice(0, 60);
+                            saveStatsForResto(restoId);
+                        } catch (e) {
+                            console.error("Stats strictStop update error:", e);
+                        }
+                        res.writeHead(200, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ answer: strictStop }));
+                        return;
+                    }
+
+                    // Si la demande parle de "pousser" à la vente : on répond proprement en conseillant
+                    // uniquement les vins [⭐ À POUSSER] de la carte (sans contenu marketing chelou).
+                    const qStr = String(question || "");
+                    const wantsPousserToSell = /\bpousser\b/i.test(qStr) && (/\bvente\b/i.test(qStr) || /\bvendre\b/i.test(qStr));
+                    let pousserOverrideAnswer = null;
+                    if (wantsPousserToSell) {
+                        try {
+                            const winesObj = tenantMenu && tenantMenu.carte_des_vins ? tenantMenu.carte_des_vins : {};
+                            const allWines = [];
+                            for (const wines of Object.values(winesObj)) {
+                                if (!Array.isArray(wines)) continue;
+                                for (const w of wines) if (w) allWines.push(w);
+                            }
+                            const pousserWines = allWines.filter(w => !!w.pousser);
+                            const pickPool = pousserWines.length ? pousserWines : allWines;
+                            const chosen = pickPool.slice(0, 3);
+
+                            const suggestionLines = chosen
+                                .map((w, idx) => {
+                                    const nom = (w && (w.nom || w.name) ? (w.nom || w.name) : "").toString().trim();
+                                    const type = (w && (w.type || w.categorie) ? (w.type || w.categorie) : "Autre").toString().trim();
+                                    if (!nom) return "";
+                                    return idx === 0 ? `${nom} (${type})` : `- ${nom} (${type})`;
+                                })
+                                .filter(Boolean)
+                                .join('\n');
+
+                            const explFR = "On vous conseille en priorité nos vins marqués [⭐ À POUSSER] : ce sont des choix qui plaisent facilement et qui restent cohérents avec la cave de la carte.";
+                            const explEN = "We recommend first the wines marked [⭐ À POUSSER] in your menu: easy-to-like choices that stay consistent with the cave.";
+                            const explES = "Recomendamos primero los vinos marcados con [⭐ À POUSSER] en el menú: elecciones fáciles y coherentes con la bodega.";
+
+                            const explanation = targetLang === "en" ? explEN : targetLang === "es" ? explES : explFR;
+                            const top = chosen[0] || null;
+                            const topType = top && (top.type || top.categorie) ? (top.type || top.categorie) : "Rouge";
+
+                            const aromas = topType === "Blanc" ? "- Agrumes, fruits blancs\n- Notes florales" : topType === "Rosé" ? "- Fruits rouges\n- Fraîcheur légère" : "- Fruits mûrs, épices douces\n- Notes gourmandes";
+                            const profils = "- Puissance : 3/5\n- Fraîcheur : 3/5\n- Rondeur : 3/5";
+                            const degre = topType === "Blanc" ? "12% - Sec" : topType === "Rosé" ? "12,5% - Frais" : "13,5% - Rond";
+                            const avis = "Conseil à table : servez et laissez-le s'exprimer quelques minutes. Vous allez sentir la belle harmonie entre le vin et le repas.";
+
+                            pousserOverrideAnswer =
+                                `[DEMANDE] : Vous voulez des vins à mettre en avant ce soir.\n` +
+                                `[SUGGESTION] : ${suggestionLines}\n` +
+                                `[EXPLICATION] : ${explanation}\n` +
+                                `[AROMES] : ${aromas}\n` +
+                                `[PROFIL_VIN] : ${profils}\n` +
+                                `[DEGRE] : ${degre}\n` +
+                                `[AVIS_SOMMELIER] : ${avis}`;
+                        } catch (e) {
+                            console.error("pousserOverrideAnswer error:", e);
+                        }
+                    }
+
+                    let consigneSpeciale = "";
+                    if (question.includes("Version Prestige") || question.includes("Prestige")) {
+                        consigneSpeciale = "CONSIGNE SPÉCIALE : Le client veut se faire plaisir (Version Prestige). Propose EXCLUSIVEMENT le vin le plus HAUT DE GAMME (le plus cher/prestigieux) de la catégorie compatible dans le menu.";
+                    }
+
+                    const reglePousser = `Voici la carte des vins. Certains vins ont la mention [⭐ À POUSSER]. Si la demande du client correspond PARFAITEMENT (même couleur, bon accord gustatif), tu dois proposer un vin [⭐ À POUSSER] en priorité absolue. ATTENTION : La cohérence prime. Ne propose JAMAIS un vin [⭐ À POUSSER] rouge si le client demande un blanc ou si l'accord est mauvais.`;
+
+                    const promptBase = `Tu es le Sommelier du "Bistrot Français" (DÉMO).
                 TON BUT : Faire saliver et vulgariser le vin pour un client non-expert.
                 ${consigneSpeciale}
                 
@@ -143,19 +817,25 @@ const server = http.createServer(async (req, res) => {
                 1. Pioche UNIQUEMENT dans le menu JSON.
                 2. VULGARISATION TOTALE : Pas de jargon technique (pas de "tanins", "cépage", "caudalie").
                 3. TOLÉRANCE FAUTES DE FRAPPE : Si le client écrit un plat avec une faute (ex: "frittes", "entrecote", "saumon fume"), une formulation proche ou une variante, considère qu'il s'agit du plat correspondant de la carte et propose l'accord. Ne refuse "[STOP] plat hors carte" que si la demande ne correspond à AUCUN plat du menu (ni de près ni de loin).
+                4. SI LE VIN DEMANDÉ (nom/appellation/profil) N'EXISTE PAS DANS LA CARTE :
+                   - Choisis le vin du menu le plus proche (couleur + accord gustatif).
+                   - Dans [EXPLICATION], écris clairement : Nous n'avons pas exactement le vin demandé, mais voici l'alternative la plus cohérente.
+                5. PRIORITÉ ACCORD METS : si la demande contient des sections "Entrées:", "Plats:", "Desserts:" (ou équivalents), en cas de conflit suit d'abord "Plats", puis "Entrées", puis "Desserts".
                 
-                MENU DU BISTROT : ${JSON.stringify(menuData)}
+                MENU DU BISTROT : ${JSON.stringify(menuForPrompt)}
+                
+                ${reglePousser}
 
                 🛑 GESTION DES ERREURS :
                 - Si insulte/hors-sujet : Réponds "[STOP] Désolé, je suis là uniquement pour vous conseiller le vin parfait."
                 - Si plat vraiment hors carte (aucune correspondance possible avec le menu) : Réponds "[STOP] Désolé, ce plat n'est pas à notre carte."`;
 
-                const formatFR = `FORMAT DE RÉPONSE OBLIGATOIRE (Respecte les tirets) :
+                    const formatFR = `FORMAT DE RÉPONSE OBLIGATOIRE (Respecte les tirets) :
                 
                 [DEMANDE] : 
                 (C'est la section LOGIQUE INVERSE. Fais très attention ici.)
-                - Si l'utilisateur demande un PLAT -> Liste simplement ce plat avec un tiret.
-                - Si l'utilisateur demande un TYPE DE VIN (ex: "Je cherche un vin...", "Je veux du Blanc") -> NE RÉPÈTE PAS "VIN BLANC". À la place, LISTE les plats du menu qui vont bien avec ce vin. (ex: "- Saumon", "- Fromage").
+                - Si l'utilisateur demande un PLAT -> Liste uniquement le champ "nom" de ce plat avec un tiret (NE PAS inclure le champ "info").
+                - Si l'utilisateur demande un TYPE DE VIN (ex: "Je cherche un vin...", "Je veux du Blanc") -> NE RÉPÈTE PAS "VIN BLANC". À la place, LISTE uniquement le champ "nom" des plats du menu qui vont bien avec ce vin. (ex: "- Saumon", "- Fromage").
                 
                 [SUGGESTION] : (Nom exact du vin) (Type entre parenthèses)
                 
@@ -174,51 +854,174 @@ const server = http.createServer(async (req, res) => {
                 
                 [AVIS_SOMMELIER] : (Un conseil DÉGUSTATION pour le client à table. INTERDIT de dire "Servir", "Caraf", "Ouvrir". Dis plutôt : "Faites-le tourner dans le verre pour...", "Prenez le temps de sentir...", "Gardez-le un peu en bouche...", "Idéal à boire maintenant". Ton complice et humain.)`;
 
-                let systemPrompt = promptBase + "\n" + formatFR;
-                if (targetLang === "en") systemPrompt += " ANSWER IN ENGLISH.";
-                if (targetLang === "es") systemPrompt += " ANSWER IN SPANISH.";
+                    let systemPrompt = promptBase + "\n" + formatFR;
+                    if (targetLang === "en") systemPrompt += " ANSWER IN ENGLISH.";
+                    if (targetLang === "es") systemPrompt += " ANSWER IN SPANISH.";
 
-                let messages = [{ role: "system", content: systemPrompt }];
-                if (image) {
-                    messages = [{ role: "user", content: [
-                        { type: "text", text: systemPrompt + "\n\nAnalyse cette étiquette :" },
-                        { type: "image_url", imageUrl: image }
-                    ] }];
-                } else {
-                    messages = messages.concat(context || []);
-                    messages.push({ role: "user", content: question });
+                    let messages = [{ role: "system", content: systemPrompt }];
+                    if (image) {
+                        messages = [{ role: "user", content: [
+                            { type: "text", text: systemPrompt + "\n\nAnalyse cette étiquette :" },
+                            { type: "image_url", imageUrl: image }
+                        ] }];
+                    } else {
+                        messages = messages.concat(context || []);
+                        messages.push({ role: "user", content: question });
+                    }
+
+                    let answer = "";
+                    if (pousserOverrideAnswer) {
+                        answer = pousserOverrideAnswer;
+                    } else {
+                        const mistralController = new AbortController();
+                        const mistralTimeout = setTimeout(() => mistralController.abort(), 8000);
+                        try {
+                            const chatResponse = await client.chat.complete({
+                                model: image ? "pixtral-12b-2409" : "mistral-small-latest",
+                                temperature: 0.2,
+                                messages: messages,
+                                signal: mistralController.signal
+                            });
+                            answer = chatResponse.choices[0].message.content;
+                        } catch (err) {
+                            const isTimeout =
+                                mistralController.signal.aborted ||
+                                err?.name === "AbortError" ||
+                                /timeout|timed out|aborted/i.test(String(err && err.message ? err.message : ""));
+                            if (isTimeout) {
+                                try {
+                                    if (!image && question) {
+                                        const tenantStats = loadStatsForResto(restoId);
+                                        const dayKey = getDayKey();
+                                        tenantStats.daily_clients[dayKey] = (tenantStats.daily_clients[dayKey] || 0) + 1;
+                                        tenantStats.error_log = Array.isArray(tenantStats.error_log) ? tenantStats.error_log : [];
+                                        tenantStats.error_reason_counts = (tenantStats.error_reason_counts && typeof tenantStats.error_reason_counts === "object") ? tenantStats.error_reason_counts : {};
+                                        const timeoutMsg = "Le sommelier est très demandé, veuillez réessayer dans un instant.";
+                                        tenantStats.error_reason_counts[timeoutMsg] = (tenantStats.error_reason_counts[timeoutMsg] || 0) + 1;
+                                        tenantStats.error_log.unshift({
+                                            ts: new Date().toISOString(),
+                                            question: (question || "").trim().slice(0, 140),
+                                            message: timeoutMsg
+                                        });
+                                        if (tenantStats.error_log.length > 60) tenantStats.error_log = tenantStats.error_log.slice(0, 60);
+                                        saveStatsForResto(restoId);
+                                    }
+                                } catch (logErr) {
+                                    console.error("Stats timeout update error:", logErr);
+                                }
+                                res.writeHead(200, { "Content-Type": "application/json" });
+                                res.end(JSON.stringify({ answer: "[ERREUR] Le sommelier est très demandé, veuillez réessayer dans un instant." }));
+                                return;
+                            }
+                            throw err;
+                        } finally {
+                            clearTimeout(mistralTimeout);
+                        }
+                    }
+                    // Stabilise la casse demandée pour la phrase d'alternative
+                    answer = (answer || "").replace(/\[EXPLICATION\]\s*:\s*nous\s+n'avons/i, "[EXPLICATION] : Nous n'avons");
+
+                    // Envoi en arrière-plan vers le Webhook Make avec les infos structurées
+                    try {
+                        // Extraction précise du vin et du type à partir du bloc [SUGGESTION]
+                        // Format garanti : [SUGGESTION] : Nom du vin (Type)
+                        let extractVin = "";
+                        let extractType = "";
+
+                        const suggestionMatch = answer.match(/\[SUGGESTION\]\s*:\s*(.+?)\s*\(([^)]+)\)/i);
+                        if (suggestionMatch) {
+                            extractVin = (suggestionMatch[1] || "").trim();
+                            extractType = (suggestionMatch[2] || "").trim();
+                        }
+
+                        const payload = {
+                            demande: question || "",
+                            vin: extractVin,
+                            type: extractType,
+                            date: new Date().toISOString()
+                        };
+
+                        // Appel non bloquant : on ne l'await pas pour ne pas impacter la réponse au client
+                        fetch("https://hook.eu1.make.com/s5l612gywl8l33e9238koif2cb556bbd", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload)
+                        }).catch(() => {});
+                    } catch (err) {
+                        // L'échec de l'envoi vers Make ne doit pas empêcher la réponse au client
+                        console.error("Erreur lors de l'envoi au Webhook Make :", err);
+                    }
+
+                    // Stats : on compte chaque demande (clients) + séparation live vs error
+                    try {
+                        if (!image && question) {
+                            const tenantStats = loadStatsForResto(restoId);
+                            const dayKey = getDayKey();
+                            tenantStats.daily_clients[dayKey] = (tenantStats.daily_clients[dayKey] || 0) + 1;
+
+                            const isStop = answer && typeof answer === "string" && (answer.trim().startsWith("[STOP]") || answer.includes("[ERREUR]"));
+                            const suggestionMatch = answer ? answer.match(/\[SUGGESTION\]\s*:\s*(.+?)\s*\(([^)]+)\)/i) : null;
+
+                            tenantStats.live_log = Array.isArray(tenantStats.live_log) ? tenantStats.live_log : [];
+                            tenantStats.error_log = Array.isArray(tenantStats.error_log) ? tenantStats.error_log : [];
+
+                            if (!isStop && suggestionMatch) {
+                                const extractVin = (suggestionMatch[1] || "").trim();
+                                const extractType = (suggestionMatch[2] || "").trim();
+
+                                tenantStats.suggestion_counts[extractVin] = (tenantStats.suggestion_counts[extractVin] || 0) + 1;
+                                const typeKey = normalizeTypeForStats(extractType);
+                                tenantStats.type_counts[typeKey] = (tenantStats.type_counts[typeKey] || 0) + 1;
+
+                                tenantStats.live_log.unshift({
+                                    ts: new Date().toISOString(),
+                                    question: (question || "").trim().slice(0, 140),
+                                    vin: extractVin,
+                                    type: extractType
+                                });
+                                if (tenantStats.live_log.length > 60) tenantStats.live_log = tenantStats.live_log.slice(0, 60);
+                            } else {
+                                // Erreur / refus / réponse non structurée
+                                const cleanMsg = (answer || "")
+                                    .toString()
+                                    .replace(/^\[STOP\]\s*/i, "")
+                                    .replace(/\[ERREUR\]\s*/i, "")
+                                    .trim()
+                                    .slice(0, 220);
+
+                                tenantStats.error_reason_counts = (tenantStats.error_reason_counts && typeof tenantStats.error_reason_counts === "object") ? tenantStats.error_reason_counts : {};
+                                if (cleanMsg) tenantStats.error_reason_counts[cleanMsg] = (tenantStats.error_reason_counts[cleanMsg] || 0) + 1;
+
+                                tenantStats.error_log.unshift({
+                                    ts: new Date().toISOString(),
+                                    question: (question || "").trim().slice(0, 140),
+                                    message: cleanMsg || "Requête refusée / réponse non structurée."
+                                });
+                                if (tenantStats.error_log.length > 60) tenantStats.error_log = tenantStats.error_log.slice(0, 60);
+                            }
+                            saveStatsForResto(restoId);
+                        }
+                    } catch (e) {
+                        console.error("Stats update error:", e);
+                    }
+
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ answer: answer }));
+                } catch (e) {
+                    console.error(e);
+                    res.writeHead(500, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ answer: "[STOP] Désolé, une erreur technique est survenue. Veuillez réessayer." }));
                 }
-
-                const chatResponse = await client.chat.complete({
-                    model: image ? "pixtral-12b-2409" : "mistral-small-latest",
-                    temperature: 0.2,
-                    messages: messages
-                });
-                const answer = chatResponse.choices[0].message.content;
-
-                try {
-                    const logLine = `[${new Date().toLocaleString()}] Démo: "${question}"\n`;
-                    fs.appendFile(path.join(__dirname, "journal_complet.txt"), logLine, () => {});
-                } catch (e) {}
-
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ answer: answer }));
-            } catch (e) {
-                console.error(e);
-                res.writeHead(500, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ answer: "[STOP] Désolé, une erreur technique est survenue. Veuillez réessayer." }));
-            }
+            });
         });
         return;
     }
 
-    if (req.method === "POST" && req.url === "/api/menu") {
-        if (!checkBasicAuth(req, ADMIN_MENU_USER, ADMIN_MENU_PASS)) {
-            res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Carte\"" });
-            res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ ok: false, error: "Authentification requise." }));
-            return;
-        }
+    if (req.method === "POST" && req.url.startsWith("/api/menu")) {
+        const menuUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+        const restoId = menuUrl.searchParams.get("resto");
+        const safeResto = sanitizeRestoId(restoId);
+        const targetPath = safeResto ? path.join(MENUS_DIR, `${safeResto}.json`) : DEFAULT_MENU_PATH;
         let body = "";
         req.on("data", chunk => { body += chunk; });
         req.on("end", () => {
@@ -229,22 +1032,67 @@ const server = http.createServer(async (req, res) => {
                     res.end(JSON.stringify({ ok: false, error: "carte_des_plats et carte_des_vins requis" }));
                     return;
                 }
-                menuData = { carte_des_plats: data.carte_des_plats, carte_des_vins: data.carte_des_vins };
-                fs.writeFileSync(path.join(__dirname, "menu.json"), JSON.stringify(menuData, null, 2), "utf8");
+
+                // Auth Basic multi-clients après parsing du body (sécurité + resto potentiellement côté requête).
+                req._bodyJson = data;
+                if (!checkBasicAuth(req)) {
+                    res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Carte\"" });
+                    res.setHeader("Content-Type", "application/json");
+                    res.end(JSON.stringify({ ok: false, error: "Authentification requise." }));
+                    return;
+                }
+
+                const validation = validateMenuPayload(data);
+                if (!validation.ok) {
+                    res.writeHead(400, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ ok: false, error: "Validation échouée.", details: validation.errors, warnings: validation.warnings }));
+                    return;
+                }
+
+                const existingTenant = readJsonSafe(targetPath) || readJsonSafe(DEFAULT_MENU_PATH) || {};
+                const configToKeep = existingTenant.config || defaultMenu.config || {};
+
+                // Conversion : { carte_des_vins: { [categorie]: Wine[] } } -> { vins: [{ categorie, ...Wine, pousser }] }
+                const vins = [];
+                Object.entries(data.carte_des_vins || {}).forEach(([categorie, wines]) => {
+                    if (!Array.isArray(wines)) return;
+                    wines.forEach(w => {
+                        vins.push({
+                            categorie,
+                            nom: w && (w.nom || w.name || "") || "",
+                            domaine: w && (w.domaine || "") || "",
+                            annee: w && (w.annee || "") || "",
+                            prix_bouteille: w && (w.prix_bouteille || w.prixBouteille || "") || "",
+                            prix_verre: w && (w.prix_verre || w.prixVerre || "") || "",
+                            prix: w && (w.prix || w.price || w.prix_bouteille || w.prixBouteille || w.prix_verre || w.prixVerre || "") || "",
+                            type: w && (w.type || "") || "",
+                            pousser: !!(w && w.pousser)
+                        });
+                    });
+                });
+
+                const tenantToWrite = {
+                    config: configToKeep,
+                    carte_des_plats: data.carte_des_plats,
+                    vins
+                };
+
+                const existedBefore = fs.existsSync(targetPath);
+                fs.writeFileSync(targetPath, JSON.stringify(tenantToWrite, null, 2), "utf8");
+                // Invalidate le cache multi-modes (client/ai/admin) pour ce tenant
+                for (const key of Array.from(MENU_CACHE.keys())) {
+                    if (key.startsWith(targetPath + "::") || (!existedBefore && key.startsWith(DEFAULT_MENU_PATH + "::"))) {
+                        MENU_CACHE.delete(key);
+                    }
+                }
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ ok: true }));
+                res.end(JSON.stringify({ ok: true, warnings: validation.warnings }));
             } catch (e) {
                 console.error("POST /api/menu error:", e);
                 res.writeHead(500, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({ ok: false, error: e.message }));
             }
         });
-        return;
-    }
-
-    if (req.method === "POST" && req.url === "/feedback") {
-        res.writeHead(200);
-        res.end(JSON.stringify({ status: "ok" }));
         return;
     }
 

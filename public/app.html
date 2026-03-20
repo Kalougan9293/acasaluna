@@ -108,10 +108,6 @@
         .tag-btn { font-size: 0.7rem; padding: 0.5rem 0.3rem; border: 1px solid #e5e7eb; border-radius: 12px; background: white; color: #2a0303; cursor: pointer; transition: all 0.2s; font-family: 'Montserrat', sans-serif; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .tag-btn:hover { background: #fdf2f8; border-color: #d4af37; color: #b8860b; transform: translateY(-1px); }
         
-        .feedback-btn { font-size: 1.3rem; padding: 0.5rem; cursor: pointer; transition: transform 0.2s; opacity: 0.7; }
-        .feedback-btn:hover { transform: scale(1.2); opacity: 1; }
-        .feedback-btn.selected { transform: scale(1.2); pointer-events: none; opacity: 1; }
-        
         .modal-overlay { background-color: rgba(15, 2, 2, 0.95); backdrop-filter: blur(5px); }
         
         .menu-category h3 { color: #d4af37; font-family: 'Cinzel', serif; font-size: 1.2rem; border-bottom: 1px solid rgba(212, 175, 55, 0.3); padding-bottom: 0.4rem; margin-bottom: 1rem; font-weight: 700; letter-spacing: 0.1em; }
@@ -210,7 +206,7 @@
     <div class="mb-10 relative group z-30">
         <div class="avatar-wrapper" onclick="handleAvatarClick()">
             <div id="avatar-circle" class="avatar-circle">
-                <img src="sommelier.png" alt="Sommelier" class="w-full h-full object-cover">
+                <img src="/logos/sommelier.png" alt="Sommelier" class="w-full h-full object-cover">
             </div>
             <div class="sommelier-banner">
                 French Sommelier
@@ -244,24 +240,16 @@
             <span id="photo-label" class="text-[#2a0303] font-bold text-lg md:text-xl uppercase tracking-[0.15em] font-[Cinzel]">OUVRIR LA CARTE</span>
         </button>
 
-        <div id="response-card" class="text-left space-y-5">
-            <div id="response-content"></div>
-            
-            <div id="switch-buttons" class="switch-container hidden fade-in-line">
-                <button id="btn-sw-rouge" onclick="relancerIA('rouge')" class="switch-btn">🍷 Plutôt Rouge</button>
-                <button id="btn-sw-blanc" onclick="relancerIA('blanc')" class="switch-btn">🥂 Plutôt Blanc</button>
-                <button id="btn-sw-similaire" onclick="relancerIA('similaire')" class="switch-btn">♻️ Autre Suggestion</button>
-                <button id="btn-sw-surprends" onclick="relancerIA('prestige')" class="switch-btn" style="border: 1px solid #d4af37; background: linear-gradient(45deg, #2a0303, #4c0519);">💎 Version Prestige</button>
-            </div>
-
-            <div id="feedback-container" class="hidden flex flex-col items-center mt-4 fade-in-line">
-                <p id="feedback-label" class="text-[10px] text-gray-400 italic mb-2 uppercase tracking-widest">Avis ?</p>
-                <div class="flex gap-8">
-                    <button onclick="sendFeedback('down')" id="btn-down" class="feedback-btn" title="Je n'aime pas">❌</button>
-                    <button onclick="sendFeedback('up')" id="btn-up" class="feedback-btn" title="J'apprécie">✅</button>
+            <div id="response-card" class="text-left space-y-5">
+                <div id="response-content"></div>
+                
+                <div id="switch-buttons" class="switch-container hidden fade-in-line">
+                    <button id="btn-sw-rouge" onclick="relancerIA('rouge')" class="switch-btn">🍷 Plutôt Rouge</button>
+                    <button id="btn-sw-blanc" onclick="relancerIA('blanc')" class="switch-btn">🥂 Plutôt Blanc</button>
+                    <button id="btn-sw-similaire" onclick="relancerIA('similaire')" class="switch-btn">♻️ Autre Suggestion</button>
+                    <button id="btn-sw-surprends" onclick="relancerIA('prestige')" class="switch-btn" style="border: 1px solid #d4af37; background: linear-gradient(45deg, #2a0303, #4c0519);">💎 Version Prestige</button>
                 </div>
             </div>
-        </div>
     </div>
 
     <footer class="mt-12 mb-8 space-y-4">
@@ -275,7 +263,6 @@
             
             <div class="demo-footer-bar">
                 <a onclick="toggleFakeAdmin()" class="demo-footer-link">ADMIN (DÉMO)</a>
-                <a onclick="togglePresentation()" class="demo-footer-link">PRÉSENTATION</a>
             </div>
         </div>
     </footer>
@@ -313,7 +300,7 @@
                     <p class="leading-relaxed">Render<br>525 Brannan St, San Francisco, CA 94107, USA</p>
                 </div>
                 <div class="pt-4 border-t border-[#d4af37]/30">
-                    <p id="legal-analytics" class="italic text-xs opacity-70">Ce site utilise Google Analytics à des fins de mesure d'audience anonyme.</p>
+                    <p id="legal-analytics" class="italic text-xs opacity-70"></p>
                 </div>
             </div>
         </div>
@@ -374,68 +361,49 @@
                 </div>
 
                 <div id="admin-editor" class="space-y-4 mt-4"></div>
-                <button id="admin-save-btn" onclick="saveAdminMenu()" class="w-full py-3 bg-[#4c0519] text-white font-bold uppercase tracking-wider rounded-lg hover:bg-[#2a0303] transition-colors text-sm mt-2 hidden">
-                    Enregistrer la carte
+                <button id="admin-save-btn" class="w-full py-3 bg-gray-300 text-gray-500 font-bold uppercase tracking-wider rounded-lg cursor-not-allowed text-sm mt-2">
+                    Enregistrer la carte (démo visuelle)
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="presentation-modal" class="hidden fixed inset-0 z-[150] flex flex-col items-center justify-center p-4 modal-overlay">
-        <div class="bg-white border-2 border-[#d4af37] rounded-xl w-full max-w-md max-h-[85vh] flex flex-col relative shadow-2xl text-[#2a0303]">
-            <div class="p-6 overflow-y-auto">
-                <button onclick="togglePresentation()" class="absolute top-2 right-4 text-3xl text-gray-400 hover:text-black">&times;</button>
-                
-                <h2 class="text-2xl font-bold uppercase font-[Cinzel] text-center mb-2 text-[#4c0519]">NE LAISSEZ PLUS LE HASARD FAIRE VOTRE C.A.</h2>
-                <p class="text-center text-xs italic text-red-700 font-bold mb-6">Combien de clients ont pris le "vin le moins cher" ce soir, juste parce que le serveur n'avait pas le temps de conseiller ?</p>
-
-                <div class="space-y-6 text-sm font-sans leading-relaxed">
-                    <div>
-                        <h3 class="font-bold uppercase text-[#d4af37] mb-1 tracking-wider">🤖 VOTRE NOUVEAU MEILLEUR VENDEUR</h3>
-                        <p>Vos serveurs courent partout. Le French Sommelier, lui, est assis à chaque table.</p>
-                        <ul class="list-none space-y-1 text-xs mt-2">
-                            <li>✅ <strong>Il connaît votre cave par cœur</strong> (mieux que personne).</li>
-                            <li>✅ <strong>Il parle 3 langues</strong> (Français, Anglais, Espagnol).</li>
-                            <li>✅ <strong>Il ne se fatigue jamais</strong> et propose systématiquement l'accord parfait.</li>
-                        </ul>
-                    </div>
-
-                    <div class="bg-[#fffbeb] p-4 rounded-lg border border-[#d4af37]">
-                        <h3 class="font-bold uppercase text-[#b8860b] mb-2 text-center">💎 L'EFFET "UPSELL" IMMÉDIAT</h3>
-                        <p class="text-xs">Vous avez vu le bouton <strong>"Version Prestige"</strong> ? C'est notre arme secrète. L'IA est programmée pour tenter, avec élégance, de monter en gamme.</p>
-                        <p class="mt-2 text-xs font-bold">👉 Résultat : Vous vendez vos bouteilles à forte marge, celles qui dorment en cave, sans aucun effort commercial humain.</p>
-                    </div>
-
-                    <div>
-                        <h3 class="font-bold uppercase text-[#d4af37] mb-1 tracking-wider">PRATIQUE & SANS RISQUE</h3>
-                        <ul class="list-disc pl-4 space-y-1 text-xs">
-                            <li>📱 <strong>Zéro Application :</strong> Juste un QR Code élégant sur la table.</li>
-                            <li>🎨 <strong>Marque Blanche :</strong> Votre logo, vos couleurs, votre carte.</li>
-                            <li>🚀 <strong>Installation Express :</strong> Votre carte digitalisée en 7 jours.</li>
-                        </ul>
-                    </div>
-
-                    <div class="text-center border-t pt-4 border-gray-200">
-                        <h3 class="font-bold uppercase text-[#4c0519] mb-1 tracking-wider text-lg">PRIX DU MARCHÉ</h3>
-                        <p>Un Sommelier : <strong>3 500€ / mois</strong>.</p>
-                        <p>French Sommelier : À partir de <strong>29€ / mois</strong>.</p>
-                        <p class="text-[10px] italic text-gray-500">(Soit le prix d'une demi-bouteille vendue)</p>
-                        
-                        <div class="mt-4 bg-green-100 text-green-800 p-2 rounded font-bold text-xs border border-green-300">
-                            🎁 OFFRE DÉMO :<br>Installation offerte (300€) + 1er mois GRATUIT.<br>Aucun engagement. Testez, encaissez, décidez.
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-6 text-center">
-                    <button onclick="togglePresentation()" class="bg-[#2a0303] text-white px-6 py-3 rounded-full font-bold uppercase text-xs tracking-widest shadow-lg hover:bg-[#4c0519] transition-colors">Je signe</button>
-                </div>
             </div>
         </div>
     </div>
 
     <script>
         // --- DONNEES DU SITE (DEMO) ---
+        const restoId = new URLSearchParams(window.location.search).get("resto");
+        let tenantConfig = null;
+
+        function applyTenantConfig(config) {
+            if (!config) return;
+            tenantConfig = config;
+
+            // Logo + titre restaurant
+            const logoImg = document.querySelector("#avatar-circle img");
+            if (logoImg && config.logo_url) logoImg.src = "/logos/" + config.logo_url;
+            const titleEl = document.getElementById("main-title");
+            if (titleEl && config.nom_resto) titleEl.innerText = config.nom_resto;
+
+            // Couleur principale sur les boutons principaux
+            if (config.couleur_principale) {
+                const primary = config.couleur_principale;
+
+                document.querySelectorAll(".switch-btn").forEach(btn => {
+                    btn.style.backgroundColor = primary;
+                    btn.style.borderColor = primary;
+                    btn.style.color = "#f3e7c8";
+                });
+
+                const goldBtns = [document.getElementById("photo-btn"), document.getElementById("modal-validate")].filter(Boolean);
+                goldBtns.forEach(btn => {
+                    btn.style.borderColor = primary;
+                    btn.style.boxShadow = `0 0 0 1px ${primary}33, 0 5px 15px rgba(0,0,0,0.4)`;
+                });
+
+                const legalBtn = document.getElementById("legal-btn");
+                if (legalBtn) legalBtn.style.borderBottomColor = primary;
+            }
+        }
+
         const menuPlats = {
             fr: {
                 "🫒 Entrées": ["Oeuf Mayo", "Planche de Charcuterie", "Escargots de Bourgogne", "Salade de Chèvre Chaud"],
@@ -460,8 +428,8 @@
         const langData = {
             fr: {
                 flag: "🇫🇷", main_title: "LE RESTAURANT ÉTOILÉ", subtitle: "ACCORDS METS-VINS", photo_label: "OUVRIR LA CARTE", loader: "Recherche...", footer_quote: "L'excellence, sans la complexité.", copyright: "© 2026 Powered by French Sommelier. Tous droits réservés.", tagline: "L'accord parfait selon vos plats et vos envies.", phrases: ["Entrecôte Frites", "Pavé de Saumon", "Vin Rouge léger", "Blanquette de Veau"],
-                legal_btn: "mentions légales", modal_title: "Votre Repas", modal_validate: "Trouver le Vin Idéal", feedback_label: "Avis ?", sw_rouge: "🍷 Plutôt Rouge", sw_blanc: "🥂 Plutôt Blanc", sw_similaire: "♻️ Autre Suggestion", sw_surprends: "💎 Version Prestige",
-                legal_title: "Mentions Légales", legal_editor: "Éditeur", legal_contact: "Contact", legal_host: "Hébergement", legal_analytics: "Ce site utilise Google Analytics à des fins de mesure d'audience anonyme.",
+                legal_btn: "mentions légales", modal_title: "Votre Repas", modal_validate: "Trouver le Vin Idéal", feedback_label: "", sw_rouge: "🍷 Plutôt Rouge", sw_blanc: "🥂 Plutôt Blanc", sw_similaire: "♻️ Autre Suggestion", sw_surprends: "💎 Version Prestige",
+                legal_title: "Mentions Légales", legal_editor: "Éditeur", legal_contact: "Contact", legal_host: "Hébergement", legal_analytics: "",
                 warning: "L'abus d'alcool est dangereux pour la santé, à consommer avec modération.",
                 quick_actions: [ 
                     { text: "Je cherche un vin Rouge léger", label: "🍷 Rouge Léger" }, 
@@ -475,7 +443,7 @@
             },
             en: {
                 flag: "🇺🇸", main_title: "STARRED RESTAURANT", subtitle: "WINE PAIRING", photo_label: "Open Menu", loader: "Searching...", footer_quote: "Excellence, without complexity.", copyright: "© 2026 Powered by French Sommelier. All rights reserved.", tagline: "The perfect match for your meal and taste.", phrases: ["Steak", "Salmon", "Light Red Wine", "Veal Stew"],
-                legal_btn: "legal notice", modal_title: "Your Meal", modal_validate: "Find the Perfect Wine", feedback_label: "Feedback?", sw_rouge: "🍷 Rather Red", sw_blanc: "🥂 Rather White", sw_similaire: "♻️ Another Suggestion", sw_surprends: "💎 Prestige Version",
+                legal_btn: "legal notice", modal_title: "Your Meal", modal_validate: "Find the Perfect Wine", feedback_label: "", sw_rouge: "🍷 Rather Red", sw_blanc: "🥂 Rather White", sw_similaire: "♻️ Another Suggestion", sw_surprends: "💎 Prestige Version",
                 legal_title: "Legal Notice", legal_editor: "Publisher", legal_contact: "Contact", legal_host: "Hosting", legal_analytics: "This site uses Google Analytics for anonymous audience measurement.",
                 warning: "Alcohol abuse is dangerous for your health, consume in moderation.",
                 quick_actions: [ { text: "Light Red Wine", label: "🍷 Light Red" }, { text: "Fruity White Wine", label: "🥂 Fruity White" }, { text: "Rosé", label: "🌸 Rosé" }, { text: "Powerful Red Wine", label: "🍇 Powerful Red" }, { text: "Sweet Wine", label: "🍯 Sweet Wine" }, { text: "Wine by the glass", label: "🍷 By the Glass" } ],
@@ -483,7 +451,7 @@
             },
             es: {
                 flag: "🇪🇸", main_title: "RESTAURANTE ESTRELLA", subtitle: "MARIDAJE DE VINOS", photo_label: "Abrir la Carta", loader: "Buscando...", footer_quote: "Excelencia, sin complejidad.", copyright: "© 2026 Powered by French Sommelier. Todos los derechos reservados.", tagline: "El maridaje perfecto para su comida.", phrases: ["Entrecot", "Salmón", "Vino tinto ligero", "Guiso de Ternera"],
-                legal_btn: "avisos legales", modal_title: "Su Comida", modal_validate: "Encontrar el Vino Ideal", feedback_label: "¿Opinión?", sw_rouge: "🍷 Más bien Tinto", sw_blanc: "🥂 Más bien Blanco", sw_similaire: "♻️ Otra Sugerencia", sw_surprends: "💎 Versión Prestigio",
+                legal_btn: "avisos legales", modal_title: "Su Comida", modal_validate: "Encontrar el Vino Ideal", feedback_label: "", sw_rouge: "🍷 Más bien Tinto", sw_blanc: "🥂 Más bien Blanco", sw_similaire: "♻️ Otra Sugerencia", sw_surprends: "💎 Versión Prestigio",
                 legal_title: "Avisos Legales", legal_editor: "Editor", legal_contact: "Contacto", legal_host: "Alojamiento", legal_analytics: "Este sitio utiliza Google Analytics para medir la audiencia de forma anónima.",
                 warning: "El abuso de alcohol es peligroso para la salud, consumir con moderación.",
                 quick_actions: [ { text: "Vino tinto ligero", label: "🍷 Tinto Ligero" }, { text: "Vino blanco frutal", label: "🥂 Blanco Frutal" }, { text: "Rosado", label: "🌸 Rosado" }, { text: "Vino tinto potente", label: "🍇 Tinto Potente" }, { text: "Vino dulce", label: "🍯 Vino Dulce" }, { text: "Vino por copa", label: "🍷 Por Copa" } ],
@@ -500,11 +468,9 @@
         const switchButtons = document.getElementById('switch-buttons');
         const photoBtn = document.getElementById('photo-btn');
         const quickActions = document.getElementById('quick-actions');
-        const feedbackContainer = document.getElementById('feedback-container');
         const legalModal = document.getElementById('legal-modal');
         const menuModal = document.getElementById('menu-modal');
         const adminModal = document.getElementById('admin-modal');
-        const presentationModal = document.getElementById('presentation-modal');
         
         let currentLang = 'fr';
         let lastQuestionAsked = "";
@@ -525,8 +491,14 @@
 
         async function fetchMenu() {
             try {
-                const r = await fetch('/api/menu');
-                if (r.ok) { cachedMenuData = await r.json(); return cachedMenuData; }
+                const menuUrl = '/api/menu' + (restoId ? ('?resto=' + encodeURIComponent(restoId)) : '');
+                const r = await fetch(menuUrl);
+                if (r.ok) {
+                    cachedMenuData = await r.json();
+                    tenantConfig = cachedMenuData.config || null;
+                    if (restoId && tenantConfig) applyTenantConfig(tenantConfig);
+                    return cachedMenuData;
+                }
             } catch (e) { console.warn('Menu API non disponible', e); }
             cachedMenuData = {
                 carte_des_plats: {
@@ -534,14 +506,33 @@
                     Plats: (menuPlats.fr["🍽️ Plats"] || []).slice(),
                     Desserts: (menuPlats.fr["🧀 Desserts"] || []).slice()
                 },
-                carte_des_vins: {}
+                carte_des_vins: {},
+                config: null
             };
             return cachedMenuData;
         }
 
         function getPlatsForModal() {
-            if (cachedMenuData && cachedMenuData.carte_des_plats)
-                return cachedMenuData.carte_des_plats;
+            function normalizePlatItem(item) {
+                if (item == null) return "";
+                if (typeof item === "string") return item.trim();
+                if (typeof item === "object") {
+                    const nom = (item.nom || item.name || "").toString().trim();
+                    return nom;
+                }
+                return String(item).trim();
+            }
+
+            if (cachedMenuData && cachedMenuData.carte_des_plats) {
+                const src = cachedMenuData.carte_des_plats || {};
+                const normalized = {};
+                for (const cat of ["Entrées", "Plats", "Desserts"]) {
+                    const arr = Array.isArray(src[cat]) ? src[cat] : [];
+                    normalized[cat] = arr.map(normalizePlatItem).filter(Boolean);
+                }
+                return normalized;
+            }
+
             return {
                 Entrées: (menuPlats.fr["🫒 Entrées"] || []).slice(),
                 Plats: (menuPlats.fr["🍽️ Plats"] || []).slice(),
@@ -641,9 +632,9 @@
                 const items = adminEditingPlats[cat] || [];
                 html += `<div class="mb-4"><h4 class="text-xs font-bold text-gray-600 mb-2">${cat}</h4><ul class="list-none space-y-1 mb-2">`;
                 items.forEach((name, i) => {
-                    html += `<li class="flex items-center justify-between gap-2 text-sm"><span>${escapeHtml(name)}</span><button type="button" onclick="adminRemovePlat('${cat}', ${i})" class="text-red-600 hover:text-red-800 font-bold px-2" title="Retirer">✕</button></li>`;
+                    html += `<li class="flex items-center justify-between gap-2 text-sm opacity-60"><span>${escapeHtml(name)}</span><button type="button" class="text-red-600 font-bold px-2 cursor-not-allowed" title="Démo uniquement">✕</button></li>`;
                 });
-                html += `</ul><div class="flex gap-2"><input type="text" data-admin-add-plat="${cat}" placeholder="Ajouter..." class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm" onkeypress="if(event.key==='Enter'){event.preventDefault();adminAddPlat('${cat}');}"><button type="button" onclick="adminAddPlat('${cat}')" class="bg-[#4c0519] text-white text-xs px-3 py-1 rounded">Ajouter</button></div></div>`;
+                html += `</ul><div class="flex gap-2 opacity-60"><input type="text" data-admin-add-plat="${cat}" placeholder="Ajouter..." class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm cursor-not-allowed" disabled><button type="button" class="bg-[#4c0519] text-white text-xs px-3 py-1 rounded cursor-not-allowed" title="Démo uniquement">Ajouter</button></div></div>`;
             }
             html += '</div>';
 
@@ -657,9 +648,9 @@
                     const catEsc = (cat || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                     html += `<div class="mb-4"><h4 class="text-xs font-bold text-gray-600 mb-2">${escapeHtml(cat)}</h4><ul class="list-none space-y-1 mb-2">`;
                     bottles.forEach((b, i) => {
-                        html += `<li class="flex items-center justify-between gap-2 text-sm"><span>${escapeHtml(b.nom || b)} ${typeof b.prix !== 'undefined' ? '(' + escapeHtml(b.prix) + ')' : ''}</span><button type="button" onclick="adminRemoveBottle('${catEsc}', ${i})" class="text-red-600 hover:text-red-800 font-bold px-2" title="Retirer">✕</button></li>`;
+                        html += `<li class="flex items-center justify-between gap-2 text-sm opacity-60"><span>${escapeHtml(b.nom || b)} ${typeof b.prix !== 'undefined' ? '(' + escapeHtml(b.prix) + ')' : ''}</span><button type="button" class="text-red-600 font-bold px-2 cursor-not-allowed" title="Démo uniquement">✕</button></li>`;
                     });
-                    html += `</ul><div class="flex flex-wrap gap-2 items-center text-sm" data-admin-wine-row="${escapeHtml(cat)}"><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="nom" placeholder="Nom" class="border border-gray-300 rounded px-2 py-1 w-32"><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="prix" placeholder="Prix (ex: 28€)" class="border border-gray-300 rounded px-2 py-1 w-20"><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="type" placeholder="Type" class="border border-gray-300 rounded px-2 py-1 w-24"><button type="button" onclick="adminAddBottle('${catEsc}')" class="bg-[#4c0519] text-white text-xs px-3 py-1 rounded">Ajouter</button></div></div>`;
+                    html += `</ul><div class="flex flex-wrap gap-2 items-center text-sm opacity-60" data-admin-wine-row="${escapeHtml(cat)}"><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="nom" placeholder="Nom" class="border border-gray-300 rounded px-2 py-1 w-32 cursor-not-allowed" disabled><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="prix" placeholder="Prix (ex: 28€)" class="border border-gray-300 rounded px-2 py-1 w-20 cursor-not-allowed" disabled><input type="text" data-admin-wine-cat="${escapeHtml(cat)}" data-admin-wine-field="type" placeholder="Type" class="border border-gray-300 rounded px-2 py-1 w-24 cursor-not-allowed" disabled><button type="button" class="bg-[#4c0519] text-white text-xs px-3 py-1 rounded cursor-not-allowed" title="Démo uniquement">Ajouter</button></div></div>`;
                 });
             }
             html += '</div>';
@@ -736,23 +727,38 @@
             }
         }
 
-        function togglePresentation() {
-            if (presentationModal.classList.contains('hidden')) { presentationModal.classList.remove('hidden'); } else { presentationModal.classList.add('hidden'); }
-        }
-
         function validerMenu() {
             const selected = [];
+            const entries = [];
+            const mains = [];
+            const desserts = [];
             document.querySelectorAll('.menu-checkbox:checked').forEach(cb => selected.push(cb.value));
             if (selected.length === 0) {
                 const msg = currentLang === 'en' ? "Please select at least one dish!" : currentLang === 'es' ? "¡Por favor seleccione al menos un plato!" : "Veuillez sélectionner au moins un plat !";
                 alert(msg); return;
             }
+
+            // Priorité "Plats" : on regroupe les sélections par catégorie (Entrées/Plats/Desserts)
+            document.querySelectorAll('.menu-checkbox:checked').forEach(cb => {
+                const categoryEl = cb.closest('.menu-category');
+                const heading = categoryEl ? categoryEl.querySelector('h3') : null;
+                const headTxt = heading && heading.innerText ? heading.innerText.toLowerCase() : '';
+                const v = cb.value;
+                if (headTxt.includes('entr') || headTxt.includes('starters') || headTxt.includes('entradas') || headTxt.includes('🫒')) entries.push(v);
+                else if (headTxt.includes('plats') || headTxt.includes('main courses') || headTxt.includes('platos principales') || headTxt.includes('🍽️')) mains.push(v);
+                else if (headTxt.includes('dess') || headTxt.includes('postres') || headTxt.includes('🧀')) desserts.push(v);
+                else mains.push(v); // fallback
+            });
             closeMenuModal();
             input.value = selected.join(", "); 
             setTimeout(() => {
                 const prefix = currentLang === 'en' ? "I'm having: " : currentLang === 'es' ? "Voy a comer: " : "Je vais manger : ";
                 const suffix = currentLang === 'en' ? ". What do you recommend?" : currentLang === 'es' ? ". ¿Qué me recomiendas?" : ". Que me conseilles-tu ?";
-                const query = prefix + selected.join(", ") + suffix;
+                const fr = `Entrées: ${entries.join(", ")}. Plats: ${mains.join(", ")}. Desserts: ${desserts.join(", ")}.`;
+                const en = `Starters: ${entries.join(", ")}. Main Courses: ${mains.join(", ")}. Desserts: ${desserts.join(", ")}.`;
+                const es = `Entradas: ${entries.join(", ")}. Platos Principales: ${mains.join(", ")}. Postres: ${desserts.join(", ")}.`;
+                const mealBlock = currentLang === 'en' ? en : currentLang === 'es' ? es : fr;
+                const query = prefix + mealBlock + suffix;
                 demanderIA(null, null, query);
             }, 50);
         }
@@ -763,6 +769,7 @@
             
             document.getElementById('current-lang-btn').innerText = data.flag;
             document.getElementById('main-title').innerText = data.main_title;
+            if (restoId && tenantConfig && tenantConfig.nom_resto) document.getElementById('main-title').innerText = tenantConfig.nom_resto;
             document.getElementById('subtitle').innerText = data.subtitle;
             document.getElementById('photo-label').innerText = data.photo_label;
             document.getElementById('loader-text').innerText = data.loader;
@@ -772,7 +779,6 @@
             document.getElementById('footer-quote').innerText = data.footer_quote;
             document.getElementById('copyright-text').innerText = data.copyright;
             document.getElementById('legal-warning').innerText = data.warning;
-            document.getElementById('feedback-label').innerText = data.feedback_label;
             document.getElementById('btn-sw-rouge').innerText = data.sw_rouge;
             document.getElementById('btn-sw-blanc').innerText = data.sw_blanc;
             document.getElementById('btn-sw-similaire').innerText = data.sw_similaire;
@@ -841,12 +847,6 @@
 
         function quickAction(text) { input.value = text; clearBtn.style.display = 'block'; demanderIA(); }
 
-        async function sendFeedback(vote) {
-            if (vote === 'up') { document.getElementById('btn-up').classList.add('selected'); document.getElementById('btn-down').style.display = 'none'; }
-            else { document.getElementById('btn-down').classList.add('selected'); document.getElementById('btn-up').style.display = 'none'; }
-            try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vote: vote, question: lastQuestionAsked }) }); } catch (e) { console.error("Erreur feedback", e); }
-        }
-
         function getGlassSVG(filled) {
             if (filled) return `<svg xmlns="http://www.w3.org/2000/svg" class="glass-icon" viewBox="0 0 24 24" fill="#4c0519" stroke="none"><path d="M19.8 4.2A2.2 2.2 0 0 0 17.6 2h-11a2.2 2.2 0 0 0-2.2 2.2c0 3.8 2.3 7.1 5.6 8.4V18H7a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2h-3v-5.4c3.3-1.3 5.8-4.6 5.8-8.4z"/></svg>`;
             else return `<svg xmlns="http://www.w3.org/2000/svg" class="glass-icon" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2"><path d="M19.8 4.2A2.2 2.2 0 0 0 17.6 2h-11a2.2 2.2 0 0 0-2.2 2.2c0 3.8 2.3 7.1 5.6 8.4V18H7a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2h-3v-5.4c3.3-1.3 5.8-4.6 5.8-8.4z"/></svg>`;
@@ -871,13 +871,13 @@
 
             quickActions.classList.add('hidden'); 
             avatarCircle.classList.add('pulse-gold'); loader.classList.remove('hidden'); photoBtn.classList.add('minimized'); contentArea.innerHTML = ""; card.classList.remove('visible'); 
-            switchButtons.classList.add('hidden'); feedbackContainer.classList.add('hidden');
-            document.getElementById('btn-up').classList.remove('selected'); document.getElementById('btn-down').classList.remove('selected'); document.getElementById('btn-up').style.display = 'block'; document.getElementById('btn-down').style.display = 'block';
+            switchButtons.classList.add('hidden');
 
             lastQuestionAsked = question;
 
             try {
-                const res = await fetch('/ask', {
+                const askUrl = '/ask' + (restoId ? ('?resto=' + encodeURIComponent(restoId)) : '');
+                const res = await fetch(askUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question: question, image: imageBase64, context: currentSession, lang: currentLang })
@@ -897,7 +897,6 @@
                 if (data.answer.startsWith("[STOP]")) {
                     contentArea.innerHTML = `<div class="p-4 bg-red-50 text-red-800 rounded-xl text-base font-bold text-center border border-red-200 shadow-sm">${data.answer.replace("[STOP]", "").trim()}</div>`;
                     switchButtons.classList.add('hidden'); // Cache les rebonds
-                    feedbackContainer.classList.add('hidden'); // Cache les avis
                     return;
                 }
 
@@ -953,7 +952,7 @@
 
                 setTimeout(() => {
                     if (vinSuggere) {
-                        switchButtons.classList.remove('hidden'); switchButtons.classList.add('flex'); feedbackContainer.classList.remove('hidden'); feedbackContainer.classList.add('flex');
+                        switchButtons.classList.remove('hidden'); switchButtons.classList.add('flex');
                     }
                 }, delay);
 
@@ -1009,7 +1008,6 @@
         }
         
         fetchMenu().then(() => initMenu());
-        initMenu();
         renderQuickActions();
         typeWriter();
     </script>

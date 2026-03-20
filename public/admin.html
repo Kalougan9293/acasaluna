@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>French Sommelier - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+        }
+        .glass-card {
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.12), rgba(15,23,42,0.98));
+            backdrop-filter: blur(18px);
+        }
+        .tab-active {
+            border-bottom-width: 2px;
+            border-color: #facc15;
+            color: #fefce8;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(148,163,184,0.7);
+            border-radius: 999px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Export PDF propre : on imprime uniquement le résumé */
+        @media print {
+            body {
+                background: #fff !important;
+                color: #111827 !important;
+            }
+
+            /* Tailwind applique des couleurs via classes (text-slate-*). On force le noir
+               pour éviter un rendu "page blanche" en impression. */
+            * {
+                color: #111827 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+
+            /* Cache la navigation + actions */
+            header, nav, a[href="/app.html"] {
+                display: none !important;
+            }
+
+            /* Masque le panneau d'édition (même s'il est caché en écran) */
+            #panel-carte, #tab-carte {
+                display: none !important;
+            }
+            /* On force l'onglet Statistiques à s'afficher pour l'export */
+            #panel-stats {
+                display: block !important;
+            }
+
+            /* Masque les filtres (top N / période) pour éviter un rendu “tableur” */
+            #stats-range-select, #top-searches-topN {
+                display: none !important;
+            }
+
+            /* On garde les blocs “top” mais on évite d'imprimer les logs bruts */
+            #live-log-list, #error-log-list {
+                display: none !important;
+            }
+
+            /* Assouplit la mise en page : pas de gras/contrastes trop marqués */
+            .glass-card {
+                background: #fff !important;
+                border-color: #e5e7eb !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-900 text-slate-50">
+    <div class="min-h-screen flex flex-col">
+        <!-- Top bar -->
+        <header class="border-b border-white/10 bg-black/40 backdrop-blur">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-rose-600 flex items-center justify-center shadow-lg shadow-amber-500/40">
+                        <span class="text-xl">🍷</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <p class="text-xs uppercase tracking-[0.25em] text-amber-300/80">French Sommelier</p>
+                        <div class="flex items-baseline gap-3">
+                            <p class="text-sm font-semibold text-slate-100">Tableau de bord Administrateur</p>
+                            <p id="edition-resto" class="text-[11px] text-amber-200/90 whitespace-nowrap"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-4 text-xs text-slate-300">
+                    <span class="hidden sm:inline-flex items-center gap-1">
+                        <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Serveur en ligne
+                    </span>
+                    <button type="button" onclick="openReport()" class="px-3 py-1.5 rounded-full border border-white/15 text-[11px] uppercase tracking-[0.15em] hover:bg-white/10 transition-colors">
+                        📄 Rapport
+                    </button>
+                    <a href="/app.html" class="px-3 py-1.5 rounded-full border border-white/15 text-[11px] uppercase tracking-[0.2em] hover:bg-white/10 transition-colors">
+                        Retour client
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="border-b border-white/10 bg-black/30 backdrop-blur-sm">
+            <div class="max-w-6xl mx-auto px-4">
+                <nav class="flex space-x-6 text-xs uppercase tracking-[0.25em]">
+                    <button id="tab-stats" class="py-3 text-amber-100 tab-active">
+                        Statistiques
+                    </button>
+                    <button id="tab-carte" class="py-3 text-slate-400 hover:text-slate-100">
+                        Gestion de la Carte
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <main class="flex-1">
+            <div class="max-w-[88rem] mx-auto px-4 py-6 space-y-6">
+                <!-- Onglet 1 : Statistiques -->
+                <section id="panel-stats" class="space-y-6">
+                    <!-- Top cards -->
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400 mb-1">
+                                        Clients conseillés (<span id="clients-range-label">30 derniers jours</span>)
+                                    </p>
+                                    <p id="stat-clients" class="text-3xl font-semibold text-amber-300">0</p>
+                                </div>
+                                <div class="flex flex-col items-end gap-2 text-xs text-slate-400">
+                                    <select id="stats-range-select" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                        <option value="last30" selected>30 derniers jours</option>
+                                        <option value="all">Depuis le début</option>
+                                    </select>
+                                    <span class="inline-flex items-center gap-1 text-emerald-400">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                                        <span id="clients-period-subtitle">Basé sur la période sélectionnée</span>
+                                    </span>
+                                    <span class="mt-1 text-[11px] text-slate-500">Basé sur les requêtes IA</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Middle grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <!-- Tendances du mois -->
+                        <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40 lg:col-span-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Tendances du mois</h2>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 border border-emerald-500/40 uppercase tracking-[0.18em]">Live</span>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1.5">
+                                        <span class="text-slate-200">Vin Rouge</span>
+                                        <span id="trend-rouge-pct" class="text-slate-400">0%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+                                        <div id="trend-rouge-bar" class="h-full w-[0%] bg-gradient-to-r from-rose-500 to-red-600"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1.5">
+                                        <span class="text-slate-200">Vin Blanc</span>
+                                        <span id="trend-blanc-pct" class="text-slate-400">0%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+                                        <div id="trend-blanc-bar" class="h-full w-[0%] bg-gradient-to-r from-amber-300 to-yellow-500"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1.5">
+                                        <span class="text-slate-200">Rosé</span>
+                                        <span id="trend-rose-pct" class="text-slate-400">0%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+                                        <div id="trend-rose-bar" class="h-full w-[0%] bg-gradient-to-r from-pink-300 to-rose-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Top 3 recherches -->
+                        <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
+                            <div class="flex items-center justify-between mb-3">
+                            <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Top des recherches</h2>
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Afficher</span>
+                                <select id="top-searches-topN" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                    <option value="3" selected>Top 3</option>
+                                    <option value="5">Top 5</option>
+                                    <option value="10">Top 10</option>
+                                </select>
+                            </div>
+                            </div>
+                            <ol id="top-searches-list" class="list-none space-y-2 text-xs text-slate-200">
+                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Mouchard Live -->
+                    <div class="glass-card rounded-2xl border border-emerald-500/20 bg-slate-950/70 p-5 shadow-xl shadow-black/60">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Mouchard Live</h2>
+                            </div>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Historique (live)</span>
+                        </div>
+
+                        <div class="bg-black/70 border border-emerald-500/20 rounded-xl font-mono text-[11px] text-emerald-200 p-3 max-h-56 overflow-y-auto scrollbar-thin">
+                            <div class="flex items-center gap-2 text-emerald-400 mb-2">
+                                <span class="text-xs text-emerald-500">admin@french-sommelier</span>
+                                <span class="text-slate-600">/logs</span>
+                            </div>
+                            <pre id="live-log-list" class="whitespace-pre-wrap leading-relaxed">
+[INIT] Aucun historique pour le moment.
+                            </pre>
+                        </div>
+                    </div>
+
+                    <!-- Mouchard Error -->
+                    <div class="glass-card rounded-2xl border border-rose-500/20 bg-slate-950/70 p-5 shadow-xl shadow-black/60">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="h-2 w-2 rounded-full bg-rose-400 animate-pulse"></span>
+                                <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Mouchard Error</h2>
+                            </div>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Refus / erreurs</span>
+                        </div>
+
+                        <div class="bg-black/70 border border-rose-500/20 rounded-xl font-mono text-[11px] text-rose-200 p-3 max-h-56 overflow-y-auto scrollbar-thin">
+                            <pre id="error-log-list" class="whitespace-pre-wrap leading-relaxed">
+[INIT] Aucune erreur pour le moment.
+                            </pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Onglet 2 : Gestion de la Carte -->
+                <section id="panel-carte" class="hidden space-y-8 max-w-[95rem] mx-auto">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xl font-semibold tracking-[0.14em] uppercase text-slate-200">Gestion de la Carte</h2>
+                        <span id="menu-status" class="text-base text-slate-400"></span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        <!-- Colonne Plats -->
+                        <div class="glass-card rounded-2xl border border-white/10 p-8 shadow-xl shadow-black/40 flex flex-col min-h-[760px]">
+                            <!-- Formulaire ajout plat -->
+                            <div class="mb-6 space-y-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-base uppercase tracking-[0.14em] text-slate-300 mb-2">Ajouter un plat</label>
+                                        <input id="new-plat-name" type="text" placeholder="Nom du plat (ex: Entrecôte Frites)" class="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                    </div>
+                                    <div>
+                                        <label class="block text-base uppercase tracking-[0.14em] text-slate-300 mb-2">Catégorie</label>
+                                        <select id="new-plat-category" class="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                            <option value="Entrées">Entrée</option>
+                                            <option value="Plats" selected>Plat</option>
+                                            <option value="Desserts">Dessert</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-3">
+                                    <div>
+                                        <label class="block text-base uppercase tracking-[0.14em] text-slate-300 mb-2">Info complémentaire (ingrédients / description)</label>
+                                        <textarea id="new-plat-info" rows="2" placeholder="Indication du plat si nécessaire, tels ingrédients, façon de préparer, ..." class="w-full rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400"></textarea>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2 items-start">
+                                    <button id="btn-add-plat" class="sm:w-auto w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500/90 hover:bg-emerald-400 text-base font-semibold uppercase tracking-[0.14em] px-10 py-2 text-slate-950 transition-colors">
+                                        + Ajouter
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Filtre plats -->
+                            <div class="flex gap-3 mb-4">
+                                <button type="button" data-plat-filter="Tous" class="px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors">Voir tout</button>
+                                <button type="button" data-plat-filter="Entrées" class="px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors">Entrées</button>
+                                <button type="button" data-plat-filter="Plats" class="px-4 py-2 rounded-full text-base border border-amber-400/40 text-amber-200 bg-amber-400/10 hover:bg-amber-400/15 transition-colors">Plat</button>
+                                <button type="button" data-plat-filter="Desserts" class="px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors">Dessert</button>
+                            </div>
+
+                            <!-- Liste des plats -->
+                            <div id="plats-list" class="flex-1 border-t border-white/5 pt-4 mt-2 max-h-[520px] overflow-y-auto scrollbar-thin text-base text-slate-100 space-y-4">
+                                <!-- Rempli en JS -->
+                            </div>
+                        </div>
+
+                        <!-- Colonne Vins -->
+                        <div class="glass-card rounded-2xl border border-white/10 p-8 shadow-xl shadow-black/40 flex flex-col min-h-[760px]">
+                            <!-- Formulaire ajout vin -->
+                            <div class="mb-6 space-y-3">
+                                <label class="block text-base uppercase tracking-[0.14em] text-slate-300">Ajouter un vin</label>
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <input id="new-vin-name" type="text" placeholder="Nom du vin" class="rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                        <input id="new-vin-domaine" type="text" placeholder="Domaine" class="rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <input id="new-vin-annee" type="text" placeholder="Année" class="rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                        <select id="new-vin-type" class="rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                            <option value="Rouge">Rouge</option>
+                                            <option value="Blanc">Blanc</option>
+                                            <option value="Rosé">Rosé</option>
+                                            <option value="Autre">Autre</option>
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <input id="new-vin-prix-bouteille" type="text" inputmode="decimal" placeholder="Prix de la bouteille" class="rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                        <input id="new-vin-prix-verre" type="text" inputmode="decimal" placeholder="Prix du verre, à partir de..." class="rounded-lg border border-white/10 bg-black/40 px-4 py-3 text-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                    </div>
+                                </div>
+                                <p class="text-xs text-amber-200/90">Conseil qualité: Domaine et année augmentent la précision. Petit piège : certains vins portent le nom de leur domaine (ex. "Château Margaux") — dans ce cas, inutile de le re-saisir</p>
+                                <div class="flex flex-col gap-2 items-start">
+                                    <button id="btn-add-vin" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500/90 hover:bg-emerald-400 text-base font-semibold uppercase tracking-[0.14em] px-10 py-2 text-slate-950 transition-colors">
+                                        + Ajouter
+                                    </button>
+                                    <p class="text-sm text-slate-400">Mettre en avant un vin (si cohérent) en cliquant sur l'étoile</p>
+                                </div>
+                            </div>
+
+                            <!-- Filtre vins -->
+                            <div class="flex gap-3 mb-4">
+                                <button type="button" data-wine-filter="Tous" class="px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors">Voir tout</button>
+                                <button type="button" data-wine-filter="Rouge" class="px-4 py-2 rounded-full text-base border border-amber-400/40 text-amber-200 bg-amber-400/10 hover:bg-amber-400/15 transition-colors">Rouge</button>
+                                <button type="button" data-wine-filter="Blanc" class="px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors">Blanc</button>
+                                <button type="button" data-wine-filter="Rosé" class="px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors">Rosé</button>
+                                <button type="button" data-wine-filter="Autres" class="px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors">Autres</button>
+                            </div>
+
+                            <!-- Liste des vins -->
+                            <div id="vins-list" class="flex-1 border-t border-white/5 pt-4 mt-2 max-h-[520px] overflow-y-auto scrollbar-thin text-base text-slate-100 space-y-4">
+                                <!-- Rempli en JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloc conseils qualité (prend la place du bouton quand visible) -->
+                    <div id="save-warnings-box" class="hidden w-full rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100"></div>
+
+                    <!-- Bouton sauvegarder -->
+                    <div class="flex justify-end pt-2">
+                        <button id="btn-save-menu" class="inline-flex items-center gap-3 rounded-full bg-amber-400 hover:bg-amber-300 text-base font-semibold uppercase tracking-[0.14em] px-8 py-4 text-slate-900 shadow-lg shadow-amber-500/40 transition-colors">
+                            <span>💾</span>
+                            <span id="save-menu-label">Sauvegarder la carte</span>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Rapport plein écran -->
+    <div id="report-overlay" class="fixed inset-0 z-[120] hidden">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur"></div>
+        <div class="relative z-[121] w-full h-full flex items-start justify-center px-4 py-6 overflow-y-auto">
+            <div class="w-full max-w-6xl bg-slate-950 border border-white/10 rounded-2xl shadow-2xl">
+                <div class="flex items-start justify-between gap-4 p-4 border-b border-white/10">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-1">RAPPORT</p>
+                        <p id="report-subtitle" class="text-sm text-slate-200"></p>
+                    </div>
+                    <button type="button" onclick="closeReport()" class="px-3 py-1.5 rounded-full border border-white/15 text-[11px] uppercase tracking-[0.15em] hover:bg-white/10 transition-colors">
+                        Fermer
+                    </button>
+                </div>
+                <div id="report-content" class="p-5 space-y-6">
+                    <div class="text-slate-200">Chargement...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Multi-tenant admin : paramètre `?resto=` ---
+        const restoId = new URLSearchParams(window.location.search).get('resto') || '';
+        const restoQuery = restoId ? `?resto=${encodeURIComponent(restoId)}` : '';
+
+        const editionEl = document.getElementById('edition-resto');
+        if (editionEl) editionEl.textContent = `Édition en cours : ${restoId || 'default'}`;
+
+        // --- Gestion des tabs ---
+        const tabStats = document.getElementById('tab-stats');
+        const tabCarte = document.getElementById('tab-carte');
+        const panelStats = document.getElementById('panel-stats');
+        const panelCarte = document.getElementById('panel-carte');
+
+        function activateTab(tab) {
+            if (tab === 'stats') {
+                tabStats.classList.add('tab-active', 'text-amber-100');
+                tabCarte.classList.remove('tab-active');
+                tabCarte.classList.add('text-slate-400');
+                panelStats.classList.remove('hidden');
+                panelCarte.classList.add('hidden');
+                loadStats();
+            } else {
+                tabCarte.classList.add('tab-active', 'text-amber-100');
+                tabStats.classList.remove('tab-active');
+                tabStats.classList.add('text-slate-400');
+                panelCarte.classList.remove('hidden');
+                panelStats.classList.add('hidden');
+            }
+        }
+
+        tabStats.addEventListener('click', () => activateTab('stats'));
+        tabCarte.addEventListener('click', () => activateTab('carte'));
+
+        // --- Gestion de la carte (API /api/menu) ---
+        let cartePlats = { Entrées: [], Plats: [], Desserts: [] };
+        let carteVins = {};
+
+        const platsList = document.getElementById('plats-list');
+        const vinsList = document.getElementById('vins-list');
+        const menuStatus = document.getElementById('menu-status');
+
+        // Par défaut dans "Gestion de la Carte" : tout afficher
+        let selectedPlatFilter = 'Tous';
+        let selectedWineFilter = 'Tous';
+
+        function wineTypeToGroup(type) {
+            const t = String(type || '').toLowerCase();
+            if (t.includes('rouge')) return 'Rouge';
+            if (t.includes('blanc')) return 'Blanc';
+            if (t.includes('rosé') || t.includes('rose')) return 'Rosé';
+            return 'Autres';
+        }
+
+        function updatePlatFilterUI() {
+            const btns = document.querySelectorAll('button[data-plat-filter]');
+            btns.forEach(btn => {
+                const v = btn.getAttribute('data-plat-filter');
+                const active = v === selectedPlatFilter;
+                if (active) {
+                    btn.className = 'px-4 py-2 rounded-full text-base border border-amber-400/40 text-amber-200 bg-amber-400/10 hover:bg-amber-400/15 transition-colors';
+                } else {
+                    btn.className = 'px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors';
+                }
+            });
+        }
+
+        function updateWineFilterUI() {
+            const btns = document.querySelectorAll('button[data-wine-filter]');
+            btns.forEach(btn => {
+                const v = btn.getAttribute('data-wine-filter');
+                const active = v === selectedWineFilter;
+
+                if (active) {
+                    btn.className = 'px-4 py-2 rounded-full text-base border border-amber-400/40 text-amber-200 bg-amber-400/10 hover:bg-amber-400/15 transition-colors';
+                } else {
+                    btn.className = 'px-4 py-2 rounded-full text-base border border-white/10 text-slate-300 bg-white/5 hover:bg-white/10 transition-colors';
+                }
+            });
+        }
+
+        document.querySelectorAll('button[data-plat-filter]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedPlatFilter = btn.getAttribute('data-plat-filter');
+                updatePlatFilterUI();
+                renderPlats();
+            });
+        });
+
+        document.querySelectorAll('button[data-wine-filter]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedWineFilter = btn.getAttribute('data-wine-filter');
+                updateWineFilterUI();
+                renderVins();
+            });
+        });
+
+        function setStatus(message, type = 'info') {
+            const colors = {
+                info: 'text-slate-400',
+                success: 'text-emerald-400',
+                error: 'text-rose-400'
+            };
+            menuStatus.className = `text-base ${colors[type] || colors.info}`;
+            menuStatus.textContent = message;
+        }
+
+        function setSaveWarnings(errors = [], warnings = []) {
+            const box = document.getElementById('save-warnings-box');
+            if (!box) return;
+            const hasErrors = Array.isArray(errors) && errors.length > 0;
+            const hasWarnings = Array.isArray(warnings) && warnings.length > 0;
+            if (!hasErrors && !hasWarnings) {
+                box.classList.add('hidden');
+                box.innerHTML = '';
+                return;
+            }
+            const errHtml = hasErrors
+                ? `<div class="mb-2"><p class="text-rose-300 font-semibold mb-1">* Alertes bloquantes :</p><ul class="list-disc list-inside space-y-1 text-rose-200">${errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul></div>`
+                : '';
+            const warnHtml = hasWarnings
+                ? `<div><p class="text-amber-200 font-semibold mb-1">Conseils qualité :</p><ul class="list-disc list-inside space-y-1 text-amber-100">${warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul></div>`
+                : '';
+            box.classList.remove('hidden');
+            box.innerHTML = errHtml + warnHtml;
+        }
+
+        function normalizeWineName(s) {
+            return String(s || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9\s'\-]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function normalizeType(type) {
+            const t = normalizeWineName(type);
+            if (t.includes('rouge')) return 'Rouge';
+            if (t.includes('blanc')) return 'Blanc';
+            if (t.includes('rose')) return 'Rosé';
+            if (t.includes('autre') || t.includes('petillant') || t.includes('champagne') || t.includes('effervescent')) return 'Autre';
+            return '';
+        }
+
+        function isVagueWineName(name) {
+            const n = normalizeWineName(name);
+            const tokens = n.split(' ').filter(Boolean);
+            const generic = new Set(['beaujolais', 'bordeaux', 'bourgogne', 'chablis', 'sancerre', 'chardonnay', 'rose', 'rouge', 'blanc', 'vin']);
+            return tokens.length <= 2 && tokens.every(t => generic.has(t));
+        }
+
+        function hasDomainOrYear(name) {
+            const n = normalizeWineName(name);
+            if (/\b(19|20)\d{2}\b/.test(n)) return true;
+            return n.includes('domaine') || n.includes('chateau') || n.includes('clos') || n.includes('cuvee');
+        }
+
+        function isValidPriceDigits(value) {
+            const s = (value == null ? '' : String(value)).trim();
+            if (!s) return true; // prix vide autorisé (CA restera à 0)
+            // Chiffres uniquement, avec séparateur décimal optionnel (point ou virgule)
+            return /^\d+(?:[.,]\d+)?$/.test(s);
+        }
+
+        function validateBeforeSave() {
+            const errors = [];
+            const warnings = [];
+            const seen = new Set();
+            Object.entries(carteVins || {}).forEach(([cat, wines]) => {
+                if (!Array.isArray(wines)) return;
+                wines.forEach((w, idx) => {
+                    const nom = (w && (w.nom || w.name || '') || '').trim();
+                    const type = (w && w.type || '').trim();
+                    const normalizedType = normalizeType(type);
+                    const prixBouteille = (w && (w.prix_bouteille ?? w.prixBouteille ?? '')) || '';
+                    const prixVerre = (w && (w.prix_verre ?? w.prixVerre ?? '')) || '';
+                    if (!nom) {
+                        errors.push(`Nom de vin manquant (${cat} #${idx + 1})`);
+                        return;
+                    }
+                    if (!normalizedType) {
+                        errors.push(`Type manquant ou incohérent pour "${nom}"`);
+                    }
+                    if (!isValidPriceDigits(prixBouteille)) {
+                        errors.push(`Prix de la bouteille invalide (chiffres uniquement) pour "${nom}"`);
+                    }
+                    if (!isValidPriceDigits(prixVerre)) {
+                        errors.push(`Prix du verre invalide (chiffres uniquement) pour "${nom}"`);
+                    }
+                    if (isVagueWineName(nom)) {
+                        errors.push(`Vin trop vague : "${nom}"`);
+                    }
+                    const key = `${normalizeWineName(nom)}|${normalizedType || 'inconnu'}`;
+                    if (seen.has(key)) {
+                        errors.push(`Doublon détecté pour "${nom}"`);
+                    }
+                    seen.add(key);
+                    if (!hasDomainOrYear(nom)) {
+                        warnings.push(`Fortement conseillé: préciser domaine et/ou année pour "${nom}"`);
+                    }
+                });
+            });
+            return { ok: errors.length === 0, errors, warnings };
+        }
+
+        async function loadStats() {
+            const clientsEl = document.getElementById('stat-clients');
+            const topSearchesEl = document.getElementById('top-searches-list');
+            const liveLogEl = document.getElementById('live-log-list');
+            const errorLogEl = document.getElementById('error-log-list');
+            const rougePct = document.getElementById('trend-rouge-pct');
+            const blancPct = document.getElementById('trend-blanc-pct');
+            const rosePct = document.getElementById('trend-rose-pct');
+            const rougeBar = document.getElementById('trend-rouge-bar');
+            const blancBar = document.getElementById('trend-blanc-bar');
+            const roseBar = document.getElementById('trend-rose-bar');
+            const rangeSelect = document.getElementById('stats-range-select');
+            const range = rangeSelect ? rangeSelect.value : 'last30';
+            const topNSelect = document.getElementById('top-searches-topN');
+            const topN = topNSelect ? parseInt(topNSelect.value, 10) : 3;
+            const clientsRangeLabelEl = document.getElementById('clients-range-label');
+            const clientsPeriodSubtitleEl = document.getElementById('clients-period-subtitle');
+            const rangeLabel = range === 'all' ? 'Depuis le début' : '30 derniers jours';
+            if (clientsRangeLabelEl) clientsRangeLabelEl.textContent = rangeLabel;
+            if (clientsPeriodSubtitleEl) clientsPeriodSubtitleEl.textContent = 'Basé sur la période sélectionnée';
+            try {
+                const sep = restoQuery ? '&' : '?';
+                const res = await fetch('/api/admin/stats' + restoQuery + sep + 'range=' + encodeURIComponent(range) + '&topN=' + encodeURIComponent(topN));
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const clientsTotal = typeof data.clients_total_range === 'number' ? data.clients_total_range : 0;
+                if (clientsEl) clientsEl.textContent = Math.round(clientsTotal).toLocaleString('fr-FR');
+                const topSearches = Array.isArray(data.top_searches) ? data.top_searches : [];
+                const totalSuggestions = typeof data.total_suggestions === 'number' ? data.total_suggestions : 0;
+                const tendances = data && data.tendances ? data.tendances : { Rouge: 0, Blanc: 0, 'Rosé': 0 };
+                const live = Array.isArray(data.live_log) ? data.live_log : [];
+                const errors = Array.isArray(data.error_log) ? data.error_log : [];
+
+                const denom = totalSuggestions || topSearches.reduce((acc, it) => acc + (it.count || 0), 0) || 1;
+                function renderSearchCell(item, idx) {
+                    if (!item) {
+                        const num = (typeof idx === 'number' ? idx : '');
+                        return `${num}. <span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span>`;
+                    }
+                    const pct = Math.round(((item.count || 0) / denom) * 100);
+                    const num = (typeof idx === 'number' ? idx : '');
+                    return `${num}. <span class="font-semibold">${escapeHtml(item.vin)}</span> <span class="text-emerald-300">(${pct}%)</span>`;
+                }
+
+                // UX : pour Top 10, on affiche 5 lignes, avec 2 réponses par ligne (i et i+5)
+                if (topN === 10) {
+                    const getItem = (idx) => (Array.isArray(topSearches) && idx >= 0 && idx < topSearches.length) ? topSearches[idx] : null;
+                    const rows = Array.from({ length: 5 }, (_, rowIdx) => {
+                        const leftIdx = rowIdx + 1;
+                        const rightIdx = rowIdx + 6;
+                        const left = getItem(rowIdx);
+                        const right = getItem(rowIdx + 5);
+                        return `<li class="flex justify-between gap-6">
+                            <div class="min-w-0 text-left">${renderSearchCell(left, leftIdx)}</div>
+                            <div class="min-w-0 text-right">${renderSearchCell(right, rightIdx)}</div>
+                        </li>`;
+                    }).join('');
+                    topSearchesEl.innerHTML = rows;
+                } else {
+                    // Top 3 / Top 5 : 1 ligne = 1 réponse
+                    const items = Array.from({ length: topN }, (_, idx) => {
+                        return (Array.isArray(topSearches) && idx >= 0 && idx < topSearches.length) ? topSearches[idx] : null;
+                    });
+                    topSearchesEl.innerHTML = items.map((it, idx) => `<li>${renderSearchCell(it, idx + 1)}</li>`).join('');
+                }
+
+                const r = Number(tendances.Rouge || 0);
+                const b = Number(tendances.Blanc || 0);
+                const ro = Number(tendances['Rosé'] || 0);
+                rougePct.textContent = `${r}%`;
+                blancPct.textContent = `${b}%`;
+                rosePct.textContent = `${ro}%`;
+                rougeBar.style.width = `${Math.max(0, Math.min(100, r))}%`;
+                blancBar.style.width = `${Math.max(0, Math.min(100, b))}%`;
+                roseBar.style.width = `${Math.max(0, Math.min(100, ro))}%`;
+
+                if (live.length === 0) {
+                    liveLogEl.textContent = '[INIT] Aucun historique pour le moment.';
+                } else {
+                    liveLogEl.textContent = live.map(item => {
+                        const h = item && item.ts ? new Date(item.ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                        const q = (item && item.question) ? item.question : 'Question non fournie';
+                        const vin = (item && item.vin) ? item.vin : 'Aucune suggestion';
+                        return `[${h}] "${q}" -> ${vin}`;
+                    }).join('\n');
+                }
+                if (errorLogEl) {
+                    if (errors.length === 0) {
+                        errorLogEl.textContent = '[INIT] Aucune erreur pour le moment.';
+                    } else {
+                        errorLogEl.textContent = errors.map(item => {
+                            const h = item && item.ts ? new Date(item.ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                            const q = (item && item.question) ? item.question : 'Question non fournie';
+                            const msg = (item && item.message) ? item.message : 'Requête refusée';
+                            return `[${h}] "${q}" -> ${msg}`;
+                        }).join('\n');
+                    }
+                }
+            } catch (e) {
+                console.error('Erreur stats', e);
+                if (clientsEl) clientsEl.textContent = '—';
+                if (topSearchesEl) topSearchesEl.innerHTML = '<li class="text-rose-400 text-[11px]">Impossible de charger.</li>';
+                if (liveLogEl) liveLogEl.textContent = '[ERREUR] Impossible de charger le mouchard live.';
+                if (errorLogEl) errorLogEl.textContent = '[ERREUR] Impossible de charger le mouchard error.';
+            }
+        }
+
+        const statsRangeSelectEl = document.getElementById('stats-range-select');
+        if (statsRangeSelectEl) statsRangeSelectEl.addEventListener('change', () => loadStats());
+
+        const topSearchTopNSelectEl = document.getElementById('top-searches-topN');
+        if (topSearchTopNSelectEl) topSearchTopNSelectEl.addEventListener('change', () => loadStats());
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function openReport() {
+            const overlay = document.getElementById('report-overlay');
+            const contentEl = document.getElementById('report-content');
+            if (!overlay || !contentEl) return;
+            const subtitleEl = document.getElementById('report-subtitle');
+            if (subtitleEl) subtitleEl.textContent = `Édition : ${restoId || 'default'} • ${new Date().toLocaleString('fr-FR')}`;
+            contentEl.innerHTML = `<div class="text-slate-200">Chargement du rapport...</div>`;
+            overlay.classList.remove('hidden');
+            buildReport().catch((e) => {
+                console.error(e);
+                contentEl.innerHTML = `<div class="text-rose-200 font-semibold">Impossible de générer le rapport.</div>`;
+            });
+        }
+
+        function closeReport() {
+            const overlay = document.getElementById('report-overlay');
+            if (!overlay) return;
+            overlay.classList.add('hidden');
+        }
+
+        function formatDateTime(ts) {
+            if (!ts) return '--:--';
+            const d = new Date(ts);
+            if (Number.isNaN(d.getTime())) return '--:--';
+            return d.toLocaleString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function buildReport() {
+            const contentEl = document.getElementById('report-content');
+            if (!contentEl) return;
+
+            const rangeSelectEl = document.getElementById('stats-range-select');
+            const topNSelectEl = document.getElementById('top-searches-topN');
+            const range = rangeSelectEl ? rangeSelectEl.value : 'last30';
+            const topN = topNSelectEl ? parseInt(topNSelectEl.value, 10) : 3;
+
+            const sep = restoQuery ? '&' : '?';
+            const statsUrl = '/api/admin/stats' + restoQuery + sep + 'range=' + encodeURIComponent(range) + '&topN=' + encodeURIComponent(topN);
+            const menuUrl = '/api/admin/menu' + restoQuery;
+
+            const [statsRes, menuRes] = await Promise.all([fetch(statsUrl), fetch(menuUrl)]);
+            if (!statsRes.ok) throw new Error('HTTP stats ' + statsRes.status);
+            if (!menuRes.ok) throw new Error('HTTP menu ' + menuRes.status);
+
+            const statsData = await statsRes.json();
+            const menuData = await menuRes.json();
+
+            const clientsTotal = typeof statsData.clients_total_range === 'number' ? statsData.clients_total_range : 0;
+            const topSearches = Array.isArray(statsData.top_searches) ? statsData.top_searches : [];
+            const totalSuggestions = typeof statsData.total_suggestions === 'number' ? statsData.total_suggestions : 0;
+            const tendances = statsData && statsData.tendances ? statsData.tendances : { Rouge: 0, Blanc: 0, 'Rosé': 0 };
+            const topLiveDemands = Array.isArray(statsData.top_live_demands) ? statsData.top_live_demands : [];
+            const topErrorReasons = Array.isArray(statsData.top_error_reasons) ? statsData.top_error_reasons : [];
+            const liveLog = Array.isArray(statsData.live_log) ? statsData.live_log : [];
+            const errorLog = Array.isArray(statsData.error_log) ? statsData.error_log : [];
+            const totalErrors = typeof statsData.total_errors === 'number' ? statsData.total_errors : 0;
+            const lastUpdated = statsData.last_updated || null;
+
+            const denom = totalSuggestions || topSearches.reduce((acc, it) => acc + (it.count || 0), 0) || 1;
+
+            const topSearchesHtml = topSearches.length
+                ? `<ol class="list-decimal list-inside space-y-1 text-sm text-slate-200">
+                    ${topSearches.map((it, idx) => {
+                        const pct = Math.round(((it.count || 0) / denom) * 100);
+                        return `<li>${idx + 1}. <span class="font-semibold text-slate-100">${escapeHtml(it.vin)}</span> <span class="text-emerald-300">(${pct}%)</span></li>`;
+                    }).join('')}
+                </ol>`
+                : `<div class="text-slate-400">Aucune recherche</div>`;
+
+            const topLiveDemandsHtml = topLiveDemands.length
+                ? `<ol class="list-decimal list-inside space-y-1 text-sm text-slate-200">
+                    ${topLiveDemands.map((it, idx) => {
+                        const pct = Math.round(((it.count || 0) / (denom || 1)) * 100);
+                        return `<li>${idx + 1}. <span class="font-semibold text-slate-100">${escapeHtml(it.question || '')}</span> <span class="text-emerald-300">(${pct}%)</span></li>`;
+                    }).join('')}
+                </ol>`
+                : `<div class="text-slate-400">Aucune demande (live)</div>`;
+
+            const topErrorReasonsHtml = topErrorReasons.length
+                ? `<ol class="list-decimal list-inside space-y-1 text-sm text-rose-200">
+                    ${topErrorReasons.map((it, idx) => {
+                        const denomErr = totalErrors || topErrorReasons.reduce((acc, x) => acc + (x.count || 0), 0) || 1;
+                        const pct = Math.round(((it.count || 0) / denomErr) * 100);
+                        return `<li>${idx + 1}. <span class="font-semibold text-rose-100">${escapeHtml(it.message || '')}</span> <span class="text-rose-300">(${pct}%)</span></li>`;
+                    }).join('')}
+                </ol>`
+                : `<div class="text-rose-300/70">Aucune raison pour le moment</div>`;
+
+            const trendsHtml = `
+                <div class="space-y-2 text-sm text-slate-200">
+                    <div><span class="text-slate-400">Rouge</span> : <span class="font-semibold">${escapeHtml(String(tendances.Rouge || 0))}%</span></div>
+                    <div><span class="text-slate-400">Blanc</span> : <span class="font-semibold">${escapeHtml(String(tendances.Blanc || 0))}%</span></div>
+                    <div><span class="text-slate-400">Rosé</span> : <span class="font-semibold">${escapeHtml(String(tendances['Rosé'] || 0))}%</span></div>
+                </div>`;
+
+            const liveHtml = liveLog.length
+                ? `<div class="max-h-[58vh] overflow-y-auto border border-white/10 rounded-xl bg-black/30">
+                    <pre class="whitespace-pre-wrap break-words p-4 text-[12px] text-slate-200">${escapeHtml(
+                        liveLog.map(item => {
+                            const h = formatDateTime(item.ts);
+                            const q = item.question || 'Question non fournie';
+                            const vin = item.vin ? item.vin : 'Aucune suggestion';
+                            const type = item.type ? ' (' + item.type + ')' : '';
+                            return '[' + h + '] "' + q + '" -> ' + vin + type;
+                        }).join('\n')
+                    )}</pre>
+                </div>`
+                : `<div class="text-slate-400">Aucun historique live</div>`;
+
+            const errorHtml = errorLog.length
+                ? `<div class="max-h-[58vh] overflow-y-auto border border-rose-500/15 rounded-xl bg-black/30">
+                    <pre class="whitespace-pre-wrap break-words p-4 text-[12px] text-rose-200">${escapeHtml(
+                        errorLog.map(item => {
+                            const h = formatDateTime(item.ts);
+                            const q = item.question || 'Question non fournie';
+                            const msg = item.message || 'Requête refusée';
+                            return '[' + h + '] "' + q + '" -> ' + msg;
+                        }).join('\n')
+                    )}</pre>
+                </div>`
+                : `<div class="text-slate-400">Aucune erreur</div>`;
+
+            // Menu
+            const cartePlats = menuData && menuData.carte_des_plats ? menuData.carte_des_plats : { Entrées: [], Plats: [], Desserts: [] };
+            const carteVins = menuData && menuData.carte_des_vins ? menuData.carte_des_vins : {};
+
+            function normalizePlat(it) {
+                if (!it) return null;
+                if (typeof it === 'string') return { nom: it, info: '' };
+                const nom = (it.nom || it.name || '').toString().trim();
+                const info = (it.info || it.description || '').toString().trim();
+                if (!nom) return null;
+                return { nom, info };
+            }
+
+            const platsHtml = `
+                <div class="space-y-4">
+                    ${['Entrées', 'Plats', 'Desserts'].map(cat => {
+                        const arr = Array.isArray(cartePlats[cat]) ? cartePlats[cat] : [];
+                        const items = arr.map(normalizePlat).filter(Boolean).map(p => {
+                            return `<li class="mb-1">
+                                <span class="font-semibold">${escapeHtml(p.nom)}</span>${
+                                    p.info ? ` — <span class="text-slate-300">${escapeHtml(p.info)}</span>` : ''
+                                }
+                            </li>`;
+                        }).join('');
+                        return `<div class="border border-white/10 rounded-xl p-3">
+                            <div class="text-sm uppercase tracking-[0.12em] text-amber-300/80 mb-2">${escapeHtml(cat)}</div>
+                            ${
+                                items ? `<ul class="list-disc list-inside text-sm text-slate-200">${items}</ul>` : `<div class="text-slate-500">Aucun plat</div>`
+                            }
+                        </div>`;
+                    }).join('')}
+                </div>`;
+
+            const vinsHtml = `
+                <div class="space-y-4">
+                    ${Object.entries(carteVins || {}).map(([cat, arr]) => {
+                        const wines = Array.isArray(arr) ? arr : [];
+                        const items = wines.map(w => {
+                            const nom = w && (w.nom || w.name) ? (w.nom || w.name).toString().trim() : '';
+                            if (!nom) return '';
+                            const domaine = w && w.domaine ? w.domaine.toString().trim() : '';
+                            const annee = w && w.annee ? w.annee.toString().trim() : '';
+                            const prixBouteille = w && w.prix_bouteille ? w.prix_bouteille.toString().trim() : '';
+                            const prixVerre = w && w.prix_verre ? w.prix_verre.toString().trim() : '';
+                            const type = w && w.type ? w.type.toString().trim() : '';
+                            const pousser = w && w.pousser ? 'Oui' : 'Non';
+                            return `<li class="mb-3">
+                                <div class="font-semibold text-slate-100">${escapeHtml(nom)}</div>
+                                <div class="text-sm text-slate-300">
+                                    ${domaine ? `Domaine : ${escapeHtml(domaine)} ` : ''}
+                                    ${annee ? `• Année : ${escapeHtml(annee)} ` : ''}
+                                    ${type ? `• Type : ${escapeHtml(type)} ` : ''}
+                                    ${prixBouteille ? `• Prix bouteille : ${escapeHtml(prixBouteille)} ` : ''}
+                                    ${prixVerre ? `• Prix verre : ${escapeHtml(prixVerre)} ` : ''}
+                                    • [⭐ À POUSSER] : ${escapeHtml(pousser)}
+                                </div>
+                            </li>`;
+                        }).filter(Boolean).join('');
+                        return `<div class="border border-white/10 rounded-xl p-3">
+                            <div class="text-sm uppercase tracking-[0.12em] text-amber-300/80 mb-2">${escapeHtml(cat)}</div>
+                            ${
+                                items ? `<ul class="list-none text-sm text-slate-200">${items}</ul>` : `<div class="text-slate-500">Aucun vin</div>`
+                            }
+                        </div>`;
+                    }).join('')}
+                </div>`;
+
+            const configHtml = menuData && menuData.config
+                ? `<div class="border border-white/10 rounded-xl p-4 bg-black/20">
+                    <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-2">Config (tenant)</div>
+                    <pre class="whitespace-pre-wrap break-words p-3 text-[12px] text-slate-200">${escapeHtml(JSON.stringify(menuData.config, null, 2))}</pre>
+                </div>`
+                : '';
+
+            contentEl.innerHTML = `
+                <div class="space-y-6">
+                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
+                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-2">Résumé</div>
+                        <div class="text-sm text-slate-200 space-y-1">
+                            <div>Clients conseillés : <span class="font-semibold">${escapeHtml(String(clientsTotal))}</span></div>
+                            <div>Recherches (total) : <span class="font-semibold">${escapeHtml(String(totalSuggestions))}</span></div>
+                            <div>Erreurs (total) : <span class="font-semibold">${escapeHtml(String(totalErrors))}</span></div>
+                            <div>Dernière mise à jour : <span class="font-semibold">${escapeHtml(lastUpdated ? formatDateTime(lastUpdated) : '—')}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
+                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-2">Tendances du mois</div>
+                        ${trendsHtml}
+                    </div>
+
+                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
+                        <div class="flex items-baseline justify-between gap-4 mb-3">
+                            <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80">Top des recherches</div>
+                            <div class="text-xs text-slate-500">topN=${escapeHtml(String(topN))}</div>
+                        </div>
+                        ${topSearchesHtml}
+                    </div>
+
+                    <div class="border border-emerald-500/15 rounded-2xl p-4 bg-black/20">
+                        <div class="text-xs uppercase tracking-[0.25em] text-emerald-300 mb-3">Mouchard Live (complet)</div>
+                        ${liveHtml}
+                    </div>
+
+                    <div class="border border-emerald-500/15 rounded-2xl p-4 bg-black/20">
+                        <div class="text-xs uppercase tracking-[0.25em] text-emerald-300 mb-3">Top demandes (Live)</div>
+                        ${topLiveDemandsHtml}
+                    </div>
+
+                    <div class="border border-rose-500/15 rounded-2xl p-4 bg-black/20">
+                        <div class="text-xs uppercase tracking-[0.25em] text-rose-300 mb-3">Mouchard Error (complet)</div>
+                        ${errorHtml}
+                    </div>
+
+                    <div class="border border-rose-500/15 rounded-2xl p-4 bg-black/20">
+                        <div class="text-xs uppercase tracking-[0.25em] text-rose-300 mb-3">Top raisons de refus</div>
+                        ${topErrorReasonsHtml}
+                    </div>
+
+                    ${configHtml}
+
+                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
+                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-3">Carte des Plats</div>
+                        ${platsHtml}
+                    </div>
+
+                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
+                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-3">Carte des Vins</div>
+                        ${vinsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getWineCategoryFromType(type) {
+            const t = String(type || '').toLowerCase();
+            if (t.includes('rouge')) return 'Vins Rouges';
+            if (t.includes('blanc')) return 'Vins Blancs';
+            if (t.includes('rosé') || t.includes('rose')) return 'Vins Rosés';
+            return 'Autres Vins';
+        }
+
+        async function loadMenu() {
+            try {
+                setStatus('Chargement de la carte...', 'info');
+                const res = await fetch('/api/admin/menu' + restoQuery);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const rawPlats = data.carte_des_plats || { Entrées: [], Plats: [], Desserts: [] };
+                function normalizePlatItem(it) {
+                    if (typeof it === 'string') return { nom: it, info: '' };
+                    if (!it || typeof it !== 'object') return null;
+                    const nom = (it.nom || it.name || '').toString().trim();
+                    const info = (it.info || it.description || '').toString().trim();
+                    if (!nom) return null;
+                    return { nom, info };
+                }
+                cartePlats = {
+                    Entrées: (rawPlats.Entrées || []).map(normalizePlatItem).filter(Boolean),
+                    Plats: (rawPlats.Plats || []).map(normalizePlatItem).filter(Boolean),
+                    Desserts: (rawPlats.Desserts || []).map(normalizePlatItem).filter(Boolean)
+                };
+                carteVins = data.carte_des_vins || {};
+                updatePlatFilterUI();
+                updateWineFilterUI();
+                renderPlats();
+                renderVins();
+                setStatus('Carte chargée.', 'success');
+            } catch (e) {
+                console.error('Erreur chargement menu', e);
+                setStatus('Erreur lors du chargement de la carte.', 'error');
+            }
+        }
+
+        function renderPlats() {
+            platsList.innerHTML = '';
+            if (selectedPlatFilter === 'Tous') {
+                const categories = ['Entrées', 'Plats', 'Desserts'];
+                let total = 0;
+                categories.forEach(cat => {
+                    const items = (cartePlats[cat] || []);
+                    total += items.length;
+                    if (items.length === 0) return;
+
+                    const label = cat === 'Plats' ? 'Plat' : (cat === 'Desserts' ? 'Dessert' : 'Entrées');
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'mb-4';
+                    wrapper.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm uppercase tracking-[0.14em] text-slate-300">${label}</h4>
+                            <span class="text-sm text-slate-500">${items.length} items</span>
+                        </div>
+                    `;
+
+                    const list = document.createElement('ul');
+                    list.className = 'space-y-2';
+                    items.forEach((plat, index) => {
+                        const name = (plat && typeof plat === 'object') ? plat.nom : String(plat || '');
+                        const li = document.createElement('li');
+                        li.className = 'flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-black/30 px-4 py-2.5';
+                        li.innerHTML = `
+                            <span class="text-base text-slate-100 truncate">${name}</span>
+                            <button class="text-rose-400 hover:text-rose-300 text-base flex items-center gap-1" data-remove-plat-cat="${cat}" data-remove-plat-index="${index}">
+                                <span class="text-lg">🗑</span>
+                            </button>
+                        `;
+                        list.appendChild(li);
+                    });
+                    wrapper.appendChild(list);
+                    platsList.appendChild(wrapper);
+                });
+
+                if (total === 0) {
+                    platsList.innerHTML = '<p class="text-xs text-slate-500 italic">Aucun plat à afficher.</p>';
+                }
+            } else {
+                const items = (cartePlats[selectedPlatFilter] || []);
+                const label = selectedPlatFilter === 'Plats' ? 'Plat' : (selectedPlatFilter === 'Desserts' ? 'Dessert' : 'Entrées');
+                const wrapper = document.createElement('div');
+                wrapper.className = 'mb-4';
+                wrapper.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm uppercase tracking-[0.14em] text-slate-300">${label}</h4>
+                        <span class="text-sm text-slate-500">${items.length} items</span>
+                    </div>
+                `;
+                const list = document.createElement('ul');
+                list.className = 'space-y-2';
+                items.forEach((plat, index) => {
+                    const name = (plat && typeof plat === 'object') ? plat.nom : String(plat || '');
+                    const li = document.createElement('li');
+                    li.className = 'flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-black/30 px-4 py-2.5';
+                    li.innerHTML = `
+                        <span class="text-base text-slate-100 truncate">${name}</span>
+                        <button class="text-rose-400 hover:text-rose-300 text-base flex items-center gap-1" data-remove-plat-cat="${selectedPlatFilter}" data-remove-plat-index="${index}">
+                            <span class="text-lg">🗑</span>
+                        </button>
+                    `;
+                    list.appendChild(li);
+                });
+                wrapper.appendChild(list);
+                platsList.appendChild(wrapper);
+            }
+
+            platsList.querySelectorAll('button[data-remove-plat-cat]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const cat = btn.getAttribute('data-remove-plat-cat');
+                    const idx = parseInt(btn.getAttribute('data-remove-plat-index'), 10);
+                    cartePlats[cat].splice(idx, 1);
+                    renderPlats();
+                });
+            });
+        }
+
+        function renderVins() {
+            vinsList.innerHTML = '';
+            const categories = Object.keys(carteVins);
+            if (categories.length === 0) {
+                vinsList.innerHTML = '<p class="text-xs text-slate-500 italic">Aucune référence de vin définie dans menu.json.</p>';
+                return;
+            }
+            if (selectedWineFilter === 'Tous') {
+                categories.forEach(cat => {
+                    const items = carteVins[cat] || [];
+                    if (items.length === 0) return;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'mb-4';
+                    wrapper.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm uppercase tracking-[0.14em] text-slate-300">${cat}</h4>
+                            <span class="text-sm text-slate-500">${items.length} références</span>
+                        </div>
+                    `;
+                    const list = document.createElement('ul');
+                    list.className = 'space-y-2';
+
+                    items.forEach((vin, index) => {
+                        const group = wineTypeToGroup(vin && vin.type);
+                        const nom = vin.nom || vin.name || vin;
+                        const prixBouteille = vin.prix_bouteille || vin.prixBouteille || vin.prix || vin.price || '';
+                        const prixVerre = vin.prix_verre || vin.prixVerre || '';
+                        const type = vin.type || '';
+                        const detailParts = [];
+                        if (prixBouteille) detailParts.push(`Bouteille: ${prixBouteille}`);
+                        if (prixVerre) detailParts.push(`Verre: ${prixVerre}`);
+                        if (type) detailParts.push(type);
+                        const detail = detailParts.join(' • ');
+                        const li = document.createElement('li');
+                        li.className = 'flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-black/30 px-4 py-2.5';
+                        li.innerHTML = `
+                            <div class="flex flex-col text-base min-w-0">
+                                <span class="text-slate-100 truncate">${escapeHtml(String(nom))}</span>
+                                ${detail ? `<span class="text-sm text-slate-400 truncate">${escapeHtml(detail)}</span>` : ''}
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <button class="text-2xl leading-none ${vin.pousser ? 'text-amber-400' : 'text-slate-500'} hover:text-amber-300" title="Inciter ce vin" data-toggle-pousser-cat="${cat}" data-toggle-pousser-index="${index}" data-toggle-pousser-group="${group}">${vin.pousser ? '⭐' : '☆'}</button>
+                                <button class="text-rose-400 hover:text-rose-300 text-base flex items-center gap-1" data-remove-vin-cat="${cat}" data-remove-vin-index="${index}">
+                                    <span class="text-lg">🗑</span>
+                                </button>
+                            </div>
+                        `;
+                        list.appendChild(li);
+                    });
+                    wrapper.appendChild(list);
+                    vinsList.appendChild(wrapper);
+                });
+            } else {
+                categories.forEach(cat => {
+                    const items = carteVins[cat] || [];
+                    let matchCount = 0;
+                    items.forEach(v => {
+                        if (v && wineTypeToGroup(v.type) === selectedWineFilter) matchCount++;
+                    });
+                    if (matchCount === 0) return;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'mb-4';
+                    wrapper.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm uppercase tracking-[0.14em] text-slate-300">${cat}</h4>
+                            <span class="text-sm text-slate-500">${matchCount} références</span>
+                        </div>
+                    `;
+                    const list = document.createElement('ul');
+                    list.className = 'space-y-2';
+
+                    items.forEach((vin, index) => {
+                        const group = wineTypeToGroup(vin && vin.type);
+                        if (group !== selectedWineFilter) return;
+
+                        const nom = vin.nom || vin.name || vin;
+                        const prixBouteille = vin.prix_bouteille || vin.prixBouteille || vin.prix || vin.price || '';
+                        const prixVerre = vin.prix_verre || vin.prixVerre || '';
+                        const type = vin.type || '';
+                        const detailParts = [];
+                        if (prixBouteille) detailParts.push(`Bouteille: ${prixBouteille}`);
+                        if (prixVerre) detailParts.push(`Verre: ${prixVerre}`);
+                        if (type) detailParts.push(type);
+                        const detail = detailParts.join(' • ');
+                        const li = document.createElement('li');
+                        li.className = 'flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-black/30 px-4 py-2.5';
+                        li.innerHTML = `
+                            <div class="flex flex-col text-base min-w-0">
+                                <span class="text-slate-100 truncate">${escapeHtml(String(nom))}</span>
+                                ${detail ? `<span class="text-sm text-slate-400 truncate">${escapeHtml(detail)}</span>` : ''}
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <button class="text-2xl leading-none ${vin.pousser ? 'text-amber-400' : 'text-slate-500'} hover:text-amber-300" title="Inciter ce vin" data-toggle-pousser-cat="${cat}" data-toggle-pousser-index="${index}" data-toggle-pousser-group="${group}">${vin.pousser ? '⭐' : '☆'}</button>
+                                <button class="text-rose-400 hover:text-rose-300 text-base flex items-center gap-1" data-remove-vin-cat="${cat}" data-remove-vin-index="${index}">
+                                    <span class="text-lg">🗑</span>
+                                </button>
+                            </div>
+                        `;
+                        list.appendChild(li);
+                    });
+                    wrapper.appendChild(list);
+                    vinsList.appendChild(wrapper);
+                });
+
+                if (vinsList.children.length === 0) {
+                    vinsList.innerHTML = '<p class="text-xs text-slate-500 italic">Aucun vin pour ce filtre.</p>';
+                }
+            }
+
+            if (selectedWineFilter === 'Tous' && vinsList.children.length === 0) {
+                vinsList.innerHTML = '<p class="text-xs text-slate-500 italic">Aucun vin à afficher.</p>';
+            }
+
+            vinsList.querySelectorAll('button[data-remove-vin-cat]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const cat = btn.getAttribute('data-remove-vin-cat');
+                    const idx = parseInt(btn.getAttribute('data-remove-vin-index'), 10);
+                    carteVins[cat].splice(idx, 1);
+                    renderVins();
+                });
+            });
+
+            vinsList.querySelectorAll('button[data-toggle-pousser-cat]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const cat = btn.getAttribute('data-toggle-pousser-cat');
+                    const idx = parseInt(btn.getAttribute('data-toggle-pousser-index'), 10);
+                    const group = btn.getAttribute('data-toggle-pousser-group') || 'Autres';
+                    const items = carteVins[cat] || [];
+                    const current = !!(items[idx] && items[idx].pousser);
+
+                    // Règle : 1 étoile max uniquement pour Rouge/Blanc/Rosé (pas pour Autres)
+                    if (group === 'Rouge' || group === 'Blanc' || group === 'Rosé') {
+                        Object.keys(carteVins).forEach(catKey => {
+                            (carteVins[catKey] || []).forEach(w => {
+                                if (w && wineTypeToGroup(w.type) === group) w.pousser = false;
+                            });
+                        });
+                    }
+
+                    if (items[idx]) items[idx].pousser = !current;
+                    renderVins();
+                });
+            });
+        }
+
+        // Ajout plat
+        document.getElementById('btn-add-plat').addEventListener('click', () => {
+            const nameEl = document.getElementById('new-plat-name');
+            const catEl = document.getElementById('new-plat-category');
+            const infoEl = document.getElementById('new-plat-info');
+            const name = (nameEl.value || '').trim();
+            const info = (infoEl && infoEl.value ? infoEl.value : '').toString().trim();
+            let cat = (catEl.value || '').trim() || 'Plats';
+            if (!name) return;
+            if (!['Entrées', 'Plats', 'Desserts'].includes(cat)) {
+                cat = 'Plats';
+            }
+            if (!cartePlats[cat]) cartePlats[cat] = [];
+            cartePlats[cat].push({ nom: name, info });
+            nameEl.value = '';
+            if (infoEl) infoEl.value = '';
+            renderPlats();
+        });
+
+        // Ajout vin
+        document.getElementById('btn-add-vin').addEventListener('click', () => {
+            const nameEl = document.getElementById('new-vin-name');
+            const domaineEl = document.getElementById('new-vin-domaine');
+            const anneeEl = document.getElementById('new-vin-annee');
+            const prixBouteilleEl = document.getElementById('new-vin-prix-bouteille');
+            const prixVerreEl = document.getElementById('new-vin-prix-verre');
+            const typeEl = document.getElementById('new-vin-type');
+            const nomBase = (nameEl.value || '').trim();
+            const domaine = (domaineEl.value || '').trim();
+            const annee = (anneeEl.value || '').trim();
+            const prix_bouteille = (prixBouteilleEl.value || '').trim();
+            const prix_verre = (prixVerreEl.value || '').trim();
+            const type = (typeEl.value || '').trim() || 'Rouge';
+            const cat = getWineCategoryFromType(type);
+            if (!nomBase) return;
+            const nom = [nomBase, domaine, annee].filter(Boolean).join(' - ');
+            if (!carteVins[cat]) carteVins[cat] = [];
+            carteVins[cat].push({ nom, domaine, annee, prix_bouteille, prix_verre, prix: prix_bouteille || prix_verre || '', type, pousser: false });
+            nameEl.value = '';
+            domaineEl.value = '';
+            anneeEl.value = '';
+            prixBouteilleEl.value = '';
+            prixVerreEl.value = '';
+            typeEl.value = 'Rouge';
+            renderVins();
+        });
+
+        // Sauvegarde
+        document.getElementById('btn-save-menu').addEventListener('click', async () => {
+            const saveBtn = document.getElementById('btn-save-menu');
+            const saveLabel = document.getElementById('save-menu-label');
+            try {
+                const localValidation = validateBeforeSave();
+                setSaveWarnings(localValidation.errors, localValidation.warnings);
+                if (!localValidation.ok) {
+                    setStatus('Impossible de sauvegarder: corrige les alertes *.', 'error');
+                    return;
+                }
+
+                setStatus('Sauvegarde en cours...', 'info');
+                saveBtn.disabled = true;
+                saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                saveLabel.textContent = 'Sauvegarde en cours...';
+                const res = await fetch('/api/menu' + restoQuery, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        carte_des_plats: cartePlats,
+                        carte_des_vins: carteVins
+                    })
+                });
+                await new Promise(resolve => setTimeout(resolve, 1800));
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                    const serverErrors = Array.isArray(data.details) ? data.details : [data.error || ('Erreur HTTP ' + res.status)];
+                    const serverWarnings = Array.isArray(data.warnings) ? data.warnings : [];
+                    setSaveWarnings(serverErrors, serverWarnings);
+                    throw new Error(data.error || 'Erreur HTTP ' + res.status);
+                }
+                setSaveWarnings([], Array.isArray(data.warnings) ? data.warnings : localValidation.warnings);
+                setStatus('Carte sauvegardée avec succès.', 'success');
+            } catch (e) {
+                console.error('Erreur sauvegarde menu', e);
+                setStatus('Erreur lors de la sauvegarde de la carte.', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                saveLabel.textContent = 'Sauvegarder la carte';
+            }
+        });
+
+        // Initialisation
+        activateTab('stats');
+        loadMenu();
+    </script>
+</body>
+</html>

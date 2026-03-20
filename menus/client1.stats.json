@@ -1,0 +1,17 @@
+{
+  "chiffre_affaires_euros": 0,
+  "keyword_counts": {},
+  "suggestion_counts": {},
+  "type_counts": {
+    "Rouge": 0,
+    "Blanc": 0,
+    "Rosé": 0,
+    "Autre": 0
+  },
+  "live_log": [],
+  "error_log": [],
+  "error_reason_counts": {},
+  "daily_clients": {},
+  "daily_ca": {},
+  "last_updated": null
+}

@@ -1,0 +1,43 @@
+{
+  "config": {
+    "nom_resto": "Maison du Vin Rouge",
+    "logo_url": "client1_logo.png",
+    "couleur_principale": "#8B0000",
+    "admin_user": "patron1",
+    "admin_pass": "bistrot2026"
+  },
+  "carte_des_plats": {
+    "Entrées": [
+      "Oeuf Mayo",
+      "Planche de Charcuterie",
+      "Escargots de Bourgogne",
+      "Salade de Chèvre Chaud"
+    ],
+    "Plats": [
+      "Entrecôte Frites",
+      "Tartare de Boeuf",
+      "Blanquette de Veau",
+      "Pavé de Saumon",
+      "Burger du Chef"
+    ],
+    "Desserts": [
+      "Mi-cuit au Chocolat",
+      "Tarte Tatin",
+      "Crème Brûlée",
+      "Café Gourmand"
+    ]
+  },
+  "vins": [
+    { "categorie": "Vins Rouges", "nom": "Château La Pélerine", "prix": "33€", "type": "Rouge" },
+    { "categorie": "Vins Rouges", "nom": "Gigondas - Domaine des Anges", "prix": "46€", "type": "Rouge" },
+    { "categorie": "Vins Rouges", "nom": "Cahors - Les Silex", "prix": "27€", "type": "Rouge" },
+    { "categorie": "Vins Rouges", "nom": "Meursault - Rouge (Sélection)", "prix": "52€", "type": "Rouge" },
+    { "categorie": "Vins Blancs", "nom": "Pouilly-Fumé - Silex & Cie", "prix": "37€", "type": "Blanc" },
+    { "categorie": "Vins Blancs", "nom": "Chardonnay - Clos du Verger", "prix": "26€", "type": "Blanc" },
+    { "categorie": "Vins Blancs", "nom": "Gewurztraminer - Vendanges Tardives", "prix": "49€", "type": "Blanc" },
+    { "categorie": "Vins Rosés", "nom": "Rosé de Provence - Étoile d'Été", "prix": "28€", "type": "Rosé" },
+    { "categorie": "Vins Rosés", "nom": "Tavel - Rosé du Château", "prix": "21€", "type": "Rosé" },
+    { "categorie": "Champagnes", "nom": "Champagne Brut - Cuvée Souveraine", "prix": "16€", "type": "Pétillant" },
+    { "categorie": "Champagnes", "nom": "Champagne Rosé - Grand Cru", "prix": "98€", "type": "Pétillant" }
+  ]
+}
