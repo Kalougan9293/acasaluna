@@ -784,13 +784,48 @@ const server = http.createServer(async (req, res) => {
                             const top = chosen[0] || null;
                             const topType = top && (top.type || top.categorie) ? (top.type || top.categorie) : "Rouge";
 
-                            const aromas = topType === "Blanc" ? "- Agrumes, fruits blancs\n- Notes florales" : topType === "Rosé" ? "- Fruits rouges\n- Fraîcheur légère" : "- Fruits mûrs, épices douces\n- Notes gourmandes";
-                            const profils = "- Puissance : 3/5\n- Fraîcheur : 3/5\n- Rondeur : 3/5";
-                            const degre = topType === "Blanc" ? "12% - Sec" : topType === "Rosé" ? "12,5% - Frais" : "13,5% - Rond";
-                            const avis = "Conseil à table : servez et laissez-le s'exprimer quelques minutes. Vous allez sentir la belle harmonie entre le vin et le repas.";
+                            let aromas;
+                            let profils;
+                            let degre;
+                            let avis;
+                            let demLine;
+                            if (targetLang === "en") {
+                                aromas =
+                                    topType === "Blanc"
+                                        ? "- Citrus, white fruit\n- Floral notes"
+                                        : topType === "Rosé"
+                                          ? "- Red berries\n- Light freshness"
+                                          : "- Ripe fruit, gentle spice\n- Indulgent notes";
+                                profils = "- Power : 3/5\n- Freshness : 3/5\n- Roundness : 3/5";
+                                degre = topType === "Blanc" ? "12% - Dry" : topType === "Rosé" ? "12.5% - Fresh" : "13.5% - Round";
+                                avis = "At the table: pour and let it open for a minute. You'll feel the harmony between the wine and the meal.";
+                                demLine = `[DEMANDE] : You want to highlight wines to promote tonight.\n`;
+                            } else if (targetLang === "es") {
+                                aromas =
+                                    topType === "Blanc"
+                                        ? "- Cítricos, fruta blanca\n- Notas florales"
+                                        : topType === "Rosé"
+                                          ? "- Frutos rojos\n- Frescura ligera"
+                                          : "- Fruta madura, especias suaves\n- Notas golosas";
+                                profils = "- Potencia : 3/5\n- Frescura : 3/5\n- Redondez : 3/5";
+                                degre = topType === "Blanc" ? "12% - Seco" : topType === "Rosé" ? "12,5% - Fresco" : "13,5% - Redondo";
+                                avis = "En mesa: sírvase y déjelo expresarse unos minutos. Notará la armonía entre el vino y el plato.";
+                                demLine = `[DEMANDE] : Quiere destacar vinos para vender esta noche.\n`;
+                            } else {
+                                aromas =
+                                    topType === "Blanc"
+                                        ? "- Agrumes, fruits blancs\n- Notes florales"
+                                        : topType === "Rosé"
+                                          ? "- Fruits rouges\n- Fraîcheur légère"
+                                          : "- Fruits mûrs, épices douces\n- Notes gourmandes";
+                                profils = "- Puissance : 3/5\n- Fraîcheur : 3/5\n- Rondeur : 3/5";
+                                degre = topType === "Blanc" ? "12% - Sec" : topType === "Rosé" ? "12,5% - Frais" : "13,5% - Rond";
+                                avis = "Conseil à table : servez et laissez-le s'exprimer quelques minutes. Vous allez sentir la belle harmonie entre le vin et le repas.";
+                                demLine = `[DEMANDE] : Vous voulez des vins à mettre en avant ce soir.\n`;
+                            }
 
                             pousserOverrideAnswer =
-                                `[DEMANDE] : Vous voulez des vins à mettre en avant ce soir.\n` +
+                                demLine +
                                 `[SUGGESTION] : ${suggestionLines}\n` +
                                 `[EXPLICATION] : ${explanation}\n` +
                                 `[AROMES] : ${aromas}\n` +
@@ -804,12 +839,28 @@ const server = http.createServer(async (req, res) => {
 
                     let consigneSpeciale = "";
                     if (question.includes("Version Prestige") || question.includes("Prestige")) {
-                        consigneSpeciale = "CONSIGNE SPÉCIALE : Le client veut se faire plaisir (Version Prestige). Propose EXCLUSIVEMENT le vin le plus HAUT DE GAMME (le plus cher/prestigieux) de la catégorie compatible dans le menu.";
+                        if (targetLang === "en") {
+                            consigneSpeciale =
+                                "SPECIAL RULE: The guest wants a treat (Prestige). Offer ONLY the most PREMIUM (most expensive/prestigious) wine in the compatible category from the menu.";
+                        } else if (targetLang === "es") {
+                            consigneSpeciale =
+                                "REGLA ESPECIAL: El cliente quiere un capricho (Versión Prestige). Ofrece EXCLUSIVAMENTE el vino más PREMIUM (más caro/prestigioso) de la categoría compatible en la carta.";
+                        } else {
+                            consigneSpeciale =
+                                "CONSIGNE SPÉCIALE : Le client veut se faire plaisir (Version Prestige). Propose EXCLUSIVEMENT le vin le plus HAUT DE GAMME (le plus cher/prestigieux) de la catégorie compatible dans le menu.";
+                        }
                     }
 
-                    const reglePousser = `Voici la carte des vins. Certains vins ont la mention [⭐ À POUSSER]. Si la demande du client correspond PARFAITEMENT (même couleur, bon accord gustatif), tu dois proposer un vin [⭐ À POUSSER] en priorité absolue. ATTENTION : La cohérence prime. Ne propose JAMAIS un vin [⭐ À POUSSER] rouge si le client demande un blanc ou si l'accord est mauvais.`;
+                    const reglePousser =
+                        targetLang === "en"
+                            ? `Here is the wine list. Some wines are marked [⭐ À POUSSER]. If the guest's request matches PERFECTLY (same colour, good pairing), you MUST offer a [⭐ À POUSSER] wine first. Consistency wins. NEVER offer a red [⭐ À POUSSER] if the guest asked for white or the pairing is wrong.`
+                            : targetLang === "es"
+                              ? `Aquí está la carta de vinos. Algunos llevan [⭐ À POUSSER]. Si la petición encaja PERFECTAMENTE (mismo color, buen maridaje), debes proponer un vino [⭐ À POUSSER] con prioridad. La coherencia manda. NUNCA ofrezcas un [⭐ À POUSSER] tinto si pidieron blanco o el maridaje es malo.`
+                              : `Voici la carte des vins. Certains vins ont la mention [⭐ À POUSSER]. Si la demande du client correspond PARFAITEMENT (même couleur, bon accord gustatif), tu dois proposer un vin [⭐ À POUSSER] en priorité absolue. ATTENTION : La cohérence prime. Ne propose JAMAIS un vin [⭐ À POUSSER] rouge si le client demande un blanc ou si l'accord est mauvais.`;
 
-                    const promptBase = `Tu es le Sommelier du "Bistrot Français" (DÉMO).
+                    const menuJson = JSON.stringify(menuForPrompt);
+
+                    const promptBaseFR = `Tu es le Sommelier du "Bistrot Français" (DÉMO).
                 TON BUT : Faire saliver et vulgariser le vin pour un client non-expert.
                 ${consigneSpeciale}
                 
@@ -822,13 +873,57 @@ const server = http.createServer(async (req, res) => {
                    - Dans [EXPLICATION], écris clairement : Nous n'avons pas exactement le vin demandé, mais voici l'alternative la plus cohérente.
                 5. PRIORITÉ ACCORD METS : si la demande contient des sections "Entrées:", "Plats:", "Desserts:" (ou équivalents), en cas de conflit suit d'abord "Plats", puis "Entrées", puis "Desserts".
                 
-                MENU DU BISTROT : ${JSON.stringify(menuForPrompt)}
+                MENU DU BISTROT : ${menuJson}
                 
                 ${reglePousser}
 
                 🛑 GESTION DES ERREURS :
                 - Si insulte/hors-sujet : Réponds "[STOP] Désolé, je suis là uniquement pour vous conseiller le vin parfait."
                 - Si plat vraiment hors carte (aucune correspondance possible avec le menu) : Réponds "[STOP] Désolé, ce plat n'est pas à notre carte."`;
+
+                    const promptBaseEN = `You are the Sommelier at "Bistrot Français" (DEMO).
+YOUR GOAL: Make the wine sound delicious and explain it simply for a non-expert guest.
+${consigneSpeciale}
+
+GOLDEN RULES:
+1. Pick ONLY from the JSON menu.
+2. PLAIN LANGUAGE: No technical jargon (no "tannins", "grape variety", etc.).
+3. TOLERATE TYPOS: If the guest writes a dish with a typo or close variant, map it to the menu dish and offer a pairing. Only reply "[STOP] dish not on menu" if nothing matches at all.
+4. IF THE REQUESTED WINE (name/appellation/profile) IS NOT ON THE LIST:
+   - Choose the closest wine on the menu (colour + pairing).
+   - In [EXPLICATION] say clearly: We don't have exactly the wine you asked for, but here is the closest match.
+5. Meal pairing priority: if the request has "Starters / Main / Desserts" (or equivalents), follow Main first, then Starters, then Desserts.
+
+BISTROT MENU: ${menuJson}
+
+${reglePousser}
+
+ERROR HANDLING:
+- Insult/off-topic: reply "[STOP] Sorry, I'm only here to help you find the perfect wine."
+- Dish truly off-menu: reply "[STOP] Sorry, this dish is not on our menu."`;
+
+                    const promptBaseES = `Eres el Sommelier del "Bistrot Français" (DEMO).
+TU OBJETIVO: Hacer que el vino apetezca y explicarlo con sencillez a un cliente no experto.
+${consigneSpeciale}
+
+REGLAS DE ORO:
+1. Elige SOLO del menú JSON.
+2. LENGUAJE CLARO: Sin jerga técnica (sin "taninos", "cepa", etc.).
+3. TOLERANCIA A ERRORES: Si el cliente escribe un plato con typo o variante cercana, mapéalo al plato de la carta y propón maridaje. Solo responde "[STOP] plato fuera de carta" si no hay ninguna coincidencia.
+4. SI EL VINO PEDIDO (nombre/appellation/perfil) NO ESTÁ EN LA CARTA:
+   - Elige el vino más cercano (color + maridaje).
+   - En [EXPLICATION] di claramente: No tenemos exactamente el vino pedido, pero aquí está la alternativa más coherente.
+5. Prioridad de maridaje: si hay secciones "Entradas / Platos / Postres", en conflicto sigue primero "Platos", luego "Entradas", luego "Postres".
+
+MENÚ DEL BISTROT: ${menuJson}
+
+${reglePousser}
+
+GESTIÓN DE ERRORES:
+- Insulto/tema fuera: responde "[STOP] Lo siento, solo estoy aquí para ayudarte a encontrar el vino perfecto."
+- Plato realmente fuera de carta: responde "[STOP] Lo siento, este plato no está en nuestra carta."`;
+
+                    const promptBase = targetLang === "en" ? promptBaseEN : targetLang === "es" ? promptBaseES : promptBaseFR;
 
                     const formatFR = `FORMAT DE RÉPONSE OBLIGATOIRE (Respecte les tirets) :
                 
@@ -854,14 +949,75 @@ const server = http.createServer(async (req, res) => {
                 
                 [AVIS_SOMMELIER] : (Un conseil DÉGUSTATION pour le client à table. INTERDIT de dire "Servir", "Caraf", "Ouvrir". Dis plutôt : "Faites-le tourner dans le verre pour...", "Prenez le temps de sentir...", "Gardez-le un peu en bouche...", "Idéal à boire maintenant". Ton complice et humain.)`;
 
-                    let systemPrompt = promptBase + "\n" + formatFR;
-                    if (targetLang === "en") systemPrompt += " ANSWER IN ENGLISH.";
-                    if (targetLang === "es") systemPrompt += " ANSWER IN SPANISH.";
+                    const formatEN = `MANDATORY RESPONSE FORMAT (keep the dash bullets):
+
+[DEMANDE] :
+(Inverse-logic section. Be careful.)
+- If the guest asks for a DISH -> list only the dish "nom" field with a dash (do NOT include "info").
+- If the guest asks for a WINE TYPE (e.g. "I'm looking for...", "I want white") -> do NOT repeat "WHITE WINE". Instead list only the "nom" of menu dishes that pair well (e.g. "- Salmon", "- Cheese").
+
+[SUGGESTION] : (Exact wine name) (Type in parentheses)
+
+[EXPLICATION] : (Why this choice? RULE: DO NOT repeat the wine name. Use "It", "This wine", "This cuvée". Make it mouth-watering.)
+
+[AROMES] : (Vertical list. Format: "- Family (Example 1, Example 2)". Max 3 lines. No technical jargon.)
+- Family 1 (Aroma, Aroma)
+- Family 2 (Aroma)
+
+[PROFIL_VIN] : (3 simple criteria for the guest, scored /5. Pick from: Power, Freshness, Roundness, Fruitiness, Sweetness. One per line.)
+- Criterion 1 : X/5
+- Criterion 2 : X/5
+- Criterion 3 : X/5
+
+[DEGRE] : (e.g. 13% - Dry / or / 12% - Off-dry)
+
+[AVIS_SOMMELIER] : (A TASTING tip for the guest. Do NOT say "Serve", "Decant", "Open". Say things like: "Swirl it in the glass to...", "Take time to smell...", "Hold it on the palate...", "Ideal to drink now". Warm, human tone.)`;
+
+                    const formatES = `FORMATO DE RESPUESTA OBLIGATORIO (respeta los guiones):
+
+[DEMANDE] :
+(Sección de lógica inversa. ¡Cuidado!)
+- Si el usuario pide un PLATO -> lista solo el campo "nom" del plato con guión (NO incluyas "info").
+- Si pide un TIPO DE VINO (ej. "Busco un vino...", "Quiero blanco") -> NO repitas "VINO BLANCO". En su lugar lista solo el "nom" de los platos del menú que maridan bien (ej. "- Salmón", "- Queso").
+
+[SUGGESTION] : (Nombre exacto del vino) (Tipo entre paréntesis)
+
+[EXPLICATION] : (¿Por qué esta elección? REGLA: NO repitas el nombre del vino. Usa "Este vino", "Esta cuvée". Que apetezca.)
+
+[AROMES] : (Lista vertical. Formato: "- Familia (Ejemplo 1, Ejemplo 2)". Máx. 3 líneas. Sin tecnicismos.)
+- Familia 1 (Aroma, Aroma)
+- Familia 2 (Aroma)
+
+[PROFIL_VIN] : (3 criterios simples para el cliente, notados /5. Elige entre: Potencia, Frescura, Redondez, Frutosidad, Dulzor. Uno por línea.)
+- Criterio 1 : X/5
+- Criterio 2 : X/5
+- Criterio 3 : X/5
+
+[DEGRE] : (Ej. 13% - Seco / o / 12% - Semiseco)
+
+[AVIS_SOMMELIER] : (Un consejo de DEGUSTACIÓN en mesa. PROHIBIDO decir "Servir", "Decantar", "Abrir". Di cosas como: "Gírelo en la copa para...", "Tómese tiempo para oler...", "Déjelo en boca...", "Ideal para beber ahora". Tono cercano.)`;
+
+                    const formatBlock = targetLang === "en" ? formatEN : targetLang === "es" ? formatES : formatFR;
+
+                    const langDirective =
+                        targetLang === "en"
+                            ? `CRITICAL: Write the ENTIRE answer in English. All text inside [DEMANDE], [SUGGESTION], [EXPLICATION], [AROMES], [PROFIL_VIN], [DEGRE], [AVIS_SOMMELIER] must be English. Do not write French sentences in the body (wine names and menu items may stay as on the menu).\n\n`
+                            : targetLang === "es"
+                              ? `CRÍTICO: Escribe TODA la respuesta en español. Todo el contenido debe estar en español. No escribas frases en francés en el cuerpo (los nombres del menú pueden quedar como en la carta).\n\n`
+                              : "";
+
+                    let systemPrompt = langDirective + promptBase + "\n" + formatBlock;
 
                     let messages = [{ role: "system", content: systemPrompt }];
                     if (image) {
+                        const imageHint =
+                            targetLang === "en"
+                                ? "\n\nAnalyze this label:"
+                                : targetLang === "es"
+                                  ? "\n\nAnaliza esta etiqueta:"
+                                  : "\n\nAnalyse cette étiquette :";
                         messages = [{ role: "user", content: [
-                            { type: "text", text: systemPrompt + "\n\nAnalyse cette étiquette :" },
+                            { type: "text", text: systemPrompt + imageHint },
                             { type: "image_url", imageUrl: image }
                         ] }];
                     } else {
@@ -919,7 +1075,13 @@ const server = http.createServer(async (req, res) => {
                         }
                     }
                     // Stabilise la casse demandée pour la phrase d'alternative
-                    answer = (answer || "").replace(/\[EXPLICATION\]\s*:\s*nous\s+n'avons/i, "[EXPLICATION] : Nous n'avons");
+                    if (targetLang === "fr") {
+                        answer = (answer || "").replace(/\[EXPLICATION\]\s*:\s*nous\s+n'avons/i, "[EXPLICATION] : Nous n'avons");
+                    } else if (targetLang === "en") {
+                        answer = (answer || "").replace(/\[EXPLICATION\]\s*:\s*we\s+don'?t\s+have/i, "[EXPLICATION] : We don't have");
+                    } else if (targetLang === "es") {
+                        answer = (answer || "").replace(/\[EXPLICATION\]\s*:\s*no\s+tenemos/i, "[EXPLICATION] : No tenemos");
+                    }
 
                     // Envoi en arrière-plan vers le Webhook Make avec les infos structurées
                     try {

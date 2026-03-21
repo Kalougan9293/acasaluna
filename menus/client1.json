@@ -7,37 +7,169 @@
     "admin_pass": "bistrot2026"
   },
   "carte_des_plats": {
-    "Entrées": [
-      "Oeuf Mayo",
-      "Planche de Charcuterie",
-      "Escargots de Bourgogne",
-      "Salade de Chèvre Chaud"
-    ],
+    "Entrées": [],
     "Plats": [
-      "Entrecôte Frites",
-      "Tartare de Boeuf",
-      "Blanquette de Veau",
-      "Pavé de Saumon",
-      "Burger du Chef"
+      {
+        "nom": "Entrecôte Frites",
+        "info": ""
+      },
+      {
+        "nom": "Tartare de Boeuf",
+        "info": ""
+      },
+      {
+        "nom": "Blanquette de Veau",
+        "info": ""
+      },
+      {
+        "nom": "Pavé de Saumon",
+        "info": ""
+      },
+      {
+        "nom": "Burger du Chef",
+        "info": ""
+      }
     ],
     "Desserts": [
-      "Mi-cuit au Chocolat",
-      "Tarte Tatin",
-      "Crème Brûlée",
-      "Café Gourmand"
+      {
+        "nom": "Mi-cuit au Chocolat",
+        "info": ""
+      },
+      {
+        "nom": "Tarte Tatin",
+        "info": ""
+      },
+      {
+        "nom": "Crème Brûlée",
+        "info": ""
+      },
+      {
+        "nom": "Café Gourmand",
+        "info": ""
+      }
     ]
   },
   "vins": [
-    { "categorie": "Vins Rouges", "nom": "Château La Pélerine", "prix": "33€", "type": "Rouge" },
-    { "categorie": "Vins Rouges", "nom": "Gigondas - Domaine des Anges", "prix": "46€", "type": "Rouge" },
-    { "categorie": "Vins Rouges", "nom": "Cahors - Les Silex", "prix": "27€", "type": "Rouge" },
-    { "categorie": "Vins Rouges", "nom": "Meursault - Rouge (Sélection)", "prix": "52€", "type": "Rouge" },
-    { "categorie": "Vins Blancs", "nom": "Pouilly-Fumé - Silex & Cie", "prix": "37€", "type": "Blanc" },
-    { "categorie": "Vins Blancs", "nom": "Chardonnay - Clos du Verger", "prix": "26€", "type": "Blanc" },
-    { "categorie": "Vins Blancs", "nom": "Gewurztraminer - Vendanges Tardives", "prix": "49€", "type": "Blanc" },
-    { "categorie": "Vins Rosés", "nom": "Rosé de Provence - Étoile d'Été", "prix": "28€", "type": "Rosé" },
-    { "categorie": "Vins Rosés", "nom": "Tavel - Rosé du Château", "prix": "21€", "type": "Rosé" },
-    { "categorie": "Champagnes", "nom": "Champagne Brut - Cuvée Souveraine", "prix": "16€", "type": "Pétillant" },
-    { "categorie": "Champagnes", "nom": "Champagne Rosé - Grand Cru", "prix": "98€", "type": "Pétillant" }
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Château La Pélerine",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "33€",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Gigondas - Domaine des Anges",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "46€",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Cahors - Les Silex",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "27€",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Meursault - Rouge (Sélection)",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "52€",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Blancs",
+      "nom": "Pouilly-Fumé - Silex & Cie",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "37€",
+      "type": "Blanc",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Blancs",
+      "nom": "Chardonnay - Clos du Verger",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "26€",
+      "type": "Blanc",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Blancs",
+      "nom": "Gewurztraminer - Vendanges Tardives",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "49€",
+      "type": "Blanc",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rosés",
+      "nom": "Rosé de Provence - Étoile d'Été",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "28€",
+      "type": "Rosé",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rosés",
+      "nom": "Tavel - Rosé du Château",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "21€",
+      "type": "Rosé",
+      "pousser": false
+    },
+    {
+      "categorie": "Champagnes",
+      "nom": "Champagne Brut - Cuvée Souveraine",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "16€",
+      "type": "Pétillant",
+      "pousser": false
+    },
+    {
+      "categorie": "Champagnes",
+      "nom": "Champagne Rosé - Grand Cru",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "98€",
+      "type": "Pétillant",
+      "pousser": false
+    }
   ]
 }

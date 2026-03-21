@@ -2,13 +2,14 @@
   "chiffre_affaires_euros": 0,
   "keyword_counts": {},
   "suggestion_counts": {
-    "Châteauneuf-du-Pape \"La Crau\" - Domaine du Vieux Télégraphe": 3,
+    "Châteauneuf-du-Pape \"La Crau\" - Domaine du Vieux Télégraphe": 4,
     "Chablis 1er Cru \"Montée de Tonnerre\" - Domaine William Fèvre": 1,
-    "Sauternes - Château d'Yquem": 1,
+    "Sauternes - Château d'Yquem": 2,
     "Romanée-Conti - Domaine de la Romanée-Conti - 2017": 1,
     "Cuvée Tradition - Clos Cibonne": 1,
-    "Sancerre - Domaine Vacheron": 1,
-    "": 1
+    "Sancerre - Domaine Vacheron": 3,
+    "": 1,
+    "Morgon - Marcel Lapierre": 4
   },
   "error_reason_counts": {
     "Désolé, je ne trouve pas de vin correspondant à cette demande très spécifique.": 1,
@@ -16,12 +17,60 @@
     "Désolé, votre demande est trop spécifique pour notre carte.": 1
   },
   "type_counts": {
-    "Rouge": 4,
-    "Blanc": 3,
+    "Rouge": 9,
+    "Blanc": 6,
     "Rosé": 1,
     "Autre": 1
   },
   "live_log": [
+    {
+      "ts": "2026-03-21T11:41:40.912Z",
+      "question": "I'm having: Starters: Carpaccio de bœuf. Main Courses: Saumon grillé. Desserts: Tarte Tatin.. What do you recommend?",
+      "vin": "Sancerre - Domaine Vacheron",
+      "type": "Blanc"
+    },
+    {
+      "ts": "2026-03-21T11:01:29.366Z",
+      "question": "Sweet Wine",
+      "vin": "Sauternes - Château d'Yquem",
+      "type": "Blanc"
+    },
+    {
+      "ts": "2026-03-21T11:01:19.343Z",
+      "question": "Je cherche un vin Rouge léger",
+      "vin": "Morgon - Marcel Lapierre",
+      "type": "Rouge"
+    },
+    {
+      "ts": "2026-03-21T11:01:02.249Z",
+      "question": "I'm having: Starters: Tartare de saumon. Main Courses: Saumon grillé, I let you choose. Desserts: Crème brûlée.. What do you recommend?",
+      "vin": "Sancerre - Domaine Vacheron",
+      "type": "Blanc"
+    },
+    {
+      "ts": "2026-03-21T11:00:50.121Z",
+      "question": "Je cherche un vin Rouge léger",
+      "vin": "Morgon - Marcel Lapierre",
+      "type": "Rouge"
+    },
+    {
+      "ts": "2026-03-21T10:58:37.781Z",
+      "question": "Je cherche un vin Rouge léger",
+      "vin": "Morgon - Marcel Lapierre",
+      "type": "Rouge"
+    },
+    {
+      "ts": "2026-03-21T10:57:12.910Z",
+      "question": "Light Red Wine",
+      "vin": "Châteauneuf-du-Pape \"La Crau\" - Domaine du Vieux Télégraphe",
+      "type": "Rouge"
+    },
+    {
+      "ts": "2026-03-21T10:57:05.366Z",
+      "question": "Je cherche un vin Rouge léger",
+      "vin": "Morgon - Marcel Lapierre",
+      "type": "Rouge"
+    },
     {
       "ts": "2026-03-20T18:42:44.637Z",
       "question": "Quels sont les vins que le patron vous a demandé de 'pousser' à la vente ce soir ?",
@@ -130,8 +179,9 @@
     }
   ],
   "daily_clients": {
-    "2026-03-20": 19
+    "2026-03-20": 19,
+    "2026-03-21": 8
   },
   "daily_ca": {},
-  "last_updated": "2026-03-20T18:44:32.201Z"
+  "last_updated": "2026-03-21T11:41:40.912Z"
 }

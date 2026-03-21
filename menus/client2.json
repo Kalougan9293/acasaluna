@@ -28,16 +28,159 @@
     ]
   },
   "vins": [
-    { "categorie": "Vins Rouges", "nom": "Bourgogne Pinot Noir - Clos d'Azur", "prix": "44€", "type": "Rouge" },
-    { "categorie": "Vins Rouges", "nom": "Saint-Nicolas de Bourgueil - Pureté", "prix": "29€", "type": "Rouge" },
-    { "categorie": "Vins Rouges", "nom": "Corbières - Terroir Rouge", "prix": "23€", "type": "Rouge" },
-    { "categorie": "Vins Rouges", "nom": "Saint-Emilion - Grand Lot", "prix": "68€", "type": "Rouge" },
-    { "categorie": "Vins Blancs", "nom": "Chablis - Vent du Nord", "prix": "41€", "type": "Blanc" },
-    { "categorie": "Vins Blancs", "nom": "Sancerre - La Colline", "prix": "47€", "type": "Blanc" },
-    { "categorie": "Vins Blancs", "nom": "Riesling - Les Pierres", "prix": "25€", "type": "Blanc" },
-    { "categorie": "Vins Rosés", "nom": "Rosé Frais - Verger Rose", "prix": "26€", "type": "Rosé" },
-    { "categorie": "Vins Rosés", "nom": "Coteaux d'Aix - Soleil du Sud", "prix": "30€", "type": "Rosé" },
-    { "categorie": "Champagnes", "nom": "Champagne Premier Cru - Blanc", "prix": "18€", "type": "Pétillant" },
-    { "categorie": "Champagnes", "nom": "Champagne - Cuvée Brut Rosé", "prix": "102€", "type": "Pétillant" }
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Château Margaux - 2015",
+      "domaine": "",
+      "annee": "2015",
+      "prix_bouteille": "28",
+      "prix_verre": "12",
+      "prix": "28",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Romanée-Conti - Domaine de la Romanée-Conti - 2017",
+      "domaine": "Domaine de la Romanée-Conti",
+      "annee": "2017",
+      "prix_bouteille": "38",
+      "prix_verre": "15",
+      "prix": "38",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Châteauneuf-du-Pape \"La Crau\" - Domaine du Vieux Télégraphe - 2018",
+      "domaine": "Domaine du Vieux Télégraphe",
+      "annee": "2018",
+      "prix_bouteille": "18",
+      "prix_verre": "6",
+      "prix": "18",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Morgon - Marcel Lapierre - 2020",
+      "domaine": "Marcel Lapierre",
+      "annee": "2020",
+      "prix_bouteille": "14",
+      "prix_verre": "4",
+      "prix": "14",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Blancs",
+      "nom": "Chablis 1er Cru \"Montée de Tonnerre\" - Domaine William Fèvre - 2021",
+      "domaine": "Domaine William Fèvre",
+      "annee": "2021",
+      "prix_bouteille": "42",
+      "prix_verre": "18",
+      "prix": "42",
+      "type": "Blanc",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Blancs",
+      "nom": "Sancerre - Domaine Vacheron - 2022",
+      "domaine": "Domaine Vacheron",
+      "annee": "2022",
+      "prix_bouteille": "18",
+      "prix_verre": "8",
+      "prix": "18",
+      "type": "Blanc",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Blancs",
+      "nom": "Puligny-Montrachet - Domaine leflaive - 2019",
+      "domaine": "Domaine leflaive",
+      "annee": "2019",
+      "prix_bouteille": "26",
+      "prix_verre": "12",
+      "prix": "26",
+      "type": "Blanc",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Blancs",
+      "nom": "Sauternes - Château d'Yquem - 2016",
+      "domaine": "Château d'Yquem",
+      "annee": "2016",
+      "prix_bouteille": "16",
+      "prix_verre": "6",
+      "prix": "16",
+      "type": "Blanc",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rosés",
+      "nom": "Whispering Angel - Château d'Esclans - 2022",
+      "domaine": "Château d'Esclans",
+      "annee": "2022",
+      "prix_bouteille": "19",
+      "prix_verre": "9",
+      "prix": "19",
+      "type": "Rosé",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rosés",
+      "nom": "Château de selle - Domaine Ott - 2021",
+      "domaine": "Domaine Ott",
+      "annee": "2021",
+      "prix_bouteille": "18",
+      "prix_verre": "8",
+      "prix": "18",
+      "type": "Rosé",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rosés",
+      "nom": "Prestige - Château Minuty - 2023",
+      "domaine": "Château Minuty",
+      "annee": "2023",
+      "prix_bouteille": "17",
+      "prix_verre": "7",
+      "prix": "17",
+      "type": "Rosé",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Rosés",
+      "nom": "Cuvée Tradition - Clos Cibonne - 2020",
+      "domaine": "Clos Cibonne",
+      "annee": "2020",
+      "prix_bouteille": "15",
+      "prix_verre": "5",
+      "prix": "15",
+      "type": "Rosé",
+      "pousser": false
+    },
+    {
+      "categorie": "Autres Vins",
+      "nom": "Grand cuvée - Krug",
+      "domaine": "Krug",
+      "annee": "",
+      "prix_bouteille": "29",
+      "prix_verre": "12",
+      "prix": "29",
+      "type": "Autre",
+      "pousser": false
+    },
+    {
+      "categorie": "Autres Vins",
+      "nom": "Lagavulin 16 ans - Lagavulin",
+      "domaine": "Lagavulin",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "",
+      "type": "Autre",
+      "pousser": false
+    }
   ]
 }
