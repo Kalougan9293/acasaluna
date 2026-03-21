@@ -164,6 +164,114 @@
         .admin-label { font-size: 0.7rem; text-transform: uppercase; color: #666; font-weight: 600; }
         .progress-bar-bg { background: #eee; height: 8px; border-radius: 4px; margin-top: 5px; overflow: hidden; }
         .progress-bar-fill { height: 100%; background: #d4af37; }
+
+        .carte-vins-link {
+            font-family: 'Montserrat', sans-serif; font-size: 0.65rem; letter-spacing: 0.35em;
+            text-transform: uppercase; background: none; border: none;
+            cursor: pointer; padding: 0.35rem 0.5rem;
+            /* Même aspect qu’avant au survol : doré + lueur en permanence */
+            color: rgba(212, 175, 55, 0.95);
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5), 0 0 22px rgba(212, 175, 55, 0.25);
+            transition: color 0.25s ease, text-shadow 0.25s ease;
+        }
+        .carte-vins-link:hover {
+            color: rgba(255, 245, 210, 1);
+            text-shadow: 0 0 14px rgba(212, 175, 55, 0.65), 0 0 32px rgba(212, 175, 55, 0.35);
+        }
+
+        /* Carte des vins : bottom-sheet mobile + carte centrée desktop */
+        #wine-list-panel {
+            background: rgba(0,0,0,0.42);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .wine-list-sheet {
+            width: calc(100% - 1.25rem);
+            max-width: 22rem;
+            margin: 0 auto;
+            max-height: min(85vh, 32rem);
+            border-radius: 1.15rem 1.15rem 0 0;
+            box-shadow: 0 -12px 48px rgba(0,0,0,0.35);
+        }
+        @media (min-width: 640px) {
+            .wine-list-sheet {
+                max-width: 24rem;
+                max-height: min(82vh, 36rem);
+                border-radius: 1.25rem;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+            }
+        }
+        .wine-list-handle {
+            width: 2.25rem; height: 0.28rem; border-radius: 999px;
+            background: rgba(212, 175, 55, 0.35); margin: 0.5rem auto 0.15rem;
+        }
+        @media (min-width: 640px) {
+            .wine-list-handle { display: none; }
+        }
+        .wine-filter-bubbles {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.4rem;
+            max-width: 100%;
+        }
+        @media (min-width: 380px) {
+            .wine-filter-bubbles { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.35rem; }
+        }
+        .wine-filter-bubble {
+            font-family: 'Cinzel', serif; font-size: 0.52rem; letter-spacing: 0.08em; text-transform: uppercase;
+            padding: 0.45rem 0.35rem; border-radius: 999px; border: 1px solid rgba(212, 175, 55, 0.35);
+            color: #5c3d2e; background: rgba(255,255,255,0.85); cursor: pointer; transition: all 0.25s ease;
+            text-align: center; line-height: 1.2;
+        }
+        .wine-filter-bubble:hover { border-color: rgba(212, 175, 55, 0.65); color: #2a1810; }
+        .wine-filter-bubble.active {
+            background: linear-gradient(165deg, #5a091e 0%, #2a0303 55%, #3d0a12 100%);
+            color: #f8efd4; border-color: rgba(212, 175, 55, 0.55);
+            box-shadow: 0 3px 14px rgba(212, 175, 55, 0.22);
+        }
+
+        .wine-cat-sep { display: flex; align-items: center; gap: 0.75rem; margin: 1.75rem 0 1rem; }
+        .wine-cat-sep::before, .wine-cat-sep::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55), transparent);
+        }
+        .wine-cat-label {
+            font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.28em;
+            color: #a67c2a; text-transform: uppercase; white-space: nowrap;
+        }
+        .wine-row {
+            text-align: left; border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+            padding: 1rem 0.35rem; cursor: pointer; transition: background 0.25s ease;
+        }
+        .wine-row:hover { background: rgba(212, 175, 55, 0.07); }
+        .wine-row-name { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: #2a1810; font-weight: 600; line-height: 1.35; }
+        .wine-row-meta {
+            font-family: 'Montserrat', sans-serif; font-size: 0.7rem; color: #6b5344; margin-top: 0.35rem;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem;
+        }
+        .wine-badge {
+            display: inline-block; font-size: 0.58rem; font-family: 'Montserrat', sans-serif;
+            font-weight: 600; padding: 0.22rem 0.55rem; border-radius: 999px;
+            background: rgba(74, 12, 30, 0.08); color: #5c3d2e;
+            border: 1px solid rgba(212, 175, 55, 0.28); margin-top: 0.45rem; letter-spacing: 0.04em;
+        }
+        .wine-carte-scroll { max-height: min(70vh, 32rem); overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 2px; }
+        #wine-list-inner.wine-list-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        #wine-list-inner .wine-row { padding-top: 0.55rem !important; padding-bottom: 0.55rem !important; }
+        #wine-list-inner .wine-row-name { font-size: 0.95rem !important; line-height: 1.3 !important; }
+        .wine-carte-scroll::-webkit-scrollbar { width: 5px; }
+        .wine-carte-scroll::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.35); border-radius: 4px; }
+
+        .wine-flash-overlay { z-index: 120; }
+        .wine-gauge-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.45rem 0; font-family: 'Montserrat', sans-serif; font-size: 0.7rem; color: #4a2c20; }
+        .wine-gauge-bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(0,0,0,0.08); overflow: hidden; }
+        .wine-gauge-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #4c0519, #b8860b); transition: width 0.4s ease; }
     </style>
 </head>
 <body class="theme-wine text-white min-h-screen flex flex-col items-center p-6 text-center relative pt-12">
@@ -215,7 +323,7 @@
     </div>
 
     <div class="w-full max-w-md main-card rounded-[2rem] px-6 pt-6 pb-4 relative z-20 text-gray-800">
-        
+
         <div class="relative mb-2">
             <input type="text" id="search-bar" placeholder="" class="w-full border border-[#d4af37]/30 rounded-2xl p-4 pr-12 focus:outline-none focus:border-[#d4af37] transition-colors text-lg font-sans bg-white text-[#4a2c20] placeholder-[#4a2c20]/40 shadow-inner">
             <div id="clear-btn" onclick="clearInput()" class="absolute right-12 top-5 cursor-pointer text-gray-400 hover:text-[#4a2c20] hidden font-bold text-xl px-2">✕</div>
@@ -250,9 +358,12 @@
                     <button id="btn-sw-surprends" onclick="relancerIA('prestige')" class="switch-btn" style="border: 1px solid #d4af37; background: linear-gradient(45deg, #2a0303, #4c0519);">💎 Version Prestige</button>
                 </div>
             </div>
+
     </div>
 
-    <footer class="mt-12 mb-8 space-y-4">
+    <button type="button" id="carte-vins-link" class="carte-vins-link mt-2 mb-10 max-w-md w-full" onclick="openWineListPanel()">Carte des vins</button>
+
+    <footer class="mt-0 mb-8 space-y-4">
         <p id="footer-quote" class="gold-gradient text-sm md:text-base font-[Cinzel] uppercase tracking-[0.2em] mb-4 font-bold opacity-90">L'excellence, sans la complexité.</p>
         
         <p id="copyright-text" class="text-[#d4c5a5]/60 text-[10px] uppercase tracking-[0.2em] font-sans">© 2026 Powered by French Sommelier. Tous droits réservés.</p>
@@ -266,6 +377,23 @@
             </div>
         </div>
     </footer>
+
+    <div id="wine-list-panel" class="hidden fixed inset-0 z-[110] flex items-end justify-center sm:items-center p-0 sm:p-4" onclick="if(event.target===this)closeWineListPanel()">
+        <div class="wine-list-sheet bg-[#fffefc] text-[#4a2c20] flex flex-col overflow-hidden border border-[#d4af37]/40" onclick="event.stopPropagation()">
+            <div class="wine-list-handle sm:hidden" aria-hidden="true"></div>
+            <header class="flex flex-shrink-0 items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 border-b border-[#d4af37]/30 bg-[#fdfaef]">
+                <h2 id="wine-list-panel-title" class="font-[Cinzel] text-[0.65rem] sm:text-xs uppercase tracking-[0.18em] text-[#2a1810] pl-0.5 truncate pr-2">Carte des vins</h2>
+                <button type="button" onclick="closeWineListPanel()" class="text-[#4c0519] text-2xl sm:text-3xl font-light leading-none hover:text-[#d4af37] px-1.5 min-w-[2.25rem] min-h-[2.25rem] flex items-center justify-center transition-colors shrink-0" aria-label="Fermer">&times;</button>
+            </header>
+            <div class="wine-filter-bubbles px-2.5 py-2.5 sm:px-3 border-b border-[#d4af37]/12 bg-[#fcfaf6]">
+                <button type="button" class="wine-filter-bubble" data-filter="rouge" onclick="setWineListFilter('rouge')"><span id="wf-label-rouge">Rouge</span></button>
+                <button type="button" class="wine-filter-bubble" data-filter="rose" onclick="setWineListFilter('rose')"><span id="wf-label-rose">Rosé</span></button>
+                <button type="button" class="wine-filter-bubble" data-filter="blanc" onclick="setWineListFilter('blanc')"><span id="wf-label-blanc">Blanc</span></button>
+                <button type="button" class="wine-filter-bubble" data-filter="autre" onclick="setWineListFilter('autre')"><span id="wf-label-autre">Autres</span></button>
+            </div>
+            <div id="wine-list-inner" class="flex-1 min-h-0 wine-list-scroll wine-carte-scroll px-3 py-2 sm:px-4 sm:py-3"></div>
+        </div>
+    </div>
 
     <div id="menu-modal" class="hidden fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 modal-overlay">
         <div class="bg-[#2c1a12] border-2 border-[#d4af37] rounded-2xl w-full max-w-md h-[85vh] flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.8)]">
@@ -305,6 +433,29 @@
                     <p id="legal-privacy" class="italic text-[13px] sm:text-sm leading-relaxed text-[#e8dcc8]/95 font-light tracking-wide font-[Montserrat]"></p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="wine-flash-modal" class="hidden fixed inset-0 z-[120] wine-flash-overlay modal-overlay flex items-center justify-center p-3 sm:p-4" onclick="if(event.target===this)closeWineFlashModal()">
+        <div class="bg-[#fffefc] border-2 border-[#d4af37] rounded-xl sm:rounded-2xl w-full max-w-[min(92vw,22rem)] max-h-[min(78vh,28rem)] sm:max-h-[min(85vh,32rem)] overflow-y-auto shadow-[0_0_50px_rgba(0,0,0,0.55)] relative p-4 sm:p-7 text-left" onclick="event.stopPropagation()">
+            <button type="button" onclick="closeWineFlashModal()" class="absolute top-3 right-3 sm:top-4 sm:right-4 text-[#4c0519] text-2xl sm:text-3xl font-light hover:text-[#d4af37] leading-none transition-colors" aria-label="Fermer">&times;</button>
+            <h3 id="wine-flash-name" class="gold-gradient font-bold text-base sm:text-lg md:text-xl font-[Cinzel] uppercase tracking-[0.1em] mb-2 pr-9 sm:pr-10 leading-snug"></h3>
+            <p id="wine-flash-sub" class="text-xs font-[Montserrat] text-[#6b5344] tracking-wide mb-5 pr-10"></p>
+            <div class="space-y-5 text-[#4a2c20]">
+                <div>
+                    <p id="wine-flash-aromas-label" class="text-[0.65rem] font-[Montserrat] font-bold uppercase tracking-[0.2em] text-[#800020] mb-2"></p>
+                    <p id="wine-flash-aromas" class="text-sm font-[Montserrat] leading-relaxed"></p>
+                </div>
+                <div>
+                    <p id="wine-flash-profile-label" class="text-[0.65rem] font-[Montserrat] font-bold uppercase tracking-[0.2em] text-[#800020] mb-2"></p>
+                    <div id="wine-flash-gauges" class="space-y-2"></div>
+                </div>
+                <div class="pt-3 border-t border-[#d4af37]/25">
+                    <p id="wine-flash-ideal-label" class="text-[0.65rem] font-[Montserrat] font-bold uppercase tracking-[0.2em] text-[#800020] mb-2"></p>
+                    <p id="wine-flash-ideal" class="text-sm font-[Montserrat] italic leading-relaxed text-[#5c3d2e]"></p>
+                </div>
+            </div>
+            <button type="button" onclick="closeWineFlashModal()" id="wine-flash-close-btn" class="mt-8 w-full gold-btn py-3.5 rounded-xl font-[Cinzel] text-sm uppercase tracking-[0.2em] text-white">Fermer</button>
         </div>
     </div>
 
@@ -434,6 +585,34 @@
                 legal_title: "Mentions Légales", legal_editor: "Éditeur", legal_contact: "Contact", legal_host: "Hébergement", legal_analytics: "",
                 legal_sulfites: "Nos vins contiennent des sulfites. Pour toute autre allergie ou intolérance, merci de vous rapprocher de notre équipe en salle",
                 legal_privacy: "L'application French Sommelier ne dépose aucun cookie traceur ou publicitaire sur votre appareil et respecte votre vie privée.",
+                carte_vins_link: "Carte des vins",
+                wine_list_title: "Carte des vins",
+                filter_rouge: "Rouge",
+                filter_rose: "Rosé",
+                filter_blanc: "Blanc",
+                filter_autres: "Autres",
+                wine_empty_filter: "Aucun vin dans cette sélection.",
+                carte_empty: "Aucun vin disponible pour le moment.",
+                wine_aromas_label: "Arômes principaux",
+                wine_profile_label: "Profil",
+                wine_ideal_label: "Idéal avec…",
+                wine_close: "Fermer",
+                wine_power: "Puissance",
+                wine_fruit: "Fruité",
+                wine_derived: {
+                    rouge: { badge: "Corsé & Charpenté", aromas: "Fruits noirs mûrs, épices douces et notes boisées.", ideal: "viandes rouges, gibiers, fromages affinés, plats en sauce.", power: 4, fruit: 3 },
+                    blanc: { badge: "Frais & Minéral", aromas: "Agrumes, fleurs blanches et belle minéralité.", ideal: "poissons, fruits de mer, volaille, fromages de chèvre.", power: 2, fruit: 4 },
+                    rose: { badge: "Léger & Fruité", aromas: "Fruits rouges frais, rose, notes florales délicates.", ideal: "grillades, salades gourmandes, cuisine méditerranéenne.", power: 2, fruit: 4 },
+                    bulle: { badge: "Fin & Pétillant", aromas: "Pomme croquante, brioche fine et bulles élégantes.", ideal: "apéritifs, huîtres, desserts aux fruits secs.", power: 2, fruit: 3 },
+                    autre: { badge: "Élégant & Complexe", aromas: "Bouquet affirmé, belle complexité aromatique.", ideal: "apéritifs d'exception, desserts maison, grandes célébrations.", power: 3, fruit: 3 }
+                },
+                wine_badges: {
+                    puissant: "Corsé & Charpenté",
+                    leger: "Léger & Fruité",
+                    mineral: "Frais & Minéral",
+                    doux: "Doux & Rond",
+                    bulle: "Fin & Pétillant"
+                },
                 warning: "L'abus d'alcool est dangereux pour la santé, à consommer avec modération.",
                 quick_actions: [ 
                     { text: "Je cherche un vin Rouge léger", label: "🍷 Rouge Léger" }, 
@@ -451,6 +630,34 @@
                 legal_title: "Legal Notice", legal_editor: "Publisher", legal_contact: "Contact", legal_host: "Hosting", legal_analytics: "This site uses Google Analytics for anonymous audience measurement.",
                 legal_sulfites: "Our wines contain sulfites. For any other allergy or intolerance, please speak to our team in the dining room.",
                 legal_privacy: "The French Sommelier application does not place any tracking or advertising cookies on your device and respects your privacy.",
+                carte_vins_link: "Wine list",
+                wine_list_title: "Wine list",
+                filter_rouge: "Red",
+                filter_rose: "Rosé",
+                filter_blanc: "White",
+                filter_autres: "Other",
+                wine_empty_filter: "No wines in this selection.",
+                carte_empty: "No wines available at the moment.",
+                wine_aromas_label: "Key aromas",
+                wine_profile_label: "Profile",
+                wine_ideal_label: "Ideal with…",
+                wine_close: "Close",
+                wine_power: "Power",
+                wine_fruit: "Fruitiness",
+                wine_derived: {
+                    rouge: { badge: "Bold & Structured", aromas: "Ripe black fruit, soft spice and subtle oak.", ideal: "red meats, game, aged cheeses, rich sauces.", power: 4, fruit: 3 },
+                    blanc: { badge: "Fresh & Mineral", aromas: "Citrus, white flowers and clean minerality.", ideal: "fish, shellfish, poultry, goat cheese.", power: 2, fruit: 4 },
+                    rose: { badge: "Light & Fruity", aromas: "Fresh red berries, rose petals and delicate florals.", ideal: "grilled dishes, salads, Mediterranean cuisine.", power: 2, fruit: 4 },
+                    bulle: { badge: "Fine & Sparkling", aromas: "Crisp apple, brioche and elegant bubbles.", ideal: "aperitifs, oysters, dried-fruit desserts.", power: 2, fruit: 3 },
+                    autre: { badge: "Elegant & Complex", aromas: "A layered bouquet with depth and length.", ideal: "fine dining, celebratory desserts, special occasions.", power: 3, fruit: 3 }
+                },
+                wine_badges: {
+                    puissant: "Bold & Structured",
+                    leger: "Light & Fruity",
+                    mineral: "Fresh & Mineral",
+                    doux: "Sweet & Round",
+                    bulle: "Fine & Sparkling"
+                },
                 warning: "Alcohol abuse is dangerous for your health, consume in moderation.",
                 quick_actions: [ { text: "Light Red Wine", label: "🍷 Light Red" }, { text: "Fruity White Wine", label: "🥂 Fruity White" }, { text: "Rosé", label: "🌸 Rosé" }, { text: "Powerful Red Wine", label: "🍇 Powerful Red" }, { text: "Sweet Wine", label: "🍯 Sweet Wine" }, { text: "Wine by the glass", label: "🍷 By the Glass" } ],
                 sections: { '[DEMANDE]': 'Your meal', '[SUGGESTION]': 'Our Suggestion', '[EXPLICATION]': "Why this choice?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Profile', '[DEGRE]': 'Character', '[AVIS]': 'Rating', '[AVIS_SOMMELIER]': "Sommelier Secret" }
@@ -461,6 +668,34 @@
                 legal_title: "Avisos Legales", legal_editor: "Editor", legal_contact: "Contacto", legal_host: "Alojamiento", legal_analytics: "Este sitio utiliza Google Analytics para medir la audiencia de forma anónima.",
                 legal_sulfites: "Nuestros vinos contienen sulfitos. Para cualquier otra alergia o intolerancia, diríjase a nuestro equipo en sala.",
                 legal_privacy: "La aplicación French Sommelier no instala cookies de rastreo o publicitarias en su dispositivo y respeta su privacidad.",
+                carte_vins_link: "Carta de vinos",
+                wine_list_title: "Carta de vinos",
+                filter_rouge: "Tinto",
+                filter_rose: "Rosado",
+                filter_blanc: "Blanco",
+                filter_autres: "Otros",
+                wine_empty_filter: "No hay vinos en esta selección.",
+                carte_empty: "No hay vinos disponibles por el momento.",
+                wine_aromas_label: "Aromas principales",
+                wine_profile_label: "Perfil",
+                wine_ideal_label: "Ideal con…",
+                wine_close: "Cerrar",
+                wine_power: "Potencia",
+                wine_fruit: "Fruidad",
+                wine_derived: {
+                    rouge: { badge: "Con cuerpo y estructura", aromas: "Frutos negros maduros, especias suaves y notas de madera.", ideal: "carnes rojas, caza, quesos curados, salsas reducidas.", power: 4, fruit: 3 },
+                    blanc: { badge: "Fresco y mineral", aromas: "Cítricos, flores blancas y mineralidad limpia.", ideal: "pescados, mariscos, aves, quesos de cabra.", power: 2, fruit: 4 },
+                    rose: { badge: "Ligero y afrutado", aromas: "Frutos rojos frescos, rosa y flores delicadas.", ideal: "parrilla, ensaladas gourmet, cocina mediterránea.", power: 2, fruit: 4 },
+                    bulle: { badge: "Fino y efervescente", aromas: "Manzana crujiente, brioche y burbujas elegantes.", ideal: "aperitivos, ostras, postres con frutos secos.", power: 2, fruit: 3 },
+                    autre: { badge: "Elegante y complejo", aromas: "Un bouquet amplio con profundidad y persistencia.", ideal: "alta cocina, postres de celebración, ocasiones especiales.", power: 3, fruit: 3 }
+                },
+                wine_badges: {
+                    puissant: "Con cuerpo y estructura",
+                    leger: "Ligero y afrutado",
+                    mineral: "Fresco y mineral",
+                    doux: "Dulce y redondo",
+                    bulle: "Fino y efervescente"
+                },
                 warning: "El abuso de alcohol es peligroso para la salud, consumir con moderación.",
                 quick_actions: [ { text: "Vino tinto ligero", label: "🍷 Tinto Ligero" }, { text: "Vino blanco frutal", label: "🥂 Blanco Frutal" }, { text: "Rosado", label: "🌸 Rosado" }, { text: "Vino tinto potente", label: "🍇 Tinto Potente" }, { text: "Vino dulce", label: "🍯 Vino Dulce" }, { text: "Vino por copa", label: "🍷 Por Copa" } ],
                 sections: { '[DEMANDE]': 'Su pedido', '[SUGGESTION]': 'Nuestra Sugerencia', '[EXPLICATION]': "¿Por qué esta elección?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Perfil', '[DEGRE]': 'Carácter', '[AVIS]': 'Nota', '[AVIS_SOMMELIER]': "El Secreto del Sommelier" }
@@ -489,6 +724,8 @@
         let adminEditingPlats = null;
         let adminEditingVins = null;
         let requestInProgress = false;
+        let wineFlatList = [];
+        let wineListPanelFilter = "rouge";
 
         const menuCategoryLabels = {
             fr: { Entrées: "🫒 Entrées", Plats: "🍽️ Plats", Desserts: "🧀 Desserts" },
@@ -760,6 +997,178 @@
             return div.innerHTML;
         }
 
+        function wineTypeKeyFromCatAndType(cat, typeStr) {
+            const s = ((cat || "") + " " + (typeStr || "")).toLowerCase();
+            if (/(rouge|tinto|red\b)/.test(s)) return "rouge";
+            if (/(blanc|blanco|white\b)/.test(s)) return "blanc";
+            if (/(rosé|rose|rosado)/.test(s)) return "rose";
+            if (/(champagne|crémant|cremant|mousseux|effervescent|bulle|cava|prosecco|sparkling)/.test(s)) return "bulle";
+            return "autre";
+        }
+
+        function wineFilterBucket(cat, typeStr) {
+            const tk = wineTypeKeyFromCatAndType(cat, typeStr);
+            if (tk === "rouge") return "rouge";
+            if (tk === "blanc") return "blanc";
+            if (tk === "rose") return "rose";
+            return "autre";
+        }
+
+        function flattenAllWines() {
+            const out = [];
+            const vins = cachedMenuData && cachedMenuData.carte_des_vins ? cachedMenuData.carte_des_vins : {};
+            Object.keys(vins).forEach((cat) => {
+                (vins[cat] || []).forEach((b) => {
+                    if (b && typeof b === "object") out.push({ wine: b, cat: cat });
+                });
+            });
+            return out;
+        }
+
+        function pickInitialWineFilter() {
+            const all = flattenAllWines();
+            const order = ["rouge", "rose", "blanc", "autre"];
+            for (let i = 0; i < order.length; i++) {
+                const k = order[i];
+                if (all.some(({ wine, cat }) => wineFilterBucket(cat, wine.type) === k)) return k;
+            }
+            return "rouge";
+        }
+
+        function setWineListFilter(key) {
+            wineListPanelFilter = key;
+            document.querySelectorAll("#wine-list-panel .wine-filter-bubble").forEach((btn) => {
+                btn.classList.toggle("active", btn.getAttribute("data-filter") === key);
+            });
+            renderWineList();
+        }
+
+        function renderWineList() {
+            const inner = document.getElementById("wine-list-inner");
+            if (!inner) return;
+            const d = langData[currentLang];
+            wineFlatList = [];
+            const all = flattenAllWines();
+            if (all.length === 0) {
+                inner.innerHTML = `<p class="text-center text-sm text-[#6b5344] font-[Montserrat] py-12 px-2">${escapeHtml(d.carte_empty || "")}</p>`;
+                return;
+            }
+            const filtered = all.filter(({ wine, cat }) => wineFilterBucket(cat, wine.type) === wineListPanelFilter);
+            filtered.sort((a, b) => String(a.wine.nom || "").localeCompare(String(b.wine.nom || ""), undefined, { sensitivity: "base" }));
+            if (filtered.length === 0) {
+                inner.innerHTML = `<p class="text-center text-sm text-[#6b5344] font-[Montserrat] py-12 px-2">${escapeHtml(d.wine_empty_filter || "")}</p>`;
+                return;
+            }
+            let html = "";
+            filtered.forEach(({ wine: b, cat }) => {
+                wineFlatList.push({ wine: b, cat: cat });
+                const idx = wineFlatList.length - 1;
+                const nom = escapeHtml(b.nom || "");
+                const prixRaw = b.prix != null && b.prix !== "" ? b.prix : (b.prix_bouteille != null && b.prix_bouteille !== "" ? b.prix_bouteille : (b.prix_verre || ""));
+                const prix = escapeHtml(prixRaw != null ? String(prixRaw) : "");
+                const sub = [b.domaine, b.annee].filter(Boolean).map((x) => escapeHtml(String(x))).join(" · ");
+                let metaLine = "";
+                if (sub || prix) {
+                    metaLine = `<div class="wine-row-meta text-[0.72rem] mt-1 w-full">`;
+                    if (sub) metaLine += `<span class="opacity-85">${sub}</span>`;
+                    if (prix) metaLine += `<span class="ml-auto opacity-95 font-semibold whitespace-nowrap">${prix}</span>`;
+                    metaLine += `</div>`;
+                }
+                html += `<div class="wine-row" role="button" tabindex="0" onclick="openWineFlashModal(${idx})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openWineFlashModal(${idx});}">` +
+                    `<div class="wine-row-name">${nom}</div>${metaLine}</div>`;
+            });
+            inner.innerHTML = html;
+        }
+
+        function openWineListPanel() {
+            const p = document.getElementById("wine-list-panel");
+            if (!p) return;
+            const data = langData[currentLang];
+            const titleEl = document.getElementById("wine-list-panel-title");
+            if (titleEl) titleEl.textContent = data.wine_list_title || "";
+            document.getElementById("wf-label-rouge").textContent = data.filter_rouge;
+            document.getElementById("wf-label-rose").textContent = data.filter_rose;
+            document.getElementById("wf-label-blanc").textContent = data.filter_blanc;
+            document.getElementById("wf-label-autre").textContent = data.filter_autres;
+            p.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+            wineListPanelFilter = pickInitialWineFilter();
+            setWineListFilter(wineListPanelFilter);
+        }
+
+        function closeWineListPanel() {
+            const p = document.getElementById("wine-list-panel");
+            if (p) p.classList.add("hidden");
+            document.body.style.overflow = "";
+        }
+
+        function pickWineBadge(w, tk, d) {
+            const t = (w.type || "").toLowerCase();
+            const wb = d.wine_badges || {};
+            const def = (d.wine_derived[tk] || d.wine_derived.autre).badge;
+            if (/puissant|corsé|charpenté|tanique|potente|bold|structured|cuerpo/.test(t)) return wb.puissant || def;
+            if (/léger|fruté|fruité|ligero|fruit|light|fresh|afrutado/.test(t)) return wb.leger || def;
+            if (/minéral|mineral|sec\b/.test(t)) return wb.mineral || def;
+            if (/doux|moelleux|sucre|sweet|dulce/.test(t)) return wb.doux || def;
+            if (/effervescent|bulle|champagne|sparkling|cremant|pétillant|petillant|efervescente/.test(t)) return wb.bulle || def;
+            return def;
+        }
+
+        function deriveWineMeta(w, cat) {
+            const d = langData[currentLang];
+            const tk = wineTypeKeyFromCatAndType(cat, w.type);
+            const base = d.wine_derived[tk] || d.wine_derived.autre;
+            let power = base.power;
+            let fruit = base.fruit;
+            const t = (w.type || "").toLowerCase();
+            if (/puissant|corsé|charpenté|tanique|potente/.test(t)) power = Math.min(5, power + 1);
+            if (/léger|ligero|light/.test(t)) power = Math.max(1, power - 1);
+            if (/fruité|fruté|fruit|afrutado/.test(t)) fruit = Math.min(5, fruit + 1);
+            if (/minéral|sec\b|mineral/.test(t)) fruit = Math.max(1, fruit - 1);
+            const badge = pickWineBadge(w, tk, d);
+            return { badge, aromas: base.aromas, ideal: base.ideal, power, fruit };
+        }
+
+        function renderWineGauges(power, fruit) {
+            const d = langData[currentLang];
+            const pw = d.wine_power || "Puissance";
+            const fr = d.wine_fruit || "Fruité";
+            const pPct = Math.round(Math.min(5, Math.max(1, power)) / 5 * 100);
+            const fPct = Math.round(Math.min(5, Math.max(1, fruit)) / 5 * 100);
+            return (
+                `<div class="wine-gauge-row"><span class="text-xs font-[Montserrat] text-[#5c3d2e]">${escapeHtml(pw)}</span><div class="wine-gauge-bar"><div class="wine-gauge-fill" style="width:${pPct}%"></div></div></div>` +
+                `<div class="wine-gauge-row"><span class="text-xs font-[Montserrat] text-[#5c3d2e]">${escapeHtml(fr)}</span><div class="wine-gauge-bar"><div class="wine-gauge-fill" style="width:${fPct}%"></div></div></div>`
+            );
+        }
+
+        function openWineFlashModal(idx) {
+            const wfm = document.getElementById("wine-flash-modal");
+            if (!wfm || !wineFlatList[idx]) return;
+            const { wine: w, cat } = wineFlatList[idx];
+            const d = langData[currentLang];
+            const meta = deriveWineMeta(w, cat);
+            document.getElementById("wine-flash-name").textContent = w.nom || "";
+            const subEl = document.getElementById("wine-flash-sub");
+            if (subEl) {
+                const sub = [w.domaine, w.annee].filter(Boolean).join(" · ");
+                subEl.textContent = sub || "";
+                subEl.style.display = sub ? "block" : "none";
+            }
+            document.getElementById("wine-flash-aromas").textContent = meta.aromas;
+            document.getElementById("wine-flash-ideal").textContent = meta.ideal;
+            document.getElementById("wine-flash-gauges").innerHTML = renderWineGauges(meta.power, meta.fruit);
+            document.getElementById("wine-flash-aromas-label").textContent = d.wine_aromas_label;
+            document.getElementById("wine-flash-profile-label").textContent = d.wine_profile_label;
+            document.getElementById("wine-flash-ideal-label").textContent = d.wine_ideal_label;
+            document.getElementById("wine-flash-close-btn").textContent = d.wine_close;
+            wfm.classList.remove("hidden");
+        }
+
+        function closeWineFlashModal() {
+            const wfm = document.getElementById("wine-flash-modal");
+            if (wfm) wfm.classList.add("hidden");
+        }
+
         function adminAddPlat(cat) {
             const input = document.querySelector(`[data-admin-add-plat="${cat}"]`);
             const v = input && input.value.trim();
@@ -812,6 +1221,8 @@
                 if (data.ok) {
                     await fetchMenu();
                     initMenu();
+                    const wlp = document.getElementById('wine-list-panel');
+                    if (wlp && !wlp.classList.contains('hidden')) renderWineList();
                     alert('Carte enregistrée.');
                 } else {
                     alert('Erreur: ' + (data.error || 'inconnue'));
@@ -886,6 +1297,32 @@
             document.getElementById('legal-sulfites').innerText = data.legal_sulfites;
             document.getElementById('legal-privacy').innerText = data.legal_privacy;
             document.getElementById('tagline').innerText = data.tagline;
+
+            const cvLink = document.getElementById('carte-vins-link');
+            if (cvLink) cvLink.textContent = data.carte_vins_link || '';
+
+            const wlp = document.getElementById('wine-list-panel');
+            if (wlp && !wlp.classList.contains('hidden')) {
+                const t = document.getElementById('wine-list-panel-title');
+                if (t) t.textContent = data.wine_list_title || '';
+                const fr = document.getElementById('wf-label-rouge');
+                const fs = document.getElementById('wf-label-rose');
+                const fb = document.getElementById('wf-label-blanc');
+                const fa = document.getElementById('wf-label-autre');
+                if (fr) fr.textContent = data.filter_rouge;
+                if (fs) fs.textContent = data.filter_rose;
+                if (fb) fb.textContent = data.filter_blanc;
+                if (fa) fa.textContent = data.filter_autres;
+                renderWineList();
+            }
+
+            const wf = document.getElementById('wine-flash-modal');
+            if (wf && !wf.classList.contains('hidden')) {
+                document.getElementById('wine-flash-aromas-label').textContent = data.wine_aromas_label;
+                document.getElementById('wine-flash-profile-label').textContent = data.wine_profile_label;
+                document.getElementById('wine-flash-ideal-label').textContent = data.wine_ideal_label;
+                document.getElementById('wine-flash-close-btn').textContent = data.wine_close;
+            }
             
             initMenu();
             renderQuickActions();
