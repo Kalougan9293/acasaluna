@@ -140,6 +140,7 @@
                                 </div>
                                 <div class="flex flex-col items-end gap-2 text-xs text-slate-400">
                                     <select id="stats-range-select" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                        <option value="last7">7 derniers jours</option>
                                         <option value="last30" selected>30 derniers jours</option>
                                         <option value="all">Depuis le début</option>
                                     </select>
@@ -162,10 +163,10 @@
                                 <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 border border-emerald-500/40 uppercase tracking-[0.18em]">Live</span>
                             </div>
 
-                            <div class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                 <div>
                                     <div class="flex justify-between text-xs mb-1.5">
-                                        <span class="text-slate-200">Vin Rouge</span>
+                                        <span class="text-slate-200">Vin rouge</span>
                                         <span id="trend-rouge-pct" class="text-slate-400">0%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
@@ -175,7 +176,7 @@
 
                                 <div>
                                     <div class="flex justify-between text-xs mb-1.5">
-                                        <span class="text-slate-200">Vin Blanc</span>
+                                        <span class="text-slate-200">Vin blanc</span>
                                         <span id="trend-blanc-pct" class="text-slate-400">0%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
@@ -190,6 +191,36 @@
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
                                         <div id="trend-rose-bar" class="h-full w-[0%] bg-gradient-to-r from-pink-300 to-rose-400"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1.5">
+                                        <span class="text-slate-200">Champagnes &amp; bulles</span>
+                                        <span id="trend-champagne-pct" class="text-slate-400">0%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+                                        <div id="trend-champagne-bar" class="h-full w-[0%] bg-gradient-to-r from-amber-100 to-amber-400"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1.5">
+                                        <span class="text-slate-200">Spiritueux</span>
+                                        <span id="trend-spiritueux-pct" class="text-slate-400">0%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+                                        <div id="trend-spiritueux-bar" class="h-full w-[0%] bg-gradient-to-r from-amber-700 to-amber-900"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1.5">
+                                        <span class="text-slate-200">Autres</span>
+                                        <span id="trend-autres-pct" class="text-slate-400">0%</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+                                        <div id="trend-autres-bar" class="h-full w-[0%] bg-gradient-to-r from-slate-500 to-slate-600"></div>
                                     </div>
                                 </div>
                             </div>
@@ -608,16 +639,22 @@
             const rougePct = document.getElementById('trend-rouge-pct');
             const blancPct = document.getElementById('trend-blanc-pct');
             const rosePct = document.getElementById('trend-rose-pct');
+            const champagnePct = document.getElementById('trend-champagne-pct');
+            const spiritueuxPct = document.getElementById('trend-spiritueux-pct');
+            const autresPct = document.getElementById('trend-autres-pct');
             const rougeBar = document.getElementById('trend-rouge-bar');
             const blancBar = document.getElementById('trend-blanc-bar');
             const roseBar = document.getElementById('trend-rose-bar');
+            const champagneBar = document.getElementById('trend-champagne-bar');
+            const spiritueuxBar = document.getElementById('trend-spiritueux-bar');
+            const autresBar = document.getElementById('trend-autres-bar');
             const rangeSelect = document.getElementById('stats-range-select');
             const range = rangeSelect ? rangeSelect.value : 'last30';
             const topNSelect = document.getElementById('top-searches-topN');
             const topN = topNSelect ? parseInt(topNSelect.value, 10) : 3;
             const clientsRangeLabelEl = document.getElementById('clients-range-label');
             const clientsPeriodSubtitleEl = document.getElementById('clients-period-subtitle');
-            const rangeLabel = range === 'all' ? 'Depuis le début' : '30 derniers jours';
+            const rangeLabel = range === 'all' ? 'Depuis le début' : (range === 'last7' ? '7 derniers jours' : '30 derniers jours');
             if (clientsRangeLabelEl) clientsRangeLabelEl.textContent = rangeLabel;
             if (clientsPeriodSubtitleEl) clientsPeriodSubtitleEl.textContent = 'Basé sur la période sélectionnée';
             try {
@@ -629,7 +666,7 @@
                 if (clientsEl) clientsEl.textContent = Math.round(clientsTotal).toLocaleString('fr-FR');
                 const topSearches = Array.isArray(data.top_searches) ? data.top_searches : [];
                 const totalSuggestions = typeof data.total_suggestions === 'number' ? data.total_suggestions : 0;
-                const tendances = data && data.tendances ? data.tendances : { Rouge: 0, Blanc: 0, 'Rosé': 0 };
+                const tendances = data && data.tendances ? data.tendances : { Rouge: 0, Blanc: 0, 'Rosé': 0, ChampagneBulles: 0, Spiritueux: 0, Autres: 0 };
                 const live = Array.isArray(data.live_log) ? data.live_log : [];
                 const errors = Array.isArray(data.error_log) ? data.error_log : [];
 
@@ -669,12 +706,21 @@
                 const r = Number(tendances.Rouge || 0);
                 const b = Number(tendances.Blanc || 0);
                 const ro = Number(tendances['Rosé'] || 0);
+                const ch = Number(tendances.ChampagneBulles || 0);
+                const sp = Number(tendances.Spiritueux || 0);
+                const au = Number(tendances.Autres || 0);
                 rougePct.textContent = `${r}%`;
                 blancPct.textContent = `${b}%`;
                 rosePct.textContent = `${ro}%`;
+                if (champagnePct) champagnePct.textContent = `${ch}%`;
+                if (spiritueuxPct) spiritueuxPct.textContent = `${sp}%`;
+                if (autresPct) autresPct.textContent = `${au}%`;
                 rougeBar.style.width = `${Math.max(0, Math.min(100, r))}%`;
                 blancBar.style.width = `${Math.max(0, Math.min(100, b))}%`;
                 roseBar.style.width = `${Math.max(0, Math.min(100, ro))}%`;
+                if (champagneBar) champagneBar.style.width = `${Math.max(0, Math.min(100, ch))}%`;
+                if (spiritueuxBar) spiritueuxBar.style.width = `${Math.max(0, Math.min(100, sp))}%`;
+                if (autresBar) autresBar.style.width = `${Math.max(0, Math.min(100, au))}%`;
 
                 if (live.length === 0) {
                     liveLogEl.textContent = '[INIT] Aucun historique pour le moment.';
@@ -754,65 +800,115 @@
             const rangeSelectEl = document.getElementById('stats-range-select');
             const topNSelectEl = document.getElementById('top-searches-topN');
             const range = rangeSelectEl ? rangeSelectEl.value : 'last30';
-            const topN = topNSelectEl ? parseInt(topNSelectEl.value, 10) : 3;
+            const userTopNRaw = topNSelectEl ? parseInt(topNSelectEl.value, 10) : 3;
+            const userTopN = [3, 5, 10].includes(userTopNRaw) ? userTopNRaw : 3;
+            /** API 3/5/10 : on demande au moins 5 lignes pour pouvoir afficher jusqu’à 5 puces (Live / erreurs) dans le rapport. */
+            const fetchTopN = userTopN === 3 ? 5 : userTopN;
 
             const sep = restoQuery ? '&' : '?';
-            const statsUrl = '/api/admin/stats' + restoQuery + sep + 'range=' + encodeURIComponent(range) + '&topN=' + encodeURIComponent(topN);
-            const menuUrl = '/api/admin/menu' + restoQuery;
+            const statsUrl = '/api/admin/stats' + restoQuery + sep + 'range=' + encodeURIComponent(range) + '&topN=' + encodeURIComponent(fetchTopN);
 
-            const [statsRes, menuRes] = await Promise.all([fetch(statsUrl), fetch(menuUrl)]);
+            const statsRes = await fetch(statsUrl);
             if (!statsRes.ok) throw new Error('HTTP stats ' + statsRes.status);
-            if (!menuRes.ok) throw new Error('HTTP menu ' + menuRes.status);
 
             const statsData = await statsRes.json();
-            const menuData = await menuRes.json();
 
             const clientsTotal = typeof statsData.clients_total_range === 'number' ? statsData.clients_total_range : 0;
             const topSearches = Array.isArray(statsData.top_searches) ? statsData.top_searches : [];
             const totalSuggestions = typeof statsData.total_suggestions === 'number' ? statsData.total_suggestions : 0;
-            const tendances = statsData && statsData.tendances ? statsData.tendances : { Rouge: 0, Blanc: 0, 'Rosé': 0 };
+            const tendances = statsData && statsData.tendances ? statsData.tendances : { Rouge: 0, Blanc: 0, 'Rosé': 0, ChampagneBulles: 0, Spiritueux: 0, Autres: 0 };
             const topLiveDemands = Array.isArray(statsData.top_live_demands) ? statsData.top_live_demands : [];
-            const topErrorReasons = Array.isArray(statsData.top_error_reasons) ? statsData.top_error_reasons : [];
+            const topErrorQuestions = Array.isArray(statsData.top_error_questions) ? statsData.top_error_questions : [];
+            const REPORT_TOP_MAX = 5;
+            const topLiveDemandsReport = topLiveDemands.slice(0, REPORT_TOP_MAX);
+            const topErrorQuestionsReport = topErrorQuestions.slice(0, REPORT_TOP_MAX);
+            const topSearchesReport = topSearches.slice(0, userTopN);
             const liveLog = Array.isArray(statsData.live_log) ? statsData.live_log : [];
             const errorLog = Array.isArray(statsData.error_log) ? statsData.error_log : [];
             const totalErrors = typeof statsData.total_errors === 'number' ? statsData.total_errors : 0;
             const lastUpdated = statsData.last_updated || null;
+            const apiRange = statsData.range || range;
+            const rangeLabelFr = apiRange === 'all' ? 'depuis le début' : (apiRange === 'last7' ? '7 derniers jours' : '30 derniers jours');
+            const cw = statsData.chart_weekday || { labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'], counts: [0, 0, 0, 0, 0, 0, 0] };
+            const cm = Array.isArray(statsData.chart_monthly) ? statsData.chart_monthly : [];
+
+            function formatMonthFr(key) {
+                if (!key || typeof key !== 'string') return '';
+                const parts = key.split('-');
+                if (parts.length < 2) return key;
+                const y = parseInt(parts[0], 10);
+                const mo = parseInt(parts[1], 10);
+                if (Number.isNaN(y) || Number.isNaN(mo)) return key;
+                const d = new Date(Date.UTC(y, mo - 1, 1));
+                return d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+            }
+
+            const countsW = Array.isArray(cw.counts) ? cw.counts.map((x) => Number(x || 0)) : [0, 0, 0, 0, 0, 0, 0];
+            const labelsW = Array.isArray(cw.labels) && cw.labels.length === 7 ? cw.labels : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+            const maxW = Math.max(1, ...countsW);
+            const weekdayBarsHtml = labelsW.map((lab, i) => {
+                const c = countsW[i] || 0;
+                const barPx = maxW ? Math.max(c > 0 ? 6 : 0, (c / maxW) * 120) : 0;
+                return `<div class="flex flex-col items-center gap-1 flex-1 min-w-[2rem]">
+                    <div class="w-full max-w-[2.75rem] mx-auto rounded-t bg-gradient-to-t from-amber-700 to-amber-400" style="height:${barPx}px"></div>
+                    <span class="text-[10px] text-slate-400">${escapeHtml(lab)}</span>
+                    <span class="text-[11px] font-semibold text-amber-200">${c}</span>
+                </div>`;
+            }).join('');
+
+            const maxM = cm.length ? Math.max(1, ...cm.map((m) => Number(m.count || 0))) : 1;
+            const monthlyBarsHtml = cm.length
+                ? cm.map((m) => {
+                    const c = Number(m.count || 0);
+                    const barPx = maxM ? Math.max(c > 0 ? 4 : 0, (c / maxM) * 100) : 0;
+                    const lab = formatMonthFr(m.month);
+                    return `<div class="flex flex-col items-center gap-1 flex-1 min-w-[2.75rem]">
+                        <div class="w-full max-w-[3rem] rounded-t bg-gradient-to-t from-slate-600 to-slate-400" style="height:${barPx}px"></div>
+                        <span class="text-[10px] text-slate-400 whitespace-nowrap">${escapeHtml(lab)}</span>
+                        <span class="text-[11px] font-semibold text-slate-200">${c}</span>
+                    </div>`;
+                }).join('')
+                : '<div class="text-slate-500 text-sm py-4">Pas encore assez de données pour un historique mensuel.</div>';
 
             const denom = totalSuggestions || topSearches.reduce((acc, it) => acc + (it.count || 0), 0) || 1;
+            const denomLive = topLiveDemandsReport.reduce((acc, it) => acc + (it.count || 0), 0) || 1;
+            const denomErrQ = topErrorQuestionsReport.reduce((acc, it) => acc + (it.count || 0), 0) || totalErrors || 1;
 
-            const topSearchesHtml = topSearches.length
+            const topSearchesHtml = topSearchesReport.length
                 ? `<ol class="list-decimal list-inside space-y-1 text-sm text-slate-200">
-                    ${topSearches.map((it, idx) => {
+                    ${topSearchesReport.map((it) => {
                         const pct = Math.round(((it.count || 0) / denom) * 100);
-                        return `<li>${idx + 1}. <span class="font-semibold text-slate-100">${escapeHtml(it.vin)}</span> <span class="text-emerald-300">(${pct}%)</span></li>`;
+                        return `<li><span class="font-semibold text-slate-100">${escapeHtml(it.vin)}</span> <span class="text-emerald-300">(${pct}%)</span></li>`;
                     }).join('')}
                 </ol>`
                 : `<div class="text-slate-400">Aucune recherche</div>`;
 
-            const topLiveDemandsHtml = topLiveDemands.length
+            const topLiveDemandsHtml = topLiveDemandsReport.length
                 ? `<ol class="list-decimal list-inside space-y-1 text-sm text-slate-200">
-                    ${topLiveDemands.map((it, idx) => {
-                        const pct = Math.round(((it.count || 0) / (denom || 1)) * 100);
-                        return `<li>${idx + 1}. <span class="font-semibold text-slate-100">${escapeHtml(it.question || '')}</span> <span class="text-emerald-300">(${pct}%)</span></li>`;
+                    ${topLiveDemandsReport.map((it) => {
+                        const pct = Math.round(((it.count || 0) / denomLive) * 100);
+                        return `<li><span class="font-semibold text-slate-100">${escapeHtml(it.question || '')}</span> <span class="text-emerald-300">(${pct}%)</span></li>`;
                     }).join('')}
                 </ol>`
                 : `<div class="text-slate-400">Aucune demande (live)</div>`;
 
-            const topErrorReasonsHtml = topErrorReasons.length
+            const topErrorQuestionsHtml = topErrorQuestionsReport.length
                 ? `<ol class="list-decimal list-inside space-y-1 text-sm text-rose-200">
-                    ${topErrorReasons.map((it, idx) => {
-                        const denomErr = totalErrors || topErrorReasons.reduce((acc, x) => acc + (x.count || 0), 0) || 1;
-                        const pct = Math.round(((it.count || 0) / denomErr) * 100);
-                        return `<li>${idx + 1}. <span class="font-semibold text-rose-100">${escapeHtml(it.message || '')}</span> <span class="text-rose-300">(${pct}%)</span></li>`;
+                    ${topErrorQuestionsReport.map((it) => {
+                        const pct = Math.round(((it.count || 0) / denomErrQ) * 100);
+                        return `<li><span class="font-semibold text-rose-100">${escapeHtml(it.question || '')}</span> <span class="text-rose-300">(${pct}%)</span></li>`;
                     }).join('')}
                 </ol>`
-                : `<div class="text-rose-300/70">Aucune raison pour le moment</div>`;
+                : `<div class="text-rose-300/70">Aucune demande en erreur sur cette période</div>`;
 
             const trendsHtml = `
                 <div class="space-y-2 text-sm text-slate-200">
-                    <div><span class="text-slate-400">Rouge</span> : <span class="font-semibold">${escapeHtml(String(tendances.Rouge || 0))}%</span></div>
-                    <div><span class="text-slate-400">Blanc</span> : <span class="font-semibold">${escapeHtml(String(tendances.Blanc || 0))}%</span></div>
+                    <div><span class="text-slate-400">Vin rouge</span> : <span class="font-semibold">${escapeHtml(String(tendances.Rouge || 0))}%</span></div>
+                    <div><span class="text-slate-400">Vin blanc</span> : <span class="font-semibold">${escapeHtml(String(tendances.Blanc || 0))}%</span></div>
                     <div><span class="text-slate-400">Rosé</span> : <span class="font-semibold">${escapeHtml(String(tendances['Rosé'] || 0))}%</span></div>
+                    <div><span class="text-slate-400">Champagnes &amp; bulles</span> : <span class="font-semibold">${escapeHtml(String(tendances.ChampagneBulles || 0))}%</span></div>
+                    <div><span class="text-slate-400">Spiritueux</span> : <span class="font-semibold">${escapeHtml(String(tendances.Spiritueux || 0))}%</span></div>
+                    <div><span class="text-slate-400">Autres</span> : <span class="font-semibold">${escapeHtml(String(tendances.Autres || 0))}%</span></div>
                 </div>`;
 
             const liveHtml = liveLog.length
@@ -842,89 +938,84 @@
                 </div>`
                 : `<div class="text-slate-400">Aucune erreur</div>`;
 
-            // Menu
-            const cartePlats = menuData && menuData.carte_des_plats ? menuData.carte_des_plats : { Entrées: [], Plats: [], Desserts: [] };
-            const carteVins = menuData && menuData.carte_des_vins ? menuData.carte_des_vins : {};
+            const menuDiff = statsData.menu_diff && typeof statsData.menu_diff === 'object' ? statsData.menu_diff : null;
+            const diffTs = menuDiff && menuDiff.ts ? formatDateTime(menuDiff.ts) : null;
+            const platsAdded = menuDiff && menuDiff.plats && Array.isArray(menuDiff.plats.added) ? menuDiff.plats.added : [];
+            const platsRemoved = menuDiff && menuDiff.plats && Array.isArray(menuDiff.plats.removed) ? menuDiff.plats.removed : [];
+            const vinsAdded = menuDiff && menuDiff.vins && Array.isArray(menuDiff.vins.added) ? menuDiff.vins.added : [];
+            const vinsRemoved = menuDiff && menuDiff.vins && Array.isArray(menuDiff.vins.removed) ? menuDiff.vins.removed : [];
 
-            function normalizePlat(it) {
-                if (!it) return null;
-                if (typeof it === 'string') return { nom: it, info: '' };
-                const nom = (it.nom || it.name || '').toString().trim();
-                const info = (it.info || it.description || '').toString().trim();
-                if (!nom) return null;
-                return { nom, info };
-            }
-
-            const platsHtml = `
-                <div class="space-y-4">
-                    ${['Entrées', 'Plats', 'Desserts'].map(cat => {
-                        const arr = Array.isArray(cartePlats[cat]) ? cartePlats[cat] : [];
-                        const items = arr.map(normalizePlat).filter(Boolean).map(p => {
-                            return `<li class="mb-1">
-                                <span class="font-semibold">${escapeHtml(p.nom)}</span>${
-                                    p.info ? ` — <span class="text-slate-300">${escapeHtml(p.info)}</span>` : ''
-                                }
-                            </li>`;
-                        }).join('');
-                        return `<div class="border border-white/10 rounded-xl p-3">
-                            <div class="text-sm uppercase tracking-[0.12em] text-amber-300/80 mb-2">${escapeHtml(cat)}</div>
-                            ${
-                                items ? `<ul class="list-disc list-inside text-sm text-slate-200">${items}</ul>` : `<div class="text-slate-500">Aucun plat</div>`
-                            }
-                        </div>`;
-                    }).join('')}
+            const platsHtml = !menuDiff
+                ? `<div class="text-slate-400 text-sm">Aucune sauvegarde de carte enregistrée — enregistrez la carte depuis l’admin pour voir les ajouts et suppressions.</div>`
+                : `<div class="text-xs text-slate-500 mb-3">${diffTs ? `Dernière sauvegarde analysée : <span class="text-slate-300">${escapeHtml(diffTs)}</span>` : ''}</div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="border border-emerald-500/20 rounded-xl p-3 bg-emerald-950/20">
+                        <div class="text-xs uppercase tracking-[0.15em] text-emerald-300 mb-2">Nouveautés (plats)</div>
+                        ${
+                            platsAdded.length
+                                ? `<ul class="list-disc list-inside text-sm text-slate-200 space-y-1">${platsAdded.map(p => `<li><span class="text-slate-400 text-[11px]">${escapeHtml(p.categorie || '')}</span> — ${escapeHtml(p.nom || '')}</li>`).join('')}</ul>`
+                                : `<div class="text-slate-500 text-sm">Aucun ajout</div>`
+                        }
+                    </div>
+                    <div class="border border-rose-500/20 rounded-xl p-3 bg-rose-950/20">
+                        <div class="text-xs uppercase tracking-[0.15em] text-rose-300 mb-2">Supprimés (plats)</div>
+                        ${
+                            platsRemoved.length
+                                ? `<ul class="list-disc list-inside text-sm text-slate-200 space-y-1">${platsRemoved.map(p => `<li><span class="text-slate-400 text-[11px]">${escapeHtml(p.categorie || '')}</span> — ${escapeHtml(p.nom || '')}</li>`).join('')}</ul>`
+                                : `<div class="text-slate-500 text-sm">Aucune suppression</div>`
+                        }
+                    </div>
                 </div>`;
 
-            const vinsHtml = `
-                <div class="space-y-4">
-                    ${Object.entries(carteVins || {}).map(([cat, arr]) => {
-                        const wines = Array.isArray(arr) ? arr : [];
-                        const items = wines.map(w => {
-                            const nom = w && (w.nom || w.name) ? (w.nom || w.name).toString().trim() : '';
-                            if (!nom) return '';
-                            const domaine = w && w.domaine ? w.domaine.toString().trim() : '';
-                            const annee = w && w.annee ? w.annee.toString().trim() : '';
-                            const prixBouteille = w && w.prix_bouteille ? w.prix_bouteille.toString().trim() : '';
-                            const prixVerre = w && w.prix_verre ? w.prix_verre.toString().trim() : '';
-                            const type = w && w.type ? w.type.toString().trim() : '';
-                            const pousser = w && w.pousser ? 'Oui' : 'Non';
-                            return `<li class="mb-3">
-                                <div class="font-semibold text-slate-100">${escapeHtml(nom)}</div>
-                                <div class="text-sm text-slate-300">
-                                    ${domaine ? `Domaine : ${escapeHtml(domaine)} ` : ''}
-                                    ${annee ? `• Année : ${escapeHtml(annee)} ` : ''}
-                                    ${type ? `• Type : ${escapeHtml(type)} ` : ''}
-                                    ${prixBouteille ? `• Prix bouteille : ${escapeHtml(prixBouteille)} ` : ''}
-                                    ${prixVerre ? `• Prix verre : ${escapeHtml(prixVerre)} ` : ''}
-                                    • [⭐ À POUSSER] : ${escapeHtml(pousser)}
-                                </div>
-                            </li>`;
-                        }).filter(Boolean).join('');
-                        return `<div class="border border-white/10 rounded-xl p-3">
-                            <div class="text-sm uppercase tracking-[0.12em] text-amber-300/80 mb-2">${escapeHtml(cat)}</div>
-                            ${
-                                items ? `<ul class="list-none text-sm text-slate-200">${items}</ul>` : `<div class="text-slate-500">Aucun vin</div>`
-                            }
-                        </div>`;
-                    }).join('')}
+            const vinsHtml = !menuDiff
+                ? `<div class="text-slate-400 text-sm">Aucune sauvegarde de carte enregistrée — enregistrez la carte depuis l’admin pour voir les ajouts et suppressions.</div>`
+                : `<div class="text-xs text-slate-500 mb-3">${diffTs ? `Dernière sauvegarde analysée : <span class="text-slate-300">${escapeHtml(diffTs)}</span>` : ''}</div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="border border-emerald-500/20 rounded-xl p-3 bg-emerald-950/20">
+                        <div class="text-xs uppercase tracking-[0.15em] text-emerald-300 mb-2">Vins ajoutés</div>
+                        ${
+                            vinsAdded.length
+                                ? `<ul class="list-disc list-inside text-sm text-slate-200 space-y-1">${vinsAdded.map(w => `<li><span class="text-slate-400 text-[11px]">${escapeHtml(w.categorie || '')}</span> — ${escapeHtml(w.nom || '')}</li>`).join('')}</ul>`
+                                : `<div class="text-slate-500 text-sm">Aucun ajout</div>`
+                        }
+                    </div>
+                    <div class="border border-rose-500/20 rounded-xl p-3 bg-rose-950/20">
+                        <div class="text-xs uppercase tracking-[0.15em] text-rose-300 mb-2">Vins retirés</div>
+                        ${
+                            vinsRemoved.length
+                                ? `<ul class="list-disc list-inside text-sm text-slate-200 space-y-1">${vinsRemoved.map(w => `<li><span class="text-slate-400 text-[11px]">${escapeHtml(w.categorie || '')}</span> — ${escapeHtml(w.nom || '')}</li>`).join('')}</ul>`
+                                : `<div class="text-slate-500 text-sm">Aucune suppression</div>`
+                        }
+                    </div>
                 </div>`;
-
-            const configHtml = menuData && menuData.config
-                ? `<div class="border border-white/10 rounded-xl p-4 bg-black/20">
-                    <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-2">Config (tenant)</div>
-                    <pre class="whitespace-pre-wrap break-words p-3 text-[12px] text-slate-200">${escapeHtml(JSON.stringify(menuData.config, null, 2))}</pre>
-                </div>`
-                : '';
 
             contentEl.innerHTML = `
                 <div class="space-y-6">
                     <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-2">Résumé</div>
-                        <div class="text-sm text-slate-200 space-y-1">
-                            <div>Clients conseillés : <span class="font-semibold">${escapeHtml(String(clientsTotal))}</span></div>
-                            <div>Recherches (total) : <span class="font-semibold">${escapeHtml(String(totalSuggestions))}</span></div>
-                            <div>Erreurs (total) : <span class="font-semibold">${escapeHtml(String(totalErrors))}</span></div>
-                            <div>Dernière mise à jour : <span class="font-semibold">${escapeHtml(lastUpdated ? formatDateTime(lastUpdated) : '—')}</span></div>
+                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-3">Vue d’ensemble</div>
+                        <div class="flex flex-wrap items-baseline gap-2 gap-y-1 mb-1">
+                            <span class="text-4xl font-bold text-amber-300">${escapeHtml(String(clientsTotal))}</span>
+                            <span class="text-sm text-slate-400">clients conseillés</span>
+                            <span class="text-xs text-slate-500">(${escapeHtml(rangeLabelFr)})</span>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-5">
+                            <div>
+                                <div class="text-xs font-semibold text-slate-300 mb-0.5">Jour de la semaine le plus actif</div>
+                                <p class="text-[10px] text-slate-500 mb-3">Répartition des demandes (live + erreurs) sur la période sélectionnée : <span class="text-slate-400">${escapeHtml(rangeLabelFr)}</span>.</p>
+                                <div class="flex items-end gap-2 min-h-[9.5rem] border-b border-white/10 pb-2">${weekdayBarsHtml}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-semibold text-slate-300 mb-0.5">Tendance mensuelle</div>
+                                <p class="text-[10px] text-slate-500 mb-3">Volume de demandes mois par mois (historique complet, jusqu’à 24 mois) pour visualiser la progression.</p>
+                                <div class="overflow-x-auto pb-1">
+                                    <div class="flex items-end gap-2 min-h-[7.5rem] min-w-max border-b border-white/10 pb-2">${monthlyBarsHtml}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-5 pt-4 border-t border-white/10 text-sm text-slate-200 space-y-1">
+                            <div>Recherches (vins suggérés, cumul) : <span class="font-semibold">${escapeHtml(String(totalSuggestions))}</span></div>
+                            <div>Erreurs / refus (période) : <span class="font-semibold">${escapeHtml(String(totalErrors))}</span></div>
+                            <div>Dernière mise à jour des stats : <span class="font-semibold">${escapeHtml(lastUpdated ? formatDateTime(lastUpdated) : '—')}</span></div>
                         </div>
                     </div>
 
@@ -936,7 +1027,7 @@
                     <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
                         <div class="flex items-baseline justify-between gap-4 mb-3">
                             <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80">Top des recherches</div>
-                            <div class="text-xs text-slate-500">topN=${escapeHtml(String(topN))}</div>
+                            <div class="text-xs text-slate-500">topN=${escapeHtml(String(userTopN))}</div>
                         </div>
                         ${topSearchesHtml}
                     </div>
@@ -957,19 +1048,20 @@
                     </div>
 
                     <div class="border border-rose-500/15 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-rose-300 mb-3">Top raisons de refus</div>
-                        ${topErrorReasonsHtml}
+                        <div class="text-xs uppercase tracking-[0.25em] text-rose-300 mb-3">Top demandes (erreurs / refus)</div>
+                        <p class="text-[11px] text-slate-500 mb-2">Les questions les plus fréquentes ayant généré une erreur ou un refus (même logique que « Top demandes (Live) »).</p>
+                        ${topErrorQuestionsHtml}
                     </div>
 
-                    ${configHtml}
-
                     <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-3">Carte des Plats</div>
+                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-1">Carte des plats — modifications</div>
+                        <p class="text-[11px] text-slate-500 mb-3">Uniquement les entrées / plats / desserts ajoutés ou retirés lors de la dernière sauvegarde.</p>
                         ${platsHtml}
                     </div>
 
                     <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-3">Carte des Vins</div>
+                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-1">Carte des vins — modifications</div>
+                        <p class="text-[11px] text-slate-500 mb-3">Uniquement les bouteilles ajoutées ou retirées lors de la dernière sauvegarde (horodatage = dernière enregistrement).</p>
                         ${vinsHtml}
                     </div>
                 </div>

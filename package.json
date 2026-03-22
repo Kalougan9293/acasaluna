@@ -4,7 +4,8 @@
   "description": "Mon Sommelier IA",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node tests/wine-match.test.cjs"
   },
   "dependencies": {
     "@mistralai/mistralai": "^1.11.0",

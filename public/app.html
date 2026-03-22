@@ -1359,24 +1359,27 @@
         function clearInput() { input.value = ''; clearBtn.style.display = 'none'; input.focus(); }
 
         function relancerIA(type) {
-            let complement = "";
+            /* Reprendre la demande initiale : sinon l'API ne reçoit que le complément et l'IA peut « oublier » le repas ou le type de vin. */
+            const baseQ = (input.value && input.value.trim()) ? input.value.trim() : (typeof lastQuestionAsked === 'string' ? lastQuestionAsked.trim() : '');
+            let suffix = '';
             if (currentLang === 'fr') {
-                if (type === 'similaire') complement = " (Propose-moi une autre suggestion, un Autre choix)";
-                if (type === 'rouge') complement = " (Je préfère un vin Rouge avec ce plat)";
-                if (type === 'blanc') complement = " (Je préfère un vin Blanc avec ce plat)";
-                if (type === 'prestige') complement = " (Je veux une Version Prestige. Propose-moi le meilleur vin, le plus haut de gamme pour ce plat)";
+                if (type === 'similaire') suffix = ' (Propose-moi une autre suggestion : une autre bouteille, mais toujours du même type que ma demande initiale — si j\'avais demandé un vin rouge, reste sur un rouge ; un blanc sur un blanc ; un vin doux ou liquoreux et qu\'il n\'y a pas d\'autre choix cohérent sur la carte, indique-le honnêtement et repropose la même suggestion ou la meilleure approximation réaliste.)';
+                if (type === 'rouge') suffix = ' (Je préfère un vin Rouge avec ce plat)';
+                if (type === 'blanc') suffix = ' (Je préfère un vin Blanc avec ce plat)';
+                if (type === 'prestige') suffix = ' (Je veux une Version Prestige. Propose-moi le meilleur vin, le plus haut de gamme pour ce plat)';
             } else if (currentLang === 'en') {
-                if (type === 'similaire') complement = " (Give me another suggestion)";
-                if (type === 'rouge') complement = " (I prefer Red wine)";
-                if (type === 'blanc') complement = " (I prefer White wine)";
-                if (type === 'prestige') complement = " (I want a Prestige Version. Recommend the best premium wine)";
+                if (type === 'similaire') suffix = ' (Give me another suggestion: a different bottle, but stay on the SAME wine type as my original request — if I asked for red, stay red; white stays white; if I asked for sweet and there is no other suitable bottle on the list, say so honestly and propose the same wine again or the closest honest option.)';
+                if (type === 'rouge') suffix = ' (I prefer Red wine with this meal)';
+                if (type === 'blanc') suffix = ' (I prefer White wine with this meal)';
+                if (type === 'prestige') suffix = ' (I want a Prestige Version. Recommend the best premium wine)';
             } else {
-                if (type === 'similaire') complement = " (Dame otra sugerencia)";
-                if (type === 'rouge') complement = " (Prefiero vino Tinto)";
-                if (type === 'blanc') complement = " (Prefiero vino Blanco)";
-                if (type === 'prestige') complement = " (Quiero una Versión Prestigio. Recomienda el mejor vino premium)";
+                if (type === 'similaire') suffix = ' (Dame otra sugerencia: otra botella, pero del MISMO tipo que mi petición inicial — si pedí tinto, sigue en tinto; blanco en blanco; si pedí dulce y no hay otra opción en carta, dilo con honestidad y vuelve a proponer la misma o la mejor aproximación.)';
+                if (type === 'rouge') suffix = ' (Prefiero vino tinto con este plato)';
+                if (type === 'blanc') suffix = ' (Prefiero vino blanco con este plato)';
+                if (type === 'prestige') suffix = ' (Quiero una Versión Prestigio. Recomienda el mejor vino premium)';
             }
-            demanderIA(null, null, complement);
+            const question = baseQ ? (baseQ + suffix) : suffix.trim();
+            demanderIA(null, null, question);
         }
 
         function quickAction(text) { input.value = text; clearBtn.style.display = 'block'; demanderIA(); }

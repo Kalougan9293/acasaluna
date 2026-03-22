@@ -6,6 +6,12 @@ const rateLimit = require("express-rate-limit");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const {
+    normalizeVinName,
+    computeWineMatchScore,
+    tryFixSuggestionToMenu,
+    correctionPromptForInvalidWine
+} = require("./wine-match.js");
 
 const PUBLIC_DIR = path.resolve(path.join(__dirname, "public"));
 const HAS_MISTRAL_KEY = !!(process.env.MISTRAL_API_KEY && process.env.MISTRAL_API_KEY.trim());
@@ -39,6 +45,179 @@ function readJsonSafe(filePath) {
     }
 }
 
+function getMenuDiffFilePath(restoId) {
+    const safeResto = sanitizeRestoId(restoId);
+    const fileName = safeResto ? `${safeResto}.menu_diff.json` : "default.menu_diff.json";
+    return path.join(MENUS_DIR, fileName);
+}
+
+function normPlatNomForDiff(it) {
+    if (typeof it === "string") return it.trim();
+    if (it && typeof it === "object") return String(it.nom || it.name || "").trim();
+    return "";
+}
+
+function platsNameMapForDiff(carte_des_plats) {
+    const out = {};
+    for (const c of ["Entrées", "Plats", "Desserts"]) {
+        const arr = carte_des_plats && Array.isArray(carte_des_plats[c]) ? carte_des_plats[c] : [];
+        out[c] = arr.map(normPlatNomForDiff).filter(Boolean);
+    }
+    return out;
+}
+
+function diffPlatsCarte(oldCarte, newCarte) {
+    const o = platsNameMapForDiff(oldCarte || {});
+    const n = platsNameMapForDiff(newCarte || {});
+    const added = [];
+    const removed = [];
+    for (const c of ["Entrées", "Plats", "Desserts"]) {
+        const os = new Set(o[c] || []);
+        const ns = new Set(n[c] || []);
+        for (const x of ns) if (!os.has(x)) added.push({ categorie: c, nom: x });
+        for (const x of os) if (!ns.has(x)) removed.push({ categorie: c, nom: x });
+    }
+    return { added, removed };
+}
+
+function winesFlatFromVinsArray(vins) {
+    if (!Array.isArray(vins)) return [];
+    return vins
+        .map(w => ({
+            categorie: w && w.categorie ? String(w.categorie).trim() : "",
+            nom: w && (w.nom || w.name) ? String(w.nom || w.name).trim() : ""
+        }))
+        .filter(w => w.nom);
+}
+
+function winesFlatFromCarteVins(carte_des_vins) {
+    const list = [];
+    Object.entries(carte_des_vins || {}).forEach(([cat, wines]) => {
+        if (!Array.isArray(wines)) return;
+        wines.forEach(w => {
+            const nom = w && (w.nom || w.name) ? String(w.nom || w.name).trim() : "";
+            if (!nom) return;
+            list.push({ categorie: cat, nom });
+        });
+    });
+    return list;
+}
+
+function wineIdentityForDiff(w) {
+    return `${String(w.categorie || "").trim()}::${String(w.nom || "").trim()}`;
+}
+
+function diffWinesLists(oldList, newList) {
+    const om = new Map(oldList.map(w => [wineIdentityForDiff(w), w]));
+    const nm = new Map(newList.map(w => [wineIdentityForDiff(w), w]));
+    const added = [];
+    const removed = [];
+    for (const [k, w] of nm) if (!om.has(k)) added.push(w);
+    for (const [k, w] of om) if (!nm.has(k)) removed.push(w);
+    return { added, removed };
+}
+
+function writeMenuDiffAfterSave(restoId, existingTenant, incomingData) {
+    try {
+        const platsDiff = diffPlatsCarte(existingTenant && existingTenant.carte_des_plats, incomingData && incomingData.carte_des_plats);
+        let oldWines = winesFlatFromVinsArray(existingTenant && existingTenant.vins);
+        if (!oldWines.length && existingTenant && existingTenant.carte_des_vins) {
+            oldWines = winesFlatFromCarteVins(existingTenant.carte_des_vins);
+        }
+        const newWines = winesFlatFromCarteVins(incomingData && incomingData.carte_des_vins);
+        const vinsDiff = diffWinesLists(oldWines, newWines);
+        writeJsonSafe(getMenuDiffFilePath(restoId), {
+            ts: new Date().toISOString(),
+            plats: platsDiff,
+            vins: vinsDiff
+        });
+    } catch (e) {
+        console.error("writeMenuDiffAfterSave:", e);
+    }
+}
+
+function readMenuDiffForResto(restoId) {
+    const p = getMenuDiffFilePath(restoId);
+    const d = readJsonSafe(p);
+    if (!d || typeof d !== "object" || !d.ts) return null;
+    return d;
+}
+
+function normalizeStatsRange(range) {
+    const r = (range || "last30").toLowerCase();
+    if (r === "last7" || r === "7" || r === "7d") return "last7";
+    if (r === "all" || r === "depuis" || r === "all_time") return "all";
+    return "last30";
+}
+
+function filterLogsByRange(arr, range) {
+    if (!Array.isArray(arr)) return [];
+    const nr = normalizeStatsRange(range);
+    if (nr === "all") return arr.slice();
+    const end = new Date();
+    const endDayUtc = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate(), 0, 0, 0, 0));
+    const startDayUtc = new Date(endDayUtc);
+    if (nr === "last7") {
+        startDayUtc.setUTCDate(endDayUtc.getUTCDate() - 6);
+    } else {
+        startDayUtc.setUTCDate(endDayUtc.getUTCDate() - 29);
+    }
+    const startTs = startDayUtc.getTime();
+    return arr.filter(it => {
+        if (!it || !it.ts) return false;
+        const t = Date.parse(it.ts);
+        return !Number.isNaN(t) && t >= startTs;
+    });
+}
+
+/**
+ * Clé pour « Top demandes » (erreurs) : même logique que le mouchard (question affichée).
+ * Anciennes entrées ou cas limites peuvent n'avoir ni `question` ni texte utile : on retombe sur `message`.
+ */
+function getErrorLogQuestionKeyForTop(it) {
+    if (!it || typeof it !== "object") return "";
+    const q = String(it.question || it.demande || it.q || "").trim();
+    if (q) return q;
+    const msg = String(it.message || "").trim();
+    if (msg) return msg.length > 140 ? `${msg.slice(0, 137)}...` : msg;
+    return "(Sans détail)";
+}
+
+/** Lundi = 0 … Dimanche = 6 (UTC) */
+function utcTimestampToFrenchWeekdayIndex(tsMs) {
+    const d = new Date(tsMs);
+    const wd = d.getUTCDay();
+    return (wd + 6) % 7;
+}
+
+function computeWeekdayCountsFromLogs(logs) {
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    for (const it of logs) {
+        if (!it || !it.ts) continue;
+        const t = Date.parse(it.ts);
+        if (Number.isNaN(t)) continue;
+        counts[utcTimestampToFrenchWeekdayIndex(t)]++;
+    }
+    return counts;
+}
+
+/** Compte les demandes par mois (YYYY-MM), sur tout l’historique des logs fusionnés. */
+function computeMonthlyCountsFromLogs(live, errors, maxMonths = 24) {
+    const map = {};
+    const merge = [...(Array.isArray(live) ? live : []), ...(Array.isArray(errors) ? errors : [])];
+    for (const it of merge) {
+        if (!it || !it.ts) continue;
+        const t = Date.parse(it.ts);
+        if (Number.isNaN(t)) continue;
+        const d = new Date(t);
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+        map[key] = (map[key] || 0) + 1;
+    }
+    const keys = Object.keys(map).sort();
+    const sliced = maxMonths > 0 && keys.length > maxMonths ? keys.slice(-maxMonths) : keys;
+    return sliced.map((month) => ({ month, count: map[month] || 0 }));
+}
+
 function writeJsonSafe(filePath, obj) {
     try {
         fs.writeFileSync(filePath, JSON.stringify(obj, null, 2), "utf8");
@@ -54,6 +233,25 @@ function getStatsFilePath(restoId) {
     return path.join(MENUS_DIR, fileName);
 }
 
+function defaultTypeCounts() {
+    return { Rouge: 0, Blanc: 0, "Rosé": 0, ChampagneBulles: 0, Spiritueux: 0, Autres: 0 };
+}
+
+/** Fusionne les anciens fichiers stats (Autre, etc.) vers le schéma à 6 familles. */
+function mergeTypeCountsFromDisk(raw) {
+    const o = defaultTypeCounts();
+    if (!raw || typeof raw !== "object") return o;
+    o.Rouge += Number(raw.Rouge || 0);
+    o.Blanc += Number(raw.Blanc || 0);
+    o["Rosé"] += Number(raw["Rosé"] || 0);
+    o.ChampagneBulles += Number(raw.ChampagneBulles || 0);
+    o.Spiritueux += Number(raw.Spiritueux || 0);
+    o.Autres += Number(raw.Autres || 0);
+    // Ancien bucket unique « Autre » (champagne mélangé, etc.) → Autres
+    o.Autres += Number(raw.Autre || 0);
+    return o;
+}
+
 function loadStatsForResto(restoId) {
     const statsFilePath = getStatsFilePath(restoId);
     if (STATS_CACHE.has(statsFilePath)) return STATS_CACHE.get(statsFilePath);
@@ -64,7 +262,7 @@ function loadStatsForResto(restoId) {
         keyword_counts: d && d.keyword_counts && typeof d.keyword_counts === "object" ? d.keyword_counts : {},
         suggestion_counts: d && d.suggestion_counts && typeof d.suggestion_counts === "object" ? d.suggestion_counts : {},
         error_reason_counts: d && d.error_reason_counts && typeof d.error_reason_counts === "object" ? d.error_reason_counts : {},
-        type_counts: d && d.type_counts && typeof d.type_counts === "object" ? d.type_counts : { Rouge: 0, Blanc: 0, "Rosé": 0, Autre: 0 },
+        type_counts: mergeTypeCountsFromDisk(d && d.type_counts),
         live_log: d && Array.isArray(d.live_log) ? d.live_log.slice(0, 100) : [],
         error_log: d && Array.isArray(d.error_log) ? d.error_log.slice(0, 100) : [],
         daily_clients: d && d.daily_clients && typeof d.daily_clients === "object" ? d.daily_clients : {},
@@ -98,78 +296,48 @@ function parsePrixEuros(prixStr) {
 
 function normalizeTypeForStats(type) {
     const t = normalizeVinName(type || "");
+
+    // Spiritueux (avant rouge/blanc pour éviter ambiguïtés rares)
+    if (
+        /\b(whisky|whiskey|bourbon|scotch)\b/.test(t) ||
+        t.includes("cognac") ||
+        t.includes("armagnac") ||
+        t.includes("rhum") ||
+        t.includes("rum") ||
+        t.includes("gin") ||
+        t.includes("vodka") ||
+        t.includes("tequila") ||
+        t.includes("mezcal") ||
+        t.includes("calvados") ||
+        t.includes("porto") ||
+        t.includes("liqueur") ||
+        t.includes("spiritueux") ||
+        t.includes("digestif") ||
+        t.includes("eau de vie")
+    ) {
+        return "Spiritueux";
+    }
+
+    // Champagnes & bulles
+    if (
+        t.includes("champagne") ||
+        t.includes("cremant") ||
+        t.includes("mousseux") ||
+        t.includes("effervescent") ||
+        t.includes("petillant") ||
+        t.includes("prosecco") ||
+        t.includes("cava") ||
+        t.includes("bulles") ||
+        t.includes("sparkling")
+    ) {
+        return "ChampagneBulles";
+    }
+
     if (t.includes("rouge")) return "Rouge";
     if (t.includes("blanc")) return "Blanc";
     if (t.includes("rose")) return "Rosé";
-    if (t.includes("petillant") || t.includes("champagne") || t.includes("effervescent")) return "Autre";
-    if (t.includes("autre")) return "Autre";
-    return "Autre";
-}
-
-function normalizeVinName(n) {
-    let s = (n || "").toString().trim().toLowerCase();
-    // Normalisation des caractères fréquents en français
-    s = s.replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/ß/g, "ss");
-    // Suppression des accents (NFD -> caractères combinants)
-    s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    // Retire ponctuation et caractères spéciaux (on garde espaces, ' et -)
-    s = s.replace(/[^a-z0-9\s'\-]/g, " ");
-    return s.replace(/\s+/g, " ").trim();
-}
-
-function tokenize(s) {
-    return normalizeVinName(s).split(" ").filter(Boolean);
-}
-
-function levenshteinDistance(a, b) {
-    const s = a || "";
-    const t = b || "";
-    const n = s.length;
-    const m = t.length;
-    if (n === 0) return m;
-    if (m === 0) return n;
-    const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
-    for (let i = 0; i <= n; i++) dp[i][0] = i;
-    for (let j = 0; j <= m; j++) dp[0][j] = j;
-    for (let i = 1; i <= n; i++) {
-        for (let j = 1; j <= m; j++) {
-            const cost = s[i - 1] === t[j - 1] ? 0 : 1;
-            dp[i][j] = Math.min(
-                dp[i - 1][j] + 1,
-                dp[i][j - 1] + 1,
-                dp[i - 1][j - 1] + cost
-            );
-        }
-    }
-    return dp[n][m];
-}
-
-function computeWineMatchScore(targetName, candidateName) {
-    const target = normalizeVinName(targetName);
-    const candidate = normalizeVinName(candidateName);
-    if (!target || !candidate) return 0;
-    if (target === candidate) return 1;
-
-    let score = 0;
-    if (target.length >= 4 && candidate.length >= 4 && (target.includes(candidate) || candidate.includes(target))) {
-        score = Math.max(score, 0.88);
-    }
-
-    const targetTokens = tokenize(target);
-    const candidateTokens = tokenize(candidate);
-    const targetSet = new Set(targetTokens);
-    const candidateSet = new Set(candidateTokens);
-    const inter = [...targetSet].filter(x => candidateSet.has(x)).length;
-    const union = new Set([...targetSet, ...candidateSet]).size || 1;
-    const jaccard = inter / union;
-    score = Math.max(score, jaccard * 0.85);
-
-    const maxLen = Math.max(target.length, candidate.length) || 1;
-    const dist = levenshteinDistance(target, candidate);
-    const similarity = 1 - dist / maxLen;
-    score = Math.max(score, similarity * 0.8);
-
-    return Math.max(0, Math.min(1, score));
+    if (t.includes("autre")) return "Autres";
+    return "Autres";
 }
 
 function findWinePriceInMenu(carte_des_vins, suggestedName) {
@@ -325,8 +493,16 @@ function validateMenuPayload(data) {
                 return;
             }
             const normalizedRawType = normalizeVinName(type);
-            const isKnownOther = normalizedRawType.includes("autre") || normalizedRawType.includes("petillant") || normalizedRawType.includes("champagne") || normalizedRawType.includes("effervescent");
-            if (!type || (!allowed.has(type) && normalizedType === "Autre" && !isKnownOther)) {
+            const isKnownOther =
+                normalizedRawType.includes("autre") ||
+                normalizedRawType.includes("petillant") ||
+                normalizedRawType.includes("champagne") ||
+                normalizedRawType.includes("effervescent");
+            const typeOk =
+                allowed.has(type) ||
+                normalizedType !== "Autres" ||
+                (normalizedType === "Autres" && isKnownOther);
+            if (!type || !typeOk) {
                 errors.push(`Type manquant ou incohérent pour "${nom}"`);
             }
             const key = `${normalizeVinName(nom)}|${normalizedType}`;
@@ -437,6 +613,35 @@ const defaultMenu = getMenuForResto(null, "ai");
 
 const client = HAS_MISTRAL_KEY ? new Mistral({ apiKey: process.env.MISTRAL_API_KEY }) : null;
 
+/** Appel Mistral avec timeout 8 s (même logique que /ask). */
+async function mistralChatComplete(messages, image) {
+    const mistralController = new AbortController();
+    const mistralTimeout = setTimeout(() => mistralController.abort(), 8000);
+    try {
+        const chatResponse = await client.chat.complete({
+            model: image ? "pixtral-12b-2409" : "mistral-small-latest",
+            temperature: 0.2,
+            messages,
+            signal: mistralController.signal
+        });
+        return chatResponse.choices[0].message.content;
+    } finally {
+        clearTimeout(mistralTimeout);
+    }
+}
+
+function applyExplicationCasing(answer, targetLang) {
+    let a = answer || "";
+    if (targetLang === "fr") {
+        a = a.replace(/\[EXPLICATION\]\s*:\s*nous\s+n'avons/i, "[EXPLICATION] : Nous n'avons");
+    } else if (targetLang === "en") {
+        a = a.replace(/\[EXPLICATION\]\s*:\s*we\s+don'?t\s+have/i, "[EXPLICATION] : We don't have");
+    } else if (targetLang === "es") {
+        a = a.replace(/\[EXPLICATION\]\s*:\s*no\s+tenemos/i, "[EXPLICATION] : No tenemos");
+    }
+    return a;
+}
+
 function checkBasicAuth(req) {
     const restoFromQuery = (() => {
         try {
@@ -527,7 +732,7 @@ const server = http.createServer(async (req, res) => {
             }
             const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
             const restoId = u.searchParams.get("resto");
-            const range = (u.searchParams.get("range") || "last30").toLowerCase();
+            const range = normalizeStatsRange(u.searchParams.get("range"));
             const statsData = loadStatsForResto(restoId);
             const topNRaw = parseInt(u.searchParams.get("topN") || "3", 10);
             const topN = [3, 5, 10].includes(topNRaw) ? topNRaw : 3;
@@ -540,68 +745,71 @@ const server = http.createServer(async (req, res) => {
             // top_live_demands est calculé plus bas, une fois les logs live chargés,
             // pour pouvoir associer à chaque vin un plat.
 
-            let errorReasonSource = statsData.error_reason_counts && typeof statsData.error_reason_counts === "object" ? statsData.error_reason_counts : {};
-            // Backfill (au cas où error_reason_counts n'a pas encore été initialisé sur les stats existantes)
-            if (Object.keys(errorReasonSource).length === 0 && Array.isArray(statsData.error_log) && statsData.error_log.length > 0) {
-                errorReasonSource = {};
-                for (const it of statsData.error_log) {
-                    const msg = it && it.message ? it.message : null;
-                    if (!msg) continue;
-                    errorReasonSource[msg] = (errorReasonSource[msg] || 0) + 1;
-                }
-            }
-
-            const errorReasonEntries = Object.entries(errorReasonSource)
-                .map(([message, count]) => ({ message, count: typeof count === "number" ? count : Number(count || 0) }))
-                .sort((a, b) => b.count - a.count);
-            const top_error_reasons = errorReasonEntries.slice(0, 5);
-            const total_errors = errorReasonEntries.reduce((acc, it) => acc + (it.count || 0), 0);
-            const types = statsData.type_counts || { Rouge: 0, Blanc: 0, "Rosé": 0, Autre: 0 };
-            const totalType = (types.Rouge || 0) + (types.Blanc || 0) + (types["Rosé"] || 0) + (types.Autre || 0);
+            const menu_diff = readMenuDiffForResto(restoId);
+            const types = mergeTypeCountsFromDisk(statsData.type_counts);
+            const totalType =
+                (types.Rouge || 0) +
+                (types.Blanc || 0) +
+                (types["Rosé"] || 0) +
+                (types.ChampagneBulles || 0) +
+                (types.Spiritueux || 0) +
+                (types.Autres || 0);
+            const pct = (n) => (totalType ? Math.round((n / totalType) * 100) : 0);
             const tendances = {
-                Rouge: totalType ? Math.round(((types.Rouge || 0) / totalType) * 100) : 0,
-                Blanc: totalType ? Math.round(((types.Blanc || 0) / totalType) * 100) : 0,
-                "Rosé": totalType ? Math.round(((types["Rosé"] || 0) / totalType) * 100) : 0
+                Rouge: pct(types.Rouge || 0),
+                Blanc: pct(types.Blanc || 0),
+                "Rosé": pct(types["Rosé"] || 0),
+                ChampagneBulles: pct(types.ChampagneBulles || 0),
+                Spiritueux: pct(types.Spiritueux || 0),
+                Autres: pct(types.Autres || 0)
             };
             // "Clients conseillés" = nombre de demandes enregistrées
             // On se base sur les logs (live + error) pour être cohérent même si les buckets daily n'existent pas.
             const live = Array.isArray(statsData.live_log) ? statsData.live_log : [];
             const errors = Array.isArray(statsData.error_log) ? statsData.error_log : [];
 
-            // top_live_demands : les 5 demandes (question) les plus fréquentes dans le Mouchard Live
+            const liveInRange = filterLogsByRange(live, range);
+            const errorsInRange = filterLogsByRange(errors, range);
+
+            // top_live_demands : questions les plus fréquentes (période = même filtre que le rapport)
             const questionCounts = {};
-            for (const it of live) {
-                if (!it || !it.question) continue;
-                const qStr = String(it.question).trim();
+            for (const it of liveInRange) {
+                if (!it) continue;
+                const qStr = String(it.question || it.demande || it.q || "").trim();
                 if (!qStr) continue;
                 questionCounts[qStr] = (questionCounts[qStr] || 0) + 1;
             }
             const top_live_demands = Object.entries(questionCounts)
                 .map(([question, count]) => ({ question, count }))
                 .sort((a, b) => b.count - a.count)
-                .slice(0, 5);
+                .slice(0, topN);
+
+            // top_error_questions : comme top_live_demands, mais sur les demandes ayant généré une erreur / refus
+            const errorQuestionCounts = {};
+            for (const it of errorsInRange) {
+                if (!it) continue;
+                const qStr = getErrorLogQuestionKeyForTop(it);
+                if (!qStr) continue;
+                errorQuestionCounts[qStr] = (errorQuestionCounts[qStr] || 0) + 1;
+            }
+            const top_error_questions = Object.entries(errorQuestionCounts)
+                .map(([question, count]) => ({ question, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, topN);
+
+            const total_errors = errorsInRange.length;
 
             let clients_total_range = 0;
-            if (range === "all" || range === "depuis" || range === "all_time") {
+            if (range === "all") {
                 clients_total_range = live.length + errors.length;
             } else {
-                // Derniers 30 jours (inclus) : filtre sur ts
-                const end = new Date();
-                const endDayUtc = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate(), 0, 0, 0, 0));
-                const startDayUtc = new Date(endDayUtc);
-                startDayUtc.setUTCDate(endDayUtc.getUTCDate() - 29);
-                const startTs = startDayUtc.getTime();
-
-                const countInRange = (arr) => {
-                    return arr.reduce((acc, it) => {
-                        if (!it || !it.ts) return acc;
-                        const t = Date.parse(it.ts);
-                        if (Number.isNaN(t)) return acc;
-                        return acc + (t >= startTs ? 1 : 0);
-                    }, 0);
-                };
-                clients_total_range = countInRange(live) + countInRange(errors);
+                clients_total_range = liveInRange.length + errorsInRange.length;
             }
+
+            const combinedRange = [...liveInRange, ...errorsInRange];
+            const chart_weekday_counts = computeWeekdayCountsFromLogs(combinedRange);
+            const chart_weekday_labels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+            const chart_monthly = computeMonthlyCountsFromLogs(live, errors, 24);
 
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
@@ -609,12 +817,16 @@ const server = http.createServer(async (req, res) => {
                 top_searches,
                 total_suggestions,
                 top_live_demands,
+                top_error_questions,
                 tendances,
                 live_log: Array.isArray(statsData.live_log) ? statsData.live_log.slice(0, 20) : [],
                 error_log: Array.isArray(statsData.error_log) ? statsData.error_log.slice(0, 20) : [],
-                top_error_reasons,
+                menu_diff,
                 total_errors,
-                last_updated: statsData.last_updated || null
+                last_updated: statsData.last_updated || null,
+                range,
+                chart_weekday: { labels: chart_weekday_labels, counts: chart_weekday_counts },
+                chart_monthly
             }));
             return;
         }
@@ -871,7 +1083,10 @@ const server = http.createServer(async (req, res) => {
                 4. SI LE VIN DEMANDÉ (nom/appellation/profil) N'EXISTE PAS DANS LA CARTE :
                    - Choisis le vin du menu le plus proche (couleur + accord gustatif).
                    - Dans [EXPLICATION], écris clairement : Nous n'avons pas exactement le vin demandé, mais voici l'alternative la plus cohérente.
+                   - Cas DOUX / SUCRÉ / LIQUOREUX : si la carte n'offre pas ou peu ce profil, ne feins pas un accord parfait. Nuance honnêtement dans [EXPLICATION] (ex. : « nous n'avons pas de vin sucré en bouteille à la carte », « la bouteille la plus proche de votre envie est… », « ce n'est pas un moelleux, mais… »). Interdit de répondre avec un enthousiasme trompeur du type « oui, bien sûr » si ce n'est pas réellement le cas.
                 5. PRIORITÉ ACCORD METS : si la demande contient des sections "Entrées:", "Plats:", "Desserts:" (ou équivalents), en cas de conflit suit d'abord "Plats", puis "Entrées", puis "Desserts".
+                6. ENTRÉE + PLAT + DESSERT (conflit réel) : quand le vin choisi suit surtout le PLAT PRINCIPAL (règle 5) et qu'il serait nettement moins adapté à l'ENTRÉE seule (conflit de couleur ou d'accord évident), indique-le UNE FOIS dans [EXPLICATION], par ex. : « Ce vin est idéal avec votre plat principal, moins avec votre entrée ». Ne mentionne pas le dessert pour ce cas. Si tout est cohérent, n'ajoute pas cette phrase.
+                7. SUIVI « AUTRE SUGGESTION » (rebond / message de suivi) : si le client demande une autre bouteille sans changer de type, propose une AUTRE référence du MÊME type (Rouge / Blanc / Rosé) et du même registre (sec, demi-sec, doux…). Ne bascule JAMAIS du rouge au blanc (ou l'inverse) sauf demande explicite. S'il n'existe qu'une seule option pertinente sur la carte (ex. un seul vin doux), dis-le avec franchise et repropose la même suggestion ou la meilleure approximation honnête — n'invente pas une seconde bouteille impossible.
                 
                 MENU DU BISTROT : ${menuJson}
                 
@@ -892,7 +1107,10 @@ GOLDEN RULES:
 4. IF THE REQUESTED WINE (name/appellation/profile) IS NOT ON THE LIST:
    - Choose the closest wine on the menu (colour + pairing).
    - In [EXPLICATION] say clearly: We don't have exactly the wine you asked for, but here is the closest match.
+   - SWEET / OFF-DRY / LATE-HARVEST requests: if the list offers little or none, do NOT fake a perfect match. In [EXPLICATION] be honest (e.g. "we don't have a sweet bottle on the list", "the closest match to what you want is…", "this isn't a dessert wine, but…"). Do NOT say "absolutely" or "of course" if it isn't true.
 5. Meal pairing priority: if the request has "Starters / Main / Desserts" (or equivalents), follow Main first, then Starters, then Desserts.
+6. STARTER + MAIN + DESSERT (real clash): when the wine follows the MAIN COURSE first (rule 5) and would be clearly less ideal with the STARTER alone (colour/pairing clash), say it ONCE in [EXPLICATION], e.g. "This wine is ideal with your main course, less so with your starter." Do not mention dessert for this. If everything is coherent, skip this.
+7. FOLLOW-UP "ANOTHER SUGGESTION": if the guest asks for another bottle without changing type, offer a DIFFERENT bottle of the SAME colour (red/white/rosé) and style (dry/off-dry/sweet…). Never flip red ↔ white unless they explicitly ask. If only one plausible option exists on the list (e.g. one sweet wine), say so honestly and propose the same wine or the best honest approximation — do not invent a second impossible bottle.
 
 BISTROT MENU: ${menuJson}
 
@@ -913,7 +1131,10 @@ REGLAS DE ORO:
 4. SI EL VINO PEDIDO (nombre/appellation/perfil) NO ESTÁ EN LA CARTA:
    - Elige el vino más cercano (color + maridaje).
    - En [EXPLICATION] di claramente: No tenemos exactamente el vino pedido, pero aquí está la alternativa más coherente.
+   - VINOS DULCES / LICOROSOS: si la carta casi no ofrece ese perfil, no finjas un maridaje perfecto. En [EXPLICATION] sé honesto ("no tenemos un vino dulce en botella", "la botella más cercana a lo que busca es…", "no es un vino de postre, pero…"). Prohibido un "¡por supuesto!" engañoso si no es cierto.
 5. Prioridad de maridaje: si hay secciones "Entradas / Platos / Postres", en conflicto sigue primero "Platos", luego "Entradas", luego "Postres".
+6. ENTRADA + PLATO + POSTRE (conflicto real): si el vino sigue sobre todo el PLATO PRINCIPAL (regla 5) y encaja claramente peor con la ENTRADA sola (choque de color/maridaje), díelo UNA VEZ en [EXPLICATION], ej.: "Este vino es ideal con su plato principal, menos con su entrada." No menciones el postre en este caso. Si todo encaja, omítelo.
+7. SEGUIMIENTO "OTRA SUGERENCIA": si el cliente pide otra botella sin cambiar de tipo, ofrece otra referencia del MISMO tipo (tinto/blanco/rosado) y registro (seco/dulce…). Nunca cambies tinto ↔ blanco salvo petición explícita. Si solo hay una opción plausible en carta (ej. un solo vino dulce), dilo con franqueza y vuelve a proponer la misma u la mejor aproximación honesta — no inventes una segunda botella imposible.
 
 MENÚ DEL BISTROT: ${menuJson}
 
@@ -934,7 +1155,7 @@ GESTIÓN DE ERRORES:
                 
                 [SUGGESTION] : (Nom exact du vin) (Type entre parenthèses)
                 
-                [EXPLICATION] : (Pourquoi ce choix ? RÈGLE ABSOLUE : NE RÉPÈTE PAS LE NOM DU VIN. Utilise "Il", "Ce vin", "Cette cuvée". Fais saliver.)
+                [EXPLICATION] : (Pourquoi ce choix ? RÈGLE ABSOLUE : NE RÉPÈTE PAS LE NOM DU VIN. Utilise "Il", "Ce vin", "Cette cuvée". Fais saliver. Si le vin suit surtout le plat principal et l'entrée aurait mieux convenu à un autre type : dis-le brièvement. Si la demande — notamment doux/sucré — ne peut pas être satisfaite à l'identique : nuance honnêtement, sans faux enthousiasme.)
                 
                 [AROMES] : (Liste verticale. Format: "- Famille (Exemple 1, Exemple 2)". Max 3 lignes. PAS de mots techniques.)
                 - Famille 1 (Arôme, Arôme)
@@ -958,7 +1179,7 @@ GESTIÓN DE ERRORES:
 
 [SUGGESTION] : (Exact wine name) (Type in parentheses)
 
-[EXPLICATION] : (Why this choice? RULE: DO NOT repeat the wine name. Use "It", "This wine", "This cuvée". Make it mouth-watering.)
+[EXPLICATION] : (Why this choice? RULE: DO NOT repeat the wine name. Use "It", "This wine", "This cuvée". Make it mouth-watering. If the wine mainly follows the main course while the starter would suit another style, say so briefly. If the guest's request — especially sweet — cannot be met exactly, be honest and nuanced, no fake enthusiasm.)
 
 [AROMES] : (Vertical list. Format: "- Family (Example 1, Example 2)". Max 3 lines. No technical jargon.)
 - Family 1 (Aroma, Aroma)
@@ -982,7 +1203,7 @@ GESTIÓN DE ERRORES:
 
 [SUGGESTION] : (Nombre exacto del vino) (Tipo entre paréntesis)
 
-[EXPLICATION] : (¿Por qué esta elección? REGLA: NO repitas el nombre del vino. Usa "Este vino", "Esta cuvée". Que apetezca.)
+[EXPLICATION] : (¿Por qué esta elección? REGLA: NO repitas el nombre del vino. Usa "Este vino", "Esta cuvée". Que apetezca. Si el vino sigue sobre todo el plato principal y la entrada pedía otro estilo, dilo con brevedad. Si la petición —en especial dulce— no puede cumplirse al pie de la letra, sé honesto y matiza, sin entusiasmo falso.)
 
 [AROMES] : (Lista vertical. Formato: "- Familia (Ejemplo 1, Ejemplo 2)". Máx. 3 líneas. Sin tecnicismos.)
 - Familia 1 (Aroma, Aroma)
@@ -1029,19 +1250,10 @@ GESTIÓN DE ERRORES:
                     if (pousserOverrideAnswer) {
                         answer = pousserOverrideAnswer;
                     } else {
-                        const mistralController = new AbortController();
-                        const mistralTimeout = setTimeout(() => mistralController.abort(), 8000);
                         try {
-                            const chatResponse = await client.chat.complete({
-                                model: image ? "pixtral-12b-2409" : "mistral-small-latest",
-                                temperature: 0.2,
-                                messages: messages,
-                                signal: mistralController.signal
-                            });
-                            answer = chatResponse.choices[0].message.content;
+                            answer = await mistralChatComplete(messages, image);
                         } catch (err) {
                             const isTimeout =
-                                mistralController.signal.aborted ||
                                 err?.name === "AbortError" ||
                                 /timeout|timed out|aborted/i.test(String(err && err.message ? err.message : ""));
                             if (isTimeout) {
@@ -1070,17 +1282,43 @@ GESTIÓN DE ERRORES:
                                 return;
                             }
                             throw err;
-                        } finally {
-                            clearTimeout(mistralTimeout);
                         }
                     }
-                    // Stabilise la casse demandée pour la phrase d'alternative
-                    if (targetLang === "fr") {
-                        answer = (answer || "").replace(/\[EXPLICATION\]\s*:\s*nous\s+n'avons/i, "[EXPLICATION] : Nous n'avons");
-                    } else if (targetLang === "en") {
-                        answer = (answer || "").replace(/\[EXPLICATION\]\s*:\s*we\s+don'?t\s+have/i, "[EXPLICATION] : We don't have");
-                    } else if (targetLang === "es") {
-                        answer = (answer || "").replace(/\[EXPLICATION\]\s*:\s*no\s+tenemos/i, "[EXPLICATION] : No tenemos");
+                    answer = applyExplicationCasing(answer, targetLang);
+
+                    // Validation carte : le vin dans [SUGGESTION] doit correspondre à une bouteille (nom) du menu JSON
+                    if (!pousserOverrideAnswer && answer && !String(answer).trim().startsWith("[STOP]") && !String(answer).includes("[ERREUR]")) {
+                        let fix = tryFixSuggestionToMenu(answer, tenantMenu.carte_des_vins);
+                        if (fix.ok) {
+                            answer = fix.answer;
+                        } else if (fix.reason === "no_match") {
+                            try {
+                                const messagesRetry = [
+                                    ...messages,
+                                    { role: "assistant", content: answer },
+                                    { role: "user", content: correctionPromptForInvalidWine(targetLang) }
+                                ];
+                                answer = await mistralChatComplete(messagesRetry, image);
+                                answer = applyExplicationCasing(answer, targetLang);
+                                fix = tryFixSuggestionToMenu(answer, tenantMenu.carte_des_vins);
+                                if (fix.ok) {
+                                    answer = fix.answer;
+                                } else if (fix.reason === "no_match") {
+                                    console.warn("[wine-match] Validation carte refusée après retry:", { score: fix.score, resto: restoId });
+                                    answer = "[ERREUR] Impossible de valider la suggestion sur la carte. Veuillez réessayer.";
+                                }
+                            } catch (retryErr) {
+                                const isTimeout =
+                                    retryErr?.name === "AbortError" ||
+                                    /timeout|timed out|aborted/i.test(String(retryErr && retryErr.message ? retryErr.message : ""));
+                                if (isTimeout) {
+                                    answer = "[ERREUR] Le sommelier est très demandé, veuillez réessayer dans un instant.";
+                                } else {
+                                    console.error("[wine-match] Erreur retry validation:", retryErr);
+                                    answer = "[ERREUR] Impossible de finaliser la suggestion. Veuillez réessayer.";
+                                }
+                            }
+                        }
                     }
 
                     // Envoi en arrière-plan vers le Webhook Make avec les infos structurées
@@ -1241,6 +1479,7 @@ GESTIÓN DE ERRORES:
 
                 const existedBefore = fs.existsSync(targetPath);
                 fs.writeFileSync(targetPath, JSON.stringify(tenantToWrite, null, 2), "utf8");
+                writeMenuDiffAfterSave(restoId, existingTenant, data);
                 // Invalidate le cache multi-modes (client/ai/admin) pour ce tenant
                 for (const key of Array.from(MENU_CACHE.keys())) {
                     if (key.startsWith(targetPath + "::") || (!existedBefore && key.startsWith(DEFAULT_MENU_PATH + "::"))) {

@@ -7,7 +7,7 @@
     "Sauternes - Château d'Yquem": 2,
     "Romanée-Conti - Domaine de la Romanée-Conti - 2017": 1,
     "Cuvée Tradition - Clos Cibonne": 1,
-    "Sancerre - Domaine Vacheron": 3,
+    "Sancerre - Domaine Vacheron": 5,
     "": 1,
     "Morgon - Marcel Lapierre": 4
   },
@@ -18,11 +18,25 @@
   },
   "type_counts": {
     "Rouge": 9,
-    "Blanc": 6,
+    "Blanc": 8,
     "Rosé": 1,
-    "Autre": 1
+    "ChampagneBulles": 0,
+    "Spiritueux": 0,
+    "Autres": 1
   },
   "live_log": [
+    {
+      "ts": "2026-03-22T10:52:38.028Z",
+      "question": "Je vais manger : Entrées: Tartare de saumon. Plats: Saumon grillé, Je vous laisse choisir. Desserts: Tarte au citron meringuée.. Que me cons",
+      "vin": "Sancerre - Domaine Vacheron",
+      "type": "Blanc"
+    },
+    {
+      "ts": "2026-03-22T10:37:02.154Z",
+      "question": "Je cherche un vin Blanc Fruité",
+      "vin": "Sancerre - Domaine Vacheron",
+      "type": "Blanc"
+    },
     {
       "ts": "2026-03-21T11:41:40.912Z",
       "question": "I'm having: Starters: Carpaccio de bœuf. Main Courses: Saumon grillé. Desserts: Tarte Tatin.. What do you recommend?",
@@ -180,8 +194,9 @@
   ],
   "daily_clients": {
     "2026-03-20": 19,
-    "2026-03-21": 8
+    "2026-03-21": 8,
+    "2026-03-22": 2
   },
   "daily_ca": {},
-  "last_updated": "2026-03-21T11:41:40.912Z"
+  "last_updated": "2026-03-22T10:52:38.028Z"
 }
