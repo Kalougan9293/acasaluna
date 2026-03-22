@@ -257,12 +257,17 @@ function loadStatsForResto(restoId) {
     if (STATS_CACHE.has(statsFilePath)) return STATS_CACHE.get(statsFilePath);
 
     const d = readJsonSafe(statsFilePath);
+    const defaultInteraction = { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
+    const rawIc = d && d.interaction_counts && typeof d.interaction_counts === "object" ? d.interaction_counts : {};
+    const interaction_counts = { ...defaultInteraction, ...rawIc };
+
     const stats = {
         chiffre_affaires_euros: d && typeof d.chiffre_affaires_euros === "number" ? d.chiffre_affaires_euros : 0,
         keyword_counts: d && d.keyword_counts && typeof d.keyword_counts === "object" ? d.keyword_counts : {},
         suggestion_counts: d && d.suggestion_counts && typeof d.suggestion_counts === "object" ? d.suggestion_counts : {},
         error_reason_counts: d && d.error_reason_counts && typeof d.error_reason_counts === "object" ? d.error_reason_counts : {},
         type_counts: mergeTypeCountsFromDisk(d && d.type_counts),
+        interaction_counts,
         live_log: d && Array.isArray(d.live_log) ? d.live_log.slice(0, 100) : [],
         error_log: d && Array.isArray(d.error_log) ? d.error_log.slice(0, 100) : [],
         daily_clients: d && d.daily_clients && typeof d.daily_clients === "object" ? d.daily_clients : {},
@@ -279,6 +284,7 @@ function saveStatsForResto(restoId) {
     const stats = loadStatsForResto(restoId);
     stats.last_updated = new Date().toISOString();
     writeJsonSafe(statsFilePath, stats);
+    STATS_CACHE.delete(statsFilePath);
 }
 
 function getDayKey(d = new Date()) {
@@ -798,6 +804,7 @@ const server = http.createServer(async (req, res) => {
                 .slice(0, topN);
 
             const total_errors = errorsInRange.length;
+            const live_total_range = range === "all" ? live.length : liveInRange.length;
 
             let clients_total_range = 0;
             if (range === "all") {
@@ -805,6 +812,32 @@ const server = http.createServer(async (req, res) => {
             } else {
                 clients_total_range = liveInRange.length + errorsInRange.length;
             }
+
+            const top_live_demands_5 = Object.entries(questionCounts)
+                .map(([question, count]) => ({ question, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+            const top_error_questions_5 = Object.entries(errorQuestionCounts)
+                .map(([question, count]) => ({ question, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+
+            const ic = statsData.interaction_counts || { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
+            const icSum = (ic.flash || 0) + (ic.texte_libre || 0) + (ic.ouvrir_carte || 0) + (ic.carte_vins || 0);
+            const icPct = (n) => (icSum ? Math.round((n / icSum) * 100) : 0);
+            const interaction_repartition = {
+                flash: icPct(ic.flash || 0),
+                texte_libre: icPct(ic.texte_libre || 0),
+                ouvrir_carte: icPct(ic.ouvrir_carte || 0),
+                carte_vins: icPct(ic.carte_vins || 0),
+                counts: {
+                    flash: ic.flash || 0,
+                    texte_libre: ic.texte_libre || 0,
+                    ouvrir_carte: ic.ouvrir_carte || 0,
+                    carte_vins: ic.carte_vins || 0
+                },
+                total: icSum
+            };
 
             const combinedRange = [...liveInRange, ...errorsInRange];
             const chart_weekday_counts = computeWeekdayCountsFromLogs(combinedRange);
@@ -814,20 +847,70 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
                 clients_total_range,
+                live_total_range,
                 top_searches,
                 total_suggestions,
                 top_live_demands,
                 top_error_questions,
+                top_live_demands_5,
+                top_error_questions_5,
                 tendances,
                 live_log: Array.isArray(statsData.live_log) ? statsData.live_log.slice(0, 20) : [],
                 error_log: Array.isArray(statsData.error_log) ? statsData.error_log.slice(0, 20) : [],
                 menu_diff,
                 total_errors,
+                interaction_counts: ic,
+                interaction_repartition,
                 last_updated: statsData.last_updated || null,
                 range,
                 chart_weekday: { labels: chart_weekday_labels, counts: chart_weekday_counts },
                 chart_monthly
             }));
+            return;
+        }
+
+        // Export CSV : mouchards complets (lecture fichier brut)
+        if (req.url.startsWith("/api/admin/export-mouchards")) {
+            if (!checkBasicAuth(req)) {
+                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Export\"" });
+                res.end("Authentification requise.");
+                return;
+            }
+            const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+            const restoId = u.searchParams.get("resto");
+            const rawPath = getStatsFilePath(restoId);
+            const raw = readJsonSafe(rawPath) || {};
+            const liveFull = Array.isArray(raw.live_log) ? raw.live_log : [];
+            const errFull = Array.isArray(raw.error_log) ? raw.error_log : [];
+
+            function escCell(v) {
+                const s = v == null ? "" : String(v);
+                return `"${s.replace(/"/g, '""')}"`;
+            }
+
+            const lines = [];
+            lines.push("\ufeffsection,type,horodatage,question,vin_ou_message,type_vin");
+            for (const it of liveFull) {
+                const q = (it && it.question) || "";
+                const vin = (it && it.vin) || "";
+                const typ = (it && it.type) || "";
+                lines.push(["MOUCHARD_LIVE", "live", it && it.ts ? it.ts : "", q, vin, typ].map(escCell).join(","));
+            }
+            lines.push("");
+            lines.push("section,type,horodatage,question,message,");
+            for (const it of errFull) {
+                const q = (it && it.question) || "";
+                const msg = (it && it.message) || "";
+                lines.push(["MOUCHARD_ERROR", "error", it && it.ts ? it.ts : "", q, msg, ""].map(escCell).join(","));
+            }
+
+            const csv = lines.join("\r\n");
+            const fname = `mouchards_${sanitizeRestoId(restoId) || "default"}_${new Date().toISOString().slice(0, 10)}.csv`;
+            res.writeHead(200, {
+                "Content-Type": "text/csv; charset=utf-8",
+                "Content-Disposition": `attachment; filename="${fname}"`
+            });
+            res.end(csv);
             return;
         }
 
@@ -912,6 +995,37 @@ const server = http.createServer(async (req, res) => {
             if (err) { res.writeHead(404); res.end("Not Found"); return; }
             res.writeHead(200, { "Content-Type": contentType });
             res.end(data);
+        });
+        return;
+    }
+
+    /** Comptage interactions UI (app client) : flash, texte libre, carte menu, carte vins */
+    if (req.method === "POST" && req.url.startsWith("/api/track")) {
+        let body = "";
+        req.on("data", chunk => {
+            body += chunk;
+        });
+        req.on("end", () => {
+            try {
+                const data = JSON.parse(body || "{}");
+                const action = String(data.action || "").trim();
+                const allowed = new Set(["flash", "texte_libre", "ouvrir_carte", "carte_vins"]);
+                if (!allowed.has(action)) {
+                    res.writeHead(400, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ ok: false, error: "action invalide" }));
+                    return;
+                }
+                const restoRaw = data.resto != null ? String(data.resto) : "";
+                const stats = loadStatsForResto(restoRaw);
+                stats.interaction_counts = stats.interaction_counts || { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
+                stats.interaction_counts[action] = (Number(stats.interaction_counts[action]) || 0) + 1;
+                saveStatsForResto(restoRaw);
+                res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                res.end(JSON.stringify({ ok: true }));
+            } catch (e) {
+                res.writeHead(400, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                res.end(JSON.stringify({ ok: false }));
+            }
         });
         return;
     }

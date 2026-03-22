@@ -915,7 +915,19 @@
             });
         }
 
+        const restoIdForTrack = new URLSearchParams(window.location.search).get('resto') || '';
+        function trackClientAction(action) {
+            const allowed = ['flash', 'texte_libre', 'ouvrir_carte', 'carte_vins'];
+            if (!allowed.includes(action)) return;
+            fetch('/api/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ resto: restoIdForTrack, action })
+            }).catch(() => {});
+        }
+
         function openMenuModal() {
+            trackClientAction('ouvrir_carte');
             if(menuModal) {
                 menuModal.classList.remove('hidden');
                 document.querySelectorAll('.menu-checkbox').forEach(cb => {
@@ -1081,6 +1093,7 @@
         }
 
         function openWineListPanel() {
+            trackClientAction('carte_vins');
             const p = document.getElementById("wine-list-panel");
             if (!p) return;
             const data = langData[currentLang];
@@ -1142,6 +1155,7 @@
         }
 
         function openWineFlashModal(idx) {
+            trackClientAction('flash');
             const wfm = document.getElementById("wine-flash-modal");
             if (!wfm || !wineFlatList[idx]) return;
             const { wine: w, cat } = wineFlatList[idx];
@@ -1411,6 +1425,7 @@
             switchButtons.classList.add('hidden');
 
             lastQuestionAsked = question;
+            if (!imageBase64) trackClientAction('texte_libre');
 
             try {
                 const askUrl = '/ask' + (restoId ? ('?resto=' + encodeURIComponent(restoId)) : '');

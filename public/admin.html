@@ -64,11 +64,6 @@
                 display: none !important;
             }
 
-            /* On garde les blocs “top” mais on évite d'imprimer les logs bruts */
-            #live-log-list, #error-log-list {
-                display: none !important;
-            }
-
             /* Assouplit la mise en page : pas de gras/contrastes trop marqués */
             .glass-card {
                 background: #fff !important;
@@ -128,15 +123,19 @@
             <div class="max-w-[88rem] mx-auto px-4 py-6 space-y-6">
                 <!-- Onglet 1 : Statistiques -->
                 <section id="panel-stats" class="space-y-6">
-                    <!-- Top cards -->
+                    <!-- Clients + graphiques (même encadré) -->
                     <div class="grid grid-cols-1 gap-4">
                         <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
-                            <div class="flex items-center justify-between mb-3">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                                 <div>
                                     <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400 mb-1">
                                         Clients conseillés (<span id="clients-range-label">30 derniers jours</span>)
                                     </p>
                                     <p id="stat-clients" class="text-3xl font-semibold text-amber-300">0</p>
+                                    <div class="mt-2 text-[11px] text-slate-500 space-y-0.5">
+                                        <p><span class="text-slate-400">Succès</span> : <span id="stat-live-ok" class="text-emerald-400 font-medium">0</span></p>
+                                        <p><span class="text-slate-400">Erreur / refus</span> : <span id="stat-live-err" class="text-rose-400 font-medium">0</span></p>
+                                    </div>
                                 </div>
                                 <div class="flex flex-col items-end gap-2 text-xs text-slate-400">
                                     <select id="stats-range-select" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
@@ -151,10 +150,24 @@
                                     <span class="mt-1 text-[11px] text-slate-500">Basé sur les requêtes IA</span>
                                 </div>
                             </div>
+                            <div class="border-t border-white/10 pt-4 space-y-6">
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500 mb-1">Jour de la semaine le plus actif</p>
+                                    <p class="text-[10px] text-slate-500 mb-3">Répartition des demandes (live + erreurs) sur la période sélectionnée.</p>
+                                    <div id="dash-chart-weekday" class="flex items-end gap-2 min-h-[9.5rem] border-b border-white/10 pb-2 text-[11px] text-slate-500">—</div>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500 mb-1">Tendance mensuelle</p>
+                                    <p class="text-[10px] text-slate-500 mb-3">Volume mois par mois (historique complet, jusqu’à 24 mois).</p>
+                                    <div class="overflow-x-auto pb-1">
+                                        <div id="dash-chart-monthly" class="flex items-end gap-2 min-h-[7.5rem] min-w-max border-b border-white/10 pb-2 text-[11px] text-slate-500">—</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Middle grid -->
+                    <!-- Tendances + Top recherches + Répartition -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <!-- Tendances du mois -->
                         <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40 lg:col-span-2">
@@ -227,26 +240,40 @@
                         </div>
 
                         <!-- Top 3 recherches -->
-                        <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
-                            <div class="flex items-center justify-between mb-3">
-                            <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Top des recherches</h2>
-                            <div class="flex items-center gap-3">
-                                <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Afficher</span>
-                                <select id="top-searches-topN" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
-                                    <option value="3" selected>Top 3</option>
-                                    <option value="5">Top 5</option>
-                                    <option value="10">Top 10</option>
-                                </select>
+                        <div class="flex flex-col gap-4">
+                            <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Top des recherches</h2>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Afficher</span>
+                                        <select id="top-searches-topN" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                            <option value="3" selected>Top 3</option>
+                                            <option value="5">Top 5</option>
+                                            <option value="10">Top 10</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <ol id="top-searches-list" class="list-none space-y-2 text-xs text-slate-200">
+                                    <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                                    <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                                    <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                                </ol>
                             </div>
+                            <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
+                                <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 mb-2">Répartition des demandes</h2>
+                                <p class="text-[10px] text-slate-500 mb-3">Part des interactions sur l’app client (cumul depuis le déploiement).</p>
+                                <div id="interaction-repartition" class="space-y-2 text-xs text-slate-200">
+                                    <div class="flex justify-between gap-2"><span class="text-slate-400">Bouton flash (fiche vin)</span><span id="pct-flash" class="text-amber-200">0%</span></div>
+                                    <div class="flex justify-between gap-2"><span class="text-slate-400">Texte libre / envoi</span><span id="pct-texte" class="text-amber-200">0%</span></div>
+                                    <div class="flex justify-between gap-2"><span class="text-slate-400">Ouvrir la carte (repas)</span><span id="pct-carte-repas" class="text-amber-200">0%</span></div>
+                                    <div class="flex justify-between gap-2"><span class="text-slate-400">Carte des vins</span><span id="pct-carte-vins" class="text-amber-200">0%</span></div>
+                                    <p id="interaction-repartition-empty" class="text-[10px] text-slate-500 pt-1 hidden">Aucune donnée — les compteurs se remplissent au fil des visites.</p>
+                                </div>
                             </div>
-                            <ol id="top-searches-list" class="list-none space-y-2 text-xs text-slate-200">
-                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
-                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
-                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
-                            </ol>
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <!-- Mouchard Live -->
                     <div class="glass-card rounded-2xl border border-emerald-500/20 bg-slate-950/70 p-5 shadow-xl shadow-black/60">
                         <div class="flex items-center justify-between mb-3">
@@ -254,18 +281,13 @@
                                 <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                                 <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Mouchard Live</h2>
                             </div>
-                            <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Historique (live)</span>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Top 5 questions</span>
                         </div>
-
-                        <div class="bg-black/70 border border-emerald-500/20 rounded-xl font-mono text-[11px] text-emerald-200 p-3 max-h-56 overflow-y-auto scrollbar-thin">
-                            <div class="flex items-center gap-2 text-emerald-400 mb-2">
-                                <span class="text-xs text-emerald-500">admin@french-sommelier</span>
-                                <span class="text-slate-600">/logs</span>
-                            </div>
-                            <pre id="live-log-list" class="whitespace-pre-wrap leading-relaxed">
-[INIT] Aucun historique pour le moment.
-                            </pre>
-                        </div>
+                        <p class="text-[10px] text-slate-500 mb-2">Historique complet : bouton <span class="text-amber-200/90">📄 Rapport</span> (export CSV).</p>
+                        <ol id="top-live-demands-list" class="list-decimal list-inside space-y-1.5 text-[11px] text-emerald-100 mb-0 min-h-[6rem]">
+                            <li class="text-slate-500">—</li>
+                        </ol>
+                        <pre id="live-log-list" class="hidden whitespace-pre-wrap leading-relaxed">[INIT]</pre>
                     </div>
 
                     <!-- Mouchard Error -->
@@ -275,14 +297,14 @@
                                 <span class="h-2 w-2 rounded-full bg-rose-400 animate-pulse"></span>
                                 <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Mouchard Error</h2>
                             </div>
-                            <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Refus / erreurs</span>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Top 5 échecs</span>
                         </div>
-
-                        <div class="bg-black/70 border border-rose-500/20 rounded-xl font-mono text-[11px] text-rose-200 p-3 max-h-56 overflow-y-auto scrollbar-thin">
-                            <pre id="error-log-list" class="whitespace-pre-wrap leading-relaxed">
-[INIT] Aucune erreur pour le moment.
-                            </pre>
-                        </div>
+                        <p class="text-[10px] text-slate-500 mb-2">Historique complet : bouton <span class="text-amber-200/90">📄 Rapport</span> (export CSV).</p>
+                        <ol id="top-error-demands-list" class="list-decimal list-inside space-y-1.5 text-[11px] text-rose-100 mb-0 min-h-[6rem]">
+                            <li class="text-slate-500">—</li>
+                        </ol>
+                        <pre id="error-log-list" class="hidden whitespace-pre-wrap leading-relaxed">[INIT]</pre>
+                    </div>
                     </div>
                 </section>
 
@@ -401,27 +423,6 @@
                 </section>
             </div>
         </main>
-    </div>
-
-    <!-- Rapport plein écran -->
-    <div id="report-overlay" class="fixed inset-0 z-[120] hidden">
-        <div class="absolute inset-0 bg-black/70 backdrop-blur"></div>
-        <div class="relative z-[121] w-full h-full flex items-start justify-center px-4 py-6 overflow-y-auto">
-            <div class="w-full max-w-6xl bg-slate-950 border border-white/10 rounded-2xl shadow-2xl">
-                <div class="flex items-start justify-between gap-4 p-4 border-b border-white/10">
-                    <div>
-                        <p class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-1">RAPPORT</p>
-                        <p id="report-subtitle" class="text-sm text-slate-200"></p>
-                    </div>
-                    <button type="button" onclick="closeReport()" class="px-3 py-1.5 rounded-full border border-white/15 text-[11px] uppercase tracking-[0.15em] hover:bg-white/10 transition-colors">
-                        Fermer
-                    </button>
-                </div>
-                <div id="report-content" class="p-5 space-y-6">
-                    <div class="text-slate-200">Chargement...</div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -633,9 +634,13 @@
 
         async function loadStats() {
             const clientsEl = document.getElementById('stat-clients');
+            const statLiveOkEl = document.getElementById('stat-live-ok');
+            const statLiveErrEl = document.getElementById('stat-live-err');
+            const dashWeekdayEl = document.getElementById('dash-chart-weekday');
+            const dashMonthlyEl = document.getElementById('dash-chart-monthly');
             const topSearchesEl = document.getElementById('top-searches-list');
-            const liveLogEl = document.getElementById('live-log-list');
-            const errorLogEl = document.getElementById('error-log-list');
+            const topLiveDemandsEl = document.getElementById('top-live-demands-list');
+            const topErrorDemandsEl = document.getElementById('top-error-demands-list');
             const rougePct = document.getElementById('trend-rouge-pct');
             const blancPct = document.getElementById('trend-blanc-pct');
             const rosePct = document.getElementById('trend-rose-pct');
@@ -663,12 +668,77 @@
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 const clientsTotal = typeof data.clients_total_range === 'number' ? data.clients_total_range : 0;
+                const liveOk = typeof data.live_total_range === 'number' ? data.live_total_range : 0;
+                const errN = typeof data.total_errors === 'number' ? data.total_errors : 0;
                 if (clientsEl) clientsEl.textContent = Math.round(clientsTotal).toLocaleString('fr-FR');
+                if (statLiveOkEl) statLiveOkEl.textContent = String(Math.round(liveOk));
+                if (statLiveErrEl) statLiveErrEl.textContent = String(Math.round(errN));
+
+                const cw = data.chart_weekday || { labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'], counts: [0, 0, 0, 0, 0, 0, 0] };
+                const cm = Array.isArray(data.chart_monthly) ? data.chart_monthly : [];
+                const countsW = Array.isArray(cw.counts) ? cw.counts.map((x) => Number(x || 0)) : [0, 0, 0, 0, 0, 0, 0];
+                const labelsW = Array.isArray(cw.labels) && cw.labels.length === 7 ? cw.labels : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+                const maxW = Math.max(1, ...countsW);
+                if (dashWeekdayEl) {
+                    dashWeekdayEl.innerHTML = labelsW.map((lab, i) => {
+                        const c = countsW[i] || 0;
+                        const barPx = maxW ? Math.max(c > 0 ? 6 : 0, (c / maxW) * 120) : 0;
+                        return `<div class="flex flex-col items-center gap-1 flex-1 min-w-[2rem]">
+                            <div class="w-full max-w-[2.75rem] mx-auto rounded-t bg-gradient-to-t from-amber-700 to-amber-400" style="height:${barPx}px"></div>
+                            <span class="text-[10px] text-slate-400">${escapeHtml(lab)}</span>
+                            <span class="text-[11px] font-semibold text-amber-200">${c}</span>
+                        </div>`;
+                    }).join('');
+                }
+                function formatMonthFr(key) {
+                    if (!key || typeof key !== 'string') return '';
+                    const parts = key.split('-');
+                    if (parts.length < 2) return key;
+                    const y = parseInt(parts[0], 10);
+                    const mo = parseInt(parts[1], 10);
+                    if (Number.isNaN(y) || Number.isNaN(mo)) return key;
+                    const d = new Date(Date.UTC(y, mo - 1, 1));
+                    return d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+                }
+                const maxM = cm.length ? Math.max(1, ...cm.map((m) => Number(m.count || 0))) : 1;
+                if (dashMonthlyEl) {
+                    dashMonthlyEl.innerHTML = cm.length
+                        ? cm.map((m) => {
+                            const c = Number(m.count || 0);
+                            const barPx = maxM ? Math.max(c > 0 ? 4 : 0, (c / maxM) * 100) : 0;
+                            const lab = formatMonthFr(m.month);
+                            return `<div class="flex flex-col items-center gap-1 flex-1 min-w-[2.75rem]">
+                                <div class="w-full max-w-[3rem] rounded-t bg-gradient-to-t from-slate-600 to-slate-400" style="height:${barPx}px"></div>
+                                <span class="text-[10px] text-slate-400 whitespace-nowrap">${escapeHtml(lab)}</span>
+                                <span class="text-[11px] font-semibold text-slate-200">${c}</span>
+                            </div>`;
+                        }).join('')
+                        : '<span class="text-slate-500 text-sm">Pas encore assez de données.</span>';
+                }
+
+                const ir = data.interaction_repartition;
+                const pctFlash = document.getElementById('pct-flash');
+                const pctTexte = document.getElementById('pct-texte');
+                const pctCarteRepas = document.getElementById('pct-carte-repas');
+                const pctCarteVins = document.getElementById('pct-carte-vins');
+                const irEmpty = document.getElementById('interaction-repartition-empty');
+                if (ir && typeof ir.total === 'number' && ir.total > 0) {
+                    if (pctFlash) pctFlash.textContent = `${ir.flash ?? 0}%`;
+                    if (pctTexte) pctTexte.textContent = `${ir.texte_libre ?? 0}%`;
+                    if (pctCarteRepas) pctCarteRepas.textContent = `${ir.ouvrir_carte ?? 0}%`;
+                    if (pctCarteVins) pctCarteVins.textContent = `${ir.carte_vins ?? 0}%`;
+                    if (irEmpty) irEmpty.classList.add('hidden');
+                } else {
+                    if (pctFlash) pctFlash.textContent = '—';
+                    if (pctTexte) pctTexte.textContent = '—';
+                    if (pctCarteRepas) pctCarteRepas.textContent = '—';
+                    if (pctCarteVins) pctCarteVins.textContent = '—';
+                    if (irEmpty) irEmpty.classList.remove('hidden');
+                }
+
                 const topSearches = Array.isArray(data.top_searches) ? data.top_searches : [];
                 const totalSuggestions = typeof data.total_suggestions === 'number' ? data.total_suggestions : 0;
                 const tendances = data && data.tendances ? data.tendances : { Rouge: 0, Blanc: 0, 'Rosé': 0, ChampagneBulles: 0, Spiritueux: 0, Autres: 0 };
-                const live = Array.isArray(data.live_log) ? data.live_log : [];
-                const errors = Array.isArray(data.error_log) ? data.error_log : [];
 
                 const denom = totalSuggestions || topSearches.reduce((acc, it) => acc + (it.count || 0), 0) || 1;
                 function renderSearchCell(item, idx) {
@@ -722,34 +792,30 @@
                 if (spiritueuxBar) spiritueuxBar.style.width = `${Math.max(0, Math.min(100, sp))}%`;
                 if (autresBar) autresBar.style.width = `${Math.max(0, Math.min(100, au))}%`;
 
-                if (live.length === 0) {
-                    liveLogEl.textContent = '[INIT] Aucun historique pour le moment.';
-                } else {
-                    liveLogEl.textContent = live.map(item => {
-                        const h = item && item.ts ? new Date(item.ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-                        const q = (item && item.question) ? item.question : 'Question non fournie';
-                        const vin = (item && item.vin) ? item.vin : 'Aucune suggestion';
-                        return `[${h}] "${q}" -> ${vin}`;
-                    }).join('\n');
+                const tl5 = Array.isArray(data.top_live_demands_5) ? data.top_live_demands_5 : [];
+                const te5 = Array.isArray(data.top_error_questions_5) ? data.top_error_questions_5 : [];
+                if (topLiveDemandsEl) {
+                    topLiveDemandsEl.innerHTML = tl5.length
+                        ? tl5.map((it, i) => `<li><span class="text-emerald-200">${escapeHtml(it.question || '')}</span> <span class="text-slate-500">(${it.count || 0}×)</span></li>`).join('')
+                        : '<li class="text-slate-500 list-none">Aucune donnée sur la période.</li>';
                 }
-                if (errorLogEl) {
-                    if (errors.length === 0) {
-                        errorLogEl.textContent = '[INIT] Aucune erreur pour le moment.';
-                    } else {
-                        errorLogEl.textContent = errors.map(item => {
-                            const h = item && item.ts ? new Date(item.ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-                            const q = (item && item.question) ? item.question : 'Question non fournie';
-                            const msg = (item && item.message) ? item.message : 'Requête refusée';
-                            return `[${h}] "${q}" -> ${msg}`;
-                        }).join('\n');
-                    }
+                if (topErrorDemandsEl) {
+                    topErrorDemandsEl.innerHTML = te5.length
+                        ? te5.map((it) => `<li><span class="text-rose-200">${escapeHtml(it.question || '')}</span> <span class="text-slate-500">(${it.count || 0}×)</span></li>`).join('')
+                        : '<li class="text-slate-500 list-none">Aucune donnée sur la période.</li>';
                 }
             } catch (e) {
                 console.error('Erreur stats', e);
                 if (clientsEl) clientsEl.textContent = '—';
+                if (statLiveOkEl) statLiveOkEl.textContent = '—';
+                if (statLiveErrEl) statLiveErrEl.textContent = '—';
                 if (topSearchesEl) topSearchesEl.innerHTML = '<li class="text-rose-400 text-[11px]">Impossible de charger.</li>';
-                if (liveLogEl) liveLogEl.textContent = '[ERREUR] Impossible de charger le mouchard live.';
-                if (errorLogEl) errorLogEl.textContent = '[ERREUR] Impossible de charger le mouchard error.';
+                if (dashWeekdayEl) dashWeekdayEl.textContent = '—';
+                if (dashMonthlyEl) dashMonthlyEl.textContent = '—';
+                const topLiveDemandsEl = document.getElementById('top-live-demands-list');
+                const topErrorDemandsEl = document.getElementById('top-error-demands-list');
+                if (topLiveDemandsEl) topLiveDemandsEl.innerHTML = '<li class="text-rose-400">Erreur de chargement.</li>';
+                if (topErrorDemandsEl) topErrorDemandsEl.innerHTML = '<li class="text-rose-400">Erreur de chargement.</li>';
             }
         }
 
@@ -766,24 +832,27 @@
             return d.innerHTML;
         }
 
-        function openReport() {
-            const overlay = document.getElementById('report-overlay');
-            const contentEl = document.getElementById('report-content');
-            if (!overlay || !contentEl) return;
-            const subtitleEl = document.getElementById('report-subtitle');
-            if (subtitleEl) subtitleEl.textContent = `Édition : ${restoId || 'default'} • ${new Date().toLocaleString('fr-FR')}`;
-            contentEl.innerHTML = `<div class="text-slate-200">Chargement du rapport...</div>`;
-            overlay.classList.remove('hidden');
-            buildReport().catch((e) => {
+        async function openReport() {
+            try {
+                const sep = restoQuery ? '&' : '?';
+                const res = await fetch('/api/admin/export-mouchards' + restoQuery + sep + '_=' + Date.now(), { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const blob = await res.blob();
+                const cd = res.headers.get('Content-Disposition');
+                let fname = 'mouchards_export.csv';
+                const m = cd && cd.match(/filename\*?=(?:UTF-8'')?["']?([^";\n]+)/i);
+                if (m) fname = decodeURIComponent(m[1].replace(/["']/g, '').trim());
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = fname;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(a.href);
+            } catch (e) {
                 console.error(e);
-                contentEl.innerHTML = `<div class="text-rose-200 font-semibold">Impossible de générer le rapport.</div>`;
-            });
-        }
-
-        function closeReport() {
-            const overlay = document.getElementById('report-overlay');
-            if (!overlay) return;
-            overlay.classList.add('hidden');
+                alert('Impossible de télécharger l\'export CSV. Réessayez ou vérifiez la session admin.');
+            }
         }
 
         function formatDateTime(ts) {
@@ -791,281 +860,6 @@
             const d = new Date(ts);
             if (Number.isNaN(d.getTime())) return '--:--';
             return d.toLocaleString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-        }
-
-        async function buildReport() {
-            const contentEl = document.getElementById('report-content');
-            if (!contentEl) return;
-
-            const rangeSelectEl = document.getElementById('stats-range-select');
-            const topNSelectEl = document.getElementById('top-searches-topN');
-            const range = rangeSelectEl ? rangeSelectEl.value : 'last30';
-            const userTopNRaw = topNSelectEl ? parseInt(topNSelectEl.value, 10) : 3;
-            const userTopN = [3, 5, 10].includes(userTopNRaw) ? userTopNRaw : 3;
-            /** API 3/5/10 : on demande au moins 5 lignes pour pouvoir afficher jusqu’à 5 puces (Live / erreurs) dans le rapport. */
-            const fetchTopN = userTopN === 3 ? 5 : userTopN;
-
-            const sep = restoQuery ? '&' : '?';
-            const statsUrl = '/api/admin/stats' + restoQuery + sep + 'range=' + encodeURIComponent(range) + '&topN=' + encodeURIComponent(fetchTopN);
-
-            const statsRes = await fetch(statsUrl);
-            if (!statsRes.ok) throw new Error('HTTP stats ' + statsRes.status);
-
-            const statsData = await statsRes.json();
-
-            const clientsTotal = typeof statsData.clients_total_range === 'number' ? statsData.clients_total_range : 0;
-            const topSearches = Array.isArray(statsData.top_searches) ? statsData.top_searches : [];
-            const totalSuggestions = typeof statsData.total_suggestions === 'number' ? statsData.total_suggestions : 0;
-            const tendances = statsData && statsData.tendances ? statsData.tendances : { Rouge: 0, Blanc: 0, 'Rosé': 0, ChampagneBulles: 0, Spiritueux: 0, Autres: 0 };
-            const topLiveDemands = Array.isArray(statsData.top_live_demands) ? statsData.top_live_demands : [];
-            const topErrorQuestions = Array.isArray(statsData.top_error_questions) ? statsData.top_error_questions : [];
-            const REPORT_TOP_MAX = 5;
-            const topLiveDemandsReport = topLiveDemands.slice(0, REPORT_TOP_MAX);
-            const topErrorQuestionsReport = topErrorQuestions.slice(0, REPORT_TOP_MAX);
-            const topSearchesReport = topSearches.slice(0, userTopN);
-            const liveLog = Array.isArray(statsData.live_log) ? statsData.live_log : [];
-            const errorLog = Array.isArray(statsData.error_log) ? statsData.error_log : [];
-            const totalErrors = typeof statsData.total_errors === 'number' ? statsData.total_errors : 0;
-            const lastUpdated = statsData.last_updated || null;
-            const apiRange = statsData.range || range;
-            const rangeLabelFr = apiRange === 'all' ? 'depuis le début' : (apiRange === 'last7' ? '7 derniers jours' : '30 derniers jours');
-            const cw = statsData.chart_weekday || { labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'], counts: [0, 0, 0, 0, 0, 0, 0] };
-            const cm = Array.isArray(statsData.chart_monthly) ? statsData.chart_monthly : [];
-
-            function formatMonthFr(key) {
-                if (!key || typeof key !== 'string') return '';
-                const parts = key.split('-');
-                if (parts.length < 2) return key;
-                const y = parseInt(parts[0], 10);
-                const mo = parseInt(parts[1], 10);
-                if (Number.isNaN(y) || Number.isNaN(mo)) return key;
-                const d = new Date(Date.UTC(y, mo - 1, 1));
-                return d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-            }
-
-            const countsW = Array.isArray(cw.counts) ? cw.counts.map((x) => Number(x || 0)) : [0, 0, 0, 0, 0, 0, 0];
-            const labelsW = Array.isArray(cw.labels) && cw.labels.length === 7 ? cw.labels : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-            const maxW = Math.max(1, ...countsW);
-            const weekdayBarsHtml = labelsW.map((lab, i) => {
-                const c = countsW[i] || 0;
-                const barPx = maxW ? Math.max(c > 0 ? 6 : 0, (c / maxW) * 120) : 0;
-                return `<div class="flex flex-col items-center gap-1 flex-1 min-w-[2rem]">
-                    <div class="w-full max-w-[2.75rem] mx-auto rounded-t bg-gradient-to-t from-amber-700 to-amber-400" style="height:${barPx}px"></div>
-                    <span class="text-[10px] text-slate-400">${escapeHtml(lab)}</span>
-                    <span class="text-[11px] font-semibold text-amber-200">${c}</span>
-                </div>`;
-            }).join('');
-
-            const maxM = cm.length ? Math.max(1, ...cm.map((m) => Number(m.count || 0))) : 1;
-            const monthlyBarsHtml = cm.length
-                ? cm.map((m) => {
-                    const c = Number(m.count || 0);
-                    const barPx = maxM ? Math.max(c > 0 ? 4 : 0, (c / maxM) * 100) : 0;
-                    const lab = formatMonthFr(m.month);
-                    return `<div class="flex flex-col items-center gap-1 flex-1 min-w-[2.75rem]">
-                        <div class="w-full max-w-[3rem] rounded-t bg-gradient-to-t from-slate-600 to-slate-400" style="height:${barPx}px"></div>
-                        <span class="text-[10px] text-slate-400 whitespace-nowrap">${escapeHtml(lab)}</span>
-                        <span class="text-[11px] font-semibold text-slate-200">${c}</span>
-                    </div>`;
-                }).join('')
-                : '<div class="text-slate-500 text-sm py-4">Pas encore assez de données pour un historique mensuel.</div>';
-
-            const denom = totalSuggestions || topSearches.reduce((acc, it) => acc + (it.count || 0), 0) || 1;
-            const denomLive = topLiveDemandsReport.reduce((acc, it) => acc + (it.count || 0), 0) || 1;
-            const denomErrQ = topErrorQuestionsReport.reduce((acc, it) => acc + (it.count || 0), 0) || totalErrors || 1;
-
-            const topSearchesHtml = topSearchesReport.length
-                ? `<ol class="list-decimal list-inside space-y-1 text-sm text-slate-200">
-                    ${topSearchesReport.map((it) => {
-                        const pct = Math.round(((it.count || 0) / denom) * 100);
-                        return `<li><span class="font-semibold text-slate-100">${escapeHtml(it.vin)}</span> <span class="text-emerald-300">(${pct}%)</span></li>`;
-                    }).join('')}
-                </ol>`
-                : `<div class="text-slate-400">Aucune recherche</div>`;
-
-            const topLiveDemandsHtml = topLiveDemandsReport.length
-                ? `<ol class="list-decimal list-inside space-y-1 text-sm text-slate-200">
-                    ${topLiveDemandsReport.map((it) => {
-                        const pct = Math.round(((it.count || 0) / denomLive) * 100);
-                        return `<li><span class="font-semibold text-slate-100">${escapeHtml(it.question || '')}</span> <span class="text-emerald-300">(${pct}%)</span></li>`;
-                    }).join('')}
-                </ol>`
-                : `<div class="text-slate-400">Aucune demande (live)</div>`;
-
-            const topErrorQuestionsHtml = topErrorQuestionsReport.length
-                ? `<ol class="list-decimal list-inside space-y-1 text-sm text-rose-200">
-                    ${topErrorQuestionsReport.map((it) => {
-                        const pct = Math.round(((it.count || 0) / denomErrQ) * 100);
-                        return `<li><span class="font-semibold text-rose-100">${escapeHtml(it.question || '')}</span> <span class="text-rose-300">(${pct}%)</span></li>`;
-                    }).join('')}
-                </ol>`
-                : `<div class="text-rose-300/70">Aucune demande en erreur sur cette période</div>`;
-
-            const trendsHtml = `
-                <div class="space-y-2 text-sm text-slate-200">
-                    <div><span class="text-slate-400">Vin rouge</span> : <span class="font-semibold">${escapeHtml(String(tendances.Rouge || 0))}%</span></div>
-                    <div><span class="text-slate-400">Vin blanc</span> : <span class="font-semibold">${escapeHtml(String(tendances.Blanc || 0))}%</span></div>
-                    <div><span class="text-slate-400">Rosé</span> : <span class="font-semibold">${escapeHtml(String(tendances['Rosé'] || 0))}%</span></div>
-                    <div><span class="text-slate-400">Champagnes &amp; bulles</span> : <span class="font-semibold">${escapeHtml(String(tendances.ChampagneBulles || 0))}%</span></div>
-                    <div><span class="text-slate-400">Spiritueux</span> : <span class="font-semibold">${escapeHtml(String(tendances.Spiritueux || 0))}%</span></div>
-                    <div><span class="text-slate-400">Autres</span> : <span class="font-semibold">${escapeHtml(String(tendances.Autres || 0))}%</span></div>
-                </div>`;
-
-            const liveHtml = liveLog.length
-                ? `<div class="max-h-[58vh] overflow-y-auto border border-white/10 rounded-xl bg-black/30">
-                    <pre class="whitespace-pre-wrap break-words p-4 text-[12px] text-slate-200">${escapeHtml(
-                        liveLog.map(item => {
-                            const h = formatDateTime(item.ts);
-                            const q = item.question || 'Question non fournie';
-                            const vin = item.vin ? item.vin : 'Aucune suggestion';
-                            const type = item.type ? ' (' + item.type + ')' : '';
-                            return '[' + h + '] "' + q + '" -> ' + vin + type;
-                        }).join('\n')
-                    )}</pre>
-                </div>`
-                : `<div class="text-slate-400">Aucun historique live</div>`;
-
-            const errorHtml = errorLog.length
-                ? `<div class="max-h-[58vh] overflow-y-auto border border-rose-500/15 rounded-xl bg-black/30">
-                    <pre class="whitespace-pre-wrap break-words p-4 text-[12px] text-rose-200">${escapeHtml(
-                        errorLog.map(item => {
-                            const h = formatDateTime(item.ts);
-                            const q = item.question || 'Question non fournie';
-                            const msg = item.message || 'Requête refusée';
-                            return '[' + h + '] "' + q + '" -> ' + msg;
-                        }).join('\n')
-                    )}</pre>
-                </div>`
-                : `<div class="text-slate-400">Aucune erreur</div>`;
-
-            const menuDiff = statsData.menu_diff && typeof statsData.menu_diff === 'object' ? statsData.menu_diff : null;
-            const diffTs = menuDiff && menuDiff.ts ? formatDateTime(menuDiff.ts) : null;
-            const platsAdded = menuDiff && menuDiff.plats && Array.isArray(menuDiff.plats.added) ? menuDiff.plats.added : [];
-            const platsRemoved = menuDiff && menuDiff.plats && Array.isArray(menuDiff.plats.removed) ? menuDiff.plats.removed : [];
-            const vinsAdded = menuDiff && menuDiff.vins && Array.isArray(menuDiff.vins.added) ? menuDiff.vins.added : [];
-            const vinsRemoved = menuDiff && menuDiff.vins && Array.isArray(menuDiff.vins.removed) ? menuDiff.vins.removed : [];
-
-            const platsHtml = !menuDiff
-                ? `<div class="text-slate-400 text-sm">Aucune sauvegarde de carte enregistrée — enregistrez la carte depuis l’admin pour voir les ajouts et suppressions.</div>`
-                : `<div class="text-xs text-slate-500 mb-3">${diffTs ? `Dernière sauvegarde analysée : <span class="text-slate-300">${escapeHtml(diffTs)}</span>` : ''}</div>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="border border-emerald-500/20 rounded-xl p-3 bg-emerald-950/20">
-                        <div class="text-xs uppercase tracking-[0.15em] text-emerald-300 mb-2">Nouveautés (plats)</div>
-                        ${
-                            platsAdded.length
-                                ? `<ul class="list-disc list-inside text-sm text-slate-200 space-y-1">${platsAdded.map(p => `<li><span class="text-slate-400 text-[11px]">${escapeHtml(p.categorie || '')}</span> — ${escapeHtml(p.nom || '')}</li>`).join('')}</ul>`
-                                : `<div class="text-slate-500 text-sm">Aucun ajout</div>`
-                        }
-                    </div>
-                    <div class="border border-rose-500/20 rounded-xl p-3 bg-rose-950/20">
-                        <div class="text-xs uppercase tracking-[0.15em] text-rose-300 mb-2">Supprimés (plats)</div>
-                        ${
-                            platsRemoved.length
-                                ? `<ul class="list-disc list-inside text-sm text-slate-200 space-y-1">${platsRemoved.map(p => `<li><span class="text-slate-400 text-[11px]">${escapeHtml(p.categorie || '')}</span> — ${escapeHtml(p.nom || '')}</li>`).join('')}</ul>`
-                                : `<div class="text-slate-500 text-sm">Aucune suppression</div>`
-                        }
-                    </div>
-                </div>`;
-
-            const vinsHtml = !menuDiff
-                ? `<div class="text-slate-400 text-sm">Aucune sauvegarde de carte enregistrée — enregistrez la carte depuis l’admin pour voir les ajouts et suppressions.</div>`
-                : `<div class="text-xs text-slate-500 mb-3">${diffTs ? `Dernière sauvegarde analysée : <span class="text-slate-300">${escapeHtml(diffTs)}</span>` : ''}</div>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="border border-emerald-500/20 rounded-xl p-3 bg-emerald-950/20">
-                        <div class="text-xs uppercase tracking-[0.15em] text-emerald-300 mb-2">Vins ajoutés</div>
-                        ${
-                            vinsAdded.length
-                                ? `<ul class="list-disc list-inside text-sm text-slate-200 space-y-1">${vinsAdded.map(w => `<li><span class="text-slate-400 text-[11px]">${escapeHtml(w.categorie || '')}</span> — ${escapeHtml(w.nom || '')}</li>`).join('')}</ul>`
-                                : `<div class="text-slate-500 text-sm">Aucun ajout</div>`
-                        }
-                    </div>
-                    <div class="border border-rose-500/20 rounded-xl p-3 bg-rose-950/20">
-                        <div class="text-xs uppercase tracking-[0.15em] text-rose-300 mb-2">Vins retirés</div>
-                        ${
-                            vinsRemoved.length
-                                ? `<ul class="list-disc list-inside text-sm text-slate-200 space-y-1">${vinsRemoved.map(w => `<li><span class="text-slate-400 text-[11px]">${escapeHtml(w.categorie || '')}</span> — ${escapeHtml(w.nom || '')}</li>`).join('')}</ul>`
-                                : `<div class="text-slate-500 text-sm">Aucune suppression</div>`
-                        }
-                    </div>
-                </div>`;
-
-            contentEl.innerHTML = `
-                <div class="space-y-6">
-                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-3">Vue d’ensemble</div>
-                        <div class="flex flex-wrap items-baseline gap-2 gap-y-1 mb-1">
-                            <span class="text-4xl font-bold text-amber-300">${escapeHtml(String(clientsTotal))}</span>
-                            <span class="text-sm text-slate-400">clients conseillés</span>
-                            <span class="text-xs text-slate-500">(${escapeHtml(rangeLabelFr)})</span>
-                        </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-5">
-                            <div>
-                                <div class="text-xs font-semibold text-slate-300 mb-0.5">Jour de la semaine le plus actif</div>
-                                <p class="text-[10px] text-slate-500 mb-3">Répartition des demandes (live + erreurs) sur la période sélectionnée : <span class="text-slate-400">${escapeHtml(rangeLabelFr)}</span>.</p>
-                                <div class="flex items-end gap-2 min-h-[9.5rem] border-b border-white/10 pb-2">${weekdayBarsHtml}</div>
-                            </div>
-                            <div>
-                                <div class="text-xs font-semibold text-slate-300 mb-0.5">Tendance mensuelle</div>
-                                <p class="text-[10px] text-slate-500 mb-3">Volume de demandes mois par mois (historique complet, jusqu’à 24 mois) pour visualiser la progression.</p>
-                                <div class="overflow-x-auto pb-1">
-                                    <div class="flex items-end gap-2 min-h-[7.5rem] min-w-max border-b border-white/10 pb-2">${monthlyBarsHtml}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-5 pt-4 border-t border-white/10 text-sm text-slate-200 space-y-1">
-                            <div>Recherches (vins suggérés, cumul) : <span class="font-semibold">${escapeHtml(String(totalSuggestions))}</span></div>
-                            <div>Erreurs / refus (période) : <span class="font-semibold">${escapeHtml(String(totalErrors))}</span></div>
-                            <div>Dernière mise à jour des stats : <span class="font-semibold">${escapeHtml(lastUpdated ? formatDateTime(lastUpdated) : '—')}</span></div>
-                        </div>
-                    </div>
-
-                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-2">Tendances du mois</div>
-                        ${trendsHtml}
-                    </div>
-
-                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
-                        <div class="flex items-baseline justify-between gap-4 mb-3">
-                            <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80">Top des recherches</div>
-                            <div class="text-xs text-slate-500">topN=${escapeHtml(String(userTopN))}</div>
-                        </div>
-                        ${topSearchesHtml}
-                    </div>
-
-                    <div class="border border-emerald-500/15 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-emerald-300 mb-3">Mouchard Live (complet)</div>
-                        ${liveHtml}
-                    </div>
-
-                    <div class="border border-emerald-500/15 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-emerald-300 mb-3">Top demandes (Live)</div>
-                        ${topLiveDemandsHtml}
-                    </div>
-
-                    <div class="border border-rose-500/15 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-rose-300 mb-3">Mouchard Error (complet)</div>
-                        ${errorHtml}
-                    </div>
-
-                    <div class="border border-rose-500/15 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-rose-300 mb-3">Top demandes (erreurs / refus)</div>
-                        <p class="text-[11px] text-slate-500 mb-2">Les questions les plus fréquentes ayant généré une erreur ou un refus (même logique que « Top demandes (Live) »).</p>
-                        ${topErrorQuestionsHtml}
-                    </div>
-
-                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-1">Carte des plats — modifications</div>
-                        <p class="text-[11px] text-slate-500 mb-3">Uniquement les entrées / plats / desserts ajoutés ou retirés lors de la dernière sauvegarde.</p>
-                        ${platsHtml}
-                    </div>
-
-                    <div class="border border-white/10 rounded-2xl p-4 bg-black/20">
-                        <div class="text-xs uppercase tracking-[0.25em] text-amber-300/80 mb-1">Carte des vins — modifications</div>
-                        <p class="text-[11px] text-slate-500 mb-3">Uniquement les bouteilles ajoutées ou retirées lors de la dernière sauvegarde (horodatage = dernière enregistrement).</p>
-                        ${vinsHtml}
-                    </div>
-                </div>
-            `;
         }
 
         function getWineCategoryFromType(type) {
