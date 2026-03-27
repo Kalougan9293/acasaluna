@@ -1,25 +1,56 @@
 {
   "chiffre_affaires_euros": 0,
   "keyword_counts": {},
-  "suggestion_counts": {},
-  "error_reason_counts": {},
+  "suggestion_counts": {
+    "Châteauneuf-du-Pape \"La Crau\" - Domaine du Vieux Télégraphe - 2018": 1,
+    "Whispering Angel - Château d'Esclans - 2022": 1
+  },
+  "error_reason_counts": {
+    "Désolé, je suis là uniquement pour vous conseiller le vin parfait.": 2
+  },
   "type_counts": {
-    "Rouge": 0,
+    "Rouge": 1,
     "Blanc": 0,
-    "Rosé": 0,
+    "Rosé": 1,
     "ChampagneBulles": 0,
     "Spiritueux": 0,
     "Autres": 0
   },
   "interaction_counts": {
     "flash": 0,
-    "texte_libre": 0,
-    "ouvrir_carte": 0,
+    "texte_libre": 4,
+    "ouvrir_carte": 1,
     "carte_vins": 0
   },
-  "live_log": [],
-  "error_log": [],
-  "daily_clients": {},
+  "live_log": [
+    {
+      "ts": "2026-03-27T14:26:15.036Z",
+      "question": "Je cherche un vin Rosé",
+      "vin": "Whispering Angel - Château d'Esclans - 2022",
+      "type": "Rosé"
+    },
+    {
+      "ts": "2026-03-27T14:24:47.806Z",
+      "question": "Je vais manger : Entrées: Carpaccio de bœuf. Plats: Entrecôte, Je vous laisse choisir. Desserts: .. Que me conseilles-tu ?",
+      "vin": "Châteauneuf-du-Pape \"La Crau\" - Domaine du Vieux Télégraphe - 2018",
+      "type": "Rouge"
+    }
+  ],
+  "error_log": [
+    {
+      "ts": "2026-03-27T14:26:38.566Z",
+      "question": "je veux de l'eau",
+      "message": "Désolé, je suis là uniquement pour vous conseiller le vin parfait."
+    },
+    {
+      "ts": "2026-03-27T14:26:32.392Z",
+      "question": "batman",
+      "message": "Désolé, je suis là uniquement pour vous conseiller le vin parfait."
+    }
+  ],
+  "daily_clients": {
+    "2026-03-27": 4
+  },
   "daily_ca": {},
-  "last_updated": null
+  "last_updated": "2026-03-27T14:26:38.566Z"
 }

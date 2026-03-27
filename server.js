@@ -6,6 +6,7 @@ const rateLimit = require("express-rate-limit");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const {
     normalizeVinName,
     computeWineMatchScore,
@@ -648,30 +649,59 @@ function applyExplicationCasing(answer, targetLang) {
     return a;
 }
 
-function checkBasicAuth(req) {
-    const restoFromQuery = (() => {
-        try {
-            const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
-            return u.searchParams.get("resto");
-        } catch (e) {
-            return null;
+const ADMIN_SESSION_COOKIE = "admin_session";
+const ADMIN_SESSION_SECRET = String(process.env.ADMIN_SESSION_SECRET || "dev-acasaluna-admin-secret").trim();
+
+function parseCookies(req) {
+    const header = req.headers.cookie;
+    if (!header || typeof header !== "string") return {};
+    const out = {};
+    header.split(";").forEach((part) => {
+        const idx = part.indexOf("=");
+        if (idx === -1) return;
+        const k = part.slice(0, idx).trim();
+        const v = part.slice(idx + 1).trim();
+        if (k) {
+            try {
+                out[k] = decodeURIComponent(v);
+            } catch (e) {
+                out[k] = v;
+            }
         }
-    })();
+    });
+    return out;
+}
 
-    // Si jamais le frontend n'envoie pas `?resto=...`, on tente un fallback via body.
-    const restoFromBody = (req._bodyJson && req._bodyJson.resto) ? req._bodyJson.resto : null;
-    const restoId = restoFromQuery || restoFromBody || null;
+function cookieSecureSuffix(req) {
+    const xf = String(req.headers["x-forwarded-proto"] || "").toLowerCase();
+    return xf === "https" ? "; Secure" : "";
+}
 
-    const safeResto = sanitizeRestoId(restoId);
+/** Paramètre d’établissement (query ou body JSON déjà parsé sur POST). */
+function resolveRestoIdParamForAdmin(req) {
+    let fromQuery = null;
+    try {
+        fromQuery = new URL(req.url, `http://${req.headers.host || "localhost"}`).searchParams.get("resto");
+    } catch (e) {
+        fromQuery = null;
+    }
+    const fromBody = (req._bodyJson && req._bodyJson.resto != null) ? String(req._bodyJson.resto) : null;
+    const raw = fromQuery != null ? fromQuery : (fromBody != null ? fromBody : "");
+    return sanitizeRestoId(raw) || "";
+}
+
+function getAdminPasswordForResolvedTenant(restoKey) {
+    const safeResto = restoKey || "";
     const targetPath = safeResto ? path.join(MENUS_DIR, `${safeResto}.json`) : DEFAULT_MENU_PATH;
     const finalPath = safeResto && fs.existsSync(targetPath) ? targetPath : DEFAULT_MENU_PATH;
-
     const tenantJson = readJsonSafe(finalPath) || {};
     const config = tenantJson && tenantJson.config ? tenantJson.config : {};
-    const adminUser = config.admin_user;
-    const adminPass = config.admin_pass;
+    return { adminUser: config.admin_user, adminPass: config.admin_pass };
+}
 
-    // Sécurité : si pas de credentials dans le JSON tenant, on refuse.
+function checkBasicAuth(req) {
+    const restoKey = resolveRestoIdParamForAdmin(req);
+    const { adminUser, adminPass } = getAdminPasswordForResolvedTenant(restoKey);
     if (!adminUser || !adminPass) return false;
 
     const auth = req.headers["authorization"];
@@ -687,6 +717,61 @@ function checkBasicAuth(req) {
     } catch (e) {
         return false;
     }
+}
+
+function signAdminSession(restoKey, username) {
+    const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const payload = Buffer.from(JSON.stringify({
+        r: restoKey || "",
+        u: String(username || ""),
+        exp
+    })).toString("base64url");
+    const sig = crypto.createHmac("sha256", ADMIN_SESSION_SECRET).update(payload).digest("hex");
+    return `${payload}.${sig}`;
+}
+
+function verifyAdminSessionCookie(token) {
+    if (!token || typeof token !== "string") return null;
+    const dot = token.lastIndexOf(".");
+    if (dot <= 0) return null;
+    const payload = token.slice(0, dot);
+    const sig = token.slice(dot + 1);
+    const expected = crypto.createHmac("sha256", ADMIN_SESSION_SECRET).update(payload).digest("hex");
+    const a = Buffer.from(sig, "utf8");
+    const b = Buffer.from(expected, "utf8");
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+    try {
+        const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+        if (!data || typeof data.exp !== "number" || Date.now() > data.exp) return null;
+        return { r: data.r || "", u: data.u || "", exp: data.exp };
+    } catch (e) {
+        return null;
+    }
+}
+
+function checkAdminSession(req) {
+    const cookies = parseCookies(req);
+    const tok = cookies[ADMIN_SESSION_COOKIE];
+    const sess = verifyAdminSessionCookie(tok);
+    if (!sess) return false;
+    const reqResto = resolveRestoIdParamForAdmin(req);
+    if (sess.r !== reqResto) return false;
+    return true;
+}
+
+/** Cookie de session (page de login) ou Basic Auth (scripts / API). */
+function checkAdminAuth(req) {
+    return checkAdminSession(req) || checkBasicAuth(req);
+}
+
+function redirectToAdminLogin(req, res) {
+    const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+    const next = requestUrl.pathname + requestUrl.search;
+    const resto = requestUrl.searchParams.get("resto") || "";
+    let loc = `/admin-login.html?next=${encodeURIComponent(next)}`;
+    if (resto) loc += `&resto=${encodeURIComponent(resto)}`;
+    res.writeHead(302, { Location: loc });
+    res.end();
 }
 
 function serve503(res, message) {
@@ -731,9 +816,9 @@ const server = http.createServer(async (req, res) => {
 
         // API admin : statistiques (CA + mots-clés)
         if (req.url.startsWith("/api/admin/stats")) {
-            if (!checkBasicAuth(req)) {
-                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Stats\"" });
-                res.end("Authentification requise.");
+            if (!checkAdminAuth(req)) {
+                res.writeHead(401, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "auth_required" }));
                 return;
             }
             const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
@@ -869,11 +954,11 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        // Export CSV : mouchards complets (lecture fichier brut)
+        // Export CSV complet : synthèse + répartitions + mouchards complets
         if (req.url.startsWith("/api/admin/export-mouchards")) {
-            if (!checkBasicAuth(req)) {
-                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Export\"" });
-                res.end("Authentification requise.");
+            if (!checkAdminAuth(req)) {
+                res.writeHead(401, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "auth_required" }));
                 return;
             }
             const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
@@ -882,14 +967,256 @@ const server = http.createServer(async (req, res) => {
             const raw = readJsonSafe(rawPath) || {};
             const liveFull = Array.isArray(raw.live_log) ? raw.live_log : [];
             const errFull = Array.isArray(raw.error_log) ? raw.error_log : [];
+            const combinedFull = [...liveFull, ...errFull];
+            const currentMonthKey = (() => {
+                const n = new Date();
+                return `${n.getUTCFullYear()}-${String(n.getUTCMonth() + 1).padStart(2, "0")}`;
+            })();
+            const weekdayLabels = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
             function escCell(v) {
                 const s = v == null ? "" : String(v);
                 return `"${s.replace(/"/g, '""')}"`;
             }
 
+            function toMonthKey(ts) {
+                const t = Date.parse(ts || "");
+                if (Number.isNaN(t)) return "";
+                const d = new Date(t);
+                return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+            }
+
+            function logMonthMap(logs) {
+                const map = {};
+                for (const it of (Array.isArray(logs) ? logs : [])) {
+                    if (!it || !it.ts) continue;
+                    const k = toMonthKey(it.ts);
+                    if (!k) continue;
+                    map[k] = (map[k] || 0) + 1;
+                }
+                return map;
+            }
+
+            function sortedMonthKeys(...maps) {
+                const set = new Set();
+                for (const m of maps) {
+                    Object.keys(m || {}).forEach((k) => set.add(k));
+                }
+                return Array.from(set).sort();
+            }
+
+            function logWeekdayCounts(logs) {
+                return computeWeekdayCountsFromLogs(Array.isArray(logs) ? logs : []);
+            }
+
+            function topFromLogs(logs, keyFn, topN = 5) {
+                const c = {};
+                for (const it of (Array.isArray(logs) ? logs : [])) {
+                    const k = keyFn(it);
+                    if (!k) continue;
+                    c[k] = (c[k] || 0) + 1;
+                }
+                return Object.entries(c)
+                    .map(([label, count]) => ({ label, count }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, topN);
+            }
+
+            function monthKeyToLabel(monthKey) {
+                const [y, m] = String(monthKey || "").split("-");
+                const yy = Number(y || 0);
+                const mm = Number(m || 0);
+                if (!yy || !mm) return String(monthKey || "");
+                const d = new Date(Date.UTC(yy, mm - 1, 1));
+                return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
+            }
+
+            function splitLogsByMonth(logs) {
+                const out = {};
+                for (const it of (Array.isArray(logs) ? logs : [])) {
+                    if (!it || !it.ts) continue;
+                    const mk = toMonthKey(it.ts);
+                    if (!mk) continue;
+                    if (!out[mk]) out[mk] = [];
+                    out[mk].push(it);
+                }
+                return out;
+            }
+
+            function splitLogsByWeekday(logs) {
+                const out = [[], [], [], [], [], [], []];
+                for (const it of (Array.isArray(logs) ? logs : [])) {
+                    if (!it || !it.ts) continue;
+                    const t = Date.parse(it.ts);
+                    if (Number.isNaN(t)) continue;
+                    const idx = utcTimestampToFrenchWeekdayIndex(t);
+                    out[idx].push(it);
+                }
+                return out;
+            }
+
             const lines = [];
-            lines.push("\ufeffsection,type,horodatage,question,vin_ou_message,type_vin");
+            lines.push("\ufeffsection,sous_section,periode,cle,valeur_1,valeur_2,valeur_3");
+            lines.push(["META", "generation", "all", "resto", sanitizeRestoId(restoId) || "default", new Date().toISOString(), ""].map(escCell).join(","));
+
+            // ---- Clients / succès / erreurs : depuis toujours, mois en cours, par mois, par jour de semaine ----
+            const monthMapCombined = logMonthMap(combinedFull);
+            const monthMapLive = logMonthMap(liveFull);
+            const monthMapErr = logMonthMap(errFull);
+            const allMonths = sortedMonthKeys(monthMapCombined, monthMapLive, monthMapErr);
+
+            lines.push(["CLIENTS", "depuis_toujours", "all", "total", combinedFull.length, "", ""].map(escCell).join(","));
+            lines.push(["CLIENTS", "mois_en_cours", currentMonthKey, "total", monthMapCombined[currentMonthKey] || 0, "", ""].map(escCell).join(","));
+            for (const m of allMonths) {
+                lines.push(["CLIENTS", "par_mois", m, "total", monthMapCombined[m] || 0, "", ""].map(escCell).join(","));
+            }
+            const wdCombined = logWeekdayCounts(combinedFull);
+            for (let i = 0; i < weekdayLabels.length; i++) {
+                lines.push(["CLIENTS", "par_jour_semaine", "all", weekdayLabels[i], wdCombined[i] || 0, "", ""].map(escCell).join(","));
+            }
+
+            lines.push("");
+            lines.push(["SUCCES", "depuis_toujours", "all", "total", liveFull.length, "", ""].map(escCell).join(","));
+            lines.push(["SUCCES", "mois_en_cours", currentMonthKey, "total", monthMapLive[currentMonthKey] || 0, "", ""].map(escCell).join(","));
+            for (const m of allMonths) {
+                lines.push(["SUCCES", "par_mois", m, "total", monthMapLive[m] || 0, "", ""].map(escCell).join(","));
+            }
+            const wdLive = logWeekdayCounts(liveFull);
+            for (let i = 0; i < weekdayLabels.length; i++) {
+                lines.push(["SUCCES", "par_jour_semaine", "all", weekdayLabels[i], wdLive[i] || 0, "", ""].map(escCell).join(","));
+            }
+
+            lines.push("");
+            lines.push(["ERREURS_REFUS", "depuis_toujours", "all", "total", errFull.length, "", ""].map(escCell).join(","));
+            lines.push(["ERREURS_REFUS", "mois_en_cours", currentMonthKey, "total", monthMapErr[currentMonthKey] || 0, "", ""].map(escCell).join(","));
+            for (const m of allMonths) {
+                lines.push(["ERREURS_REFUS", "par_mois", m, "total", monthMapErr[m] || 0, "", ""].map(escCell).join(","));
+            }
+            const wdErr = logWeekdayCounts(errFull);
+            for (let i = 0; i < weekdayLabels.length; i++) {
+                lines.push(["ERREURS_REFUS", "par_jour_semaine", "all", weekdayLabels[i], wdErr[i] || 0, "", ""].map(escCell).join(","));
+            }
+
+            // ---- Tendances types ----
+            lines.push("");
+            const typeCounts = mergeTypeCountsFromDisk(raw.type_counts);
+            const typeTotal = Object.values(typeCounts).reduce((a, n) => a + Number(n || 0), 0);
+            for (const [k, n] of Object.entries(typeCounts)) {
+                const pct = typeTotal ? Math.round((Number(n || 0) / typeTotal) * 100) : 0;
+                lines.push(["TENDANCES_TYPES", "depuis_toujours", "all", k, Number(n || 0), `${pct}%`, ""].map(escCell).join(","));
+            }
+            const typeFamilyKeys = ["Rouge", "Blanc", "Rosé", "ChampagneBulles", "Spiritueux", "Autres"];
+            const liveByMonth = splitLogsByMonth(liveFull);
+            for (const m of allMonths) {
+                const counts = { Rouge: 0, Blanc: 0, "Rosé": 0, ChampagneBulles: 0, Spiritueux: 0, Autres: 0 };
+                for (const it of (liveByMonth[m] || [])) {
+                    const fam = normalizeTypeForStats(String(it && it.type || ""));
+                    counts[fam] = (counts[fam] || 0) + 1;
+                }
+                const total = typeFamilyKeys.reduce((a, k) => a + Number(counts[k] || 0), 0);
+                for (const fam of typeFamilyKeys) {
+                    const n = Number(counts[fam] || 0);
+                    const pct = total ? Math.round((n / total) * 100) : 0;
+                    lines.push(["TENDANCES_TYPES", "par_mois", m, fam, n, `${pct}%`, monthKeyToLabel(m)].map(escCell).join(","));
+                }
+            }
+            const liveByWeekday = splitLogsByWeekday(liveFull);
+            for (let i = 0; i < weekdayLabels.length; i++) {
+                const counts = { Rouge: 0, Blanc: 0, "Rosé": 0, ChampagneBulles: 0, Spiritueux: 0, Autres: 0 };
+                for (const it of liveByWeekday[i]) {
+                    const fam = normalizeTypeForStats(String(it && it.type || ""));
+                    counts[fam] = (counts[fam] || 0) + 1;
+                }
+                const total = typeFamilyKeys.reduce((a, k) => a + Number(counts[k] || 0), 0);
+                for (const fam of typeFamilyKeys) {
+                    const n = Number(counts[fam] || 0);
+                    const pct = total ? Math.round((n / total) * 100) : 0;
+                    lines.push(["TENDANCES_TYPES", "par_jour_semaine", "all", `${weekdayLabels[i]}::${fam}`, n, `${pct}%`, ""].map(escCell).join(","));
+                }
+            }
+
+            // ---- Top recherches / demandes / échecs ----
+            lines.push("");
+            const suggestionEntries = Object.entries(raw.suggestion_counts || {})
+                .map(([vin, count]) => ({ vin, count: Number(count || 0) }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 20);
+            for (const it of suggestionEntries) {
+                lines.push(["TOP_RECHERCHES", "depuis_toujours", "all", it.vin || "(vide)", it.count || 0, "", ""].map(escCell).join(","));
+            }
+            const topSearchFromLive = (logs) => topFromLogs(logs, (it) => String(it && (it.vin || "") || "").trim(), 5);
+            for (const m of allMonths) {
+                const tops = topSearchFromLive(liveByMonth[m] || []);
+                for (const it of tops) {
+                    lines.push(["TOP_RECHERCHES", "par_mois", m, it.label, it.count, "", monthKeyToLabel(m)].map(escCell).join(","));
+                }
+            }
+            for (let i = 0; i < weekdayLabels.length; i++) {
+                const tops = topSearchFromLive(liveByWeekday[i] || []);
+                for (const it of tops) {
+                    lines.push(["TOP_RECHERCHES", "par_jour_semaine", "all", `${weekdayLabels[i]}::${it.label}`, it.count, "", ""].map(escCell).join(","));
+                }
+            }
+
+            const topLiveAll = topFromLogs(liveFull, (it) => String(it && (it.question || it.demande || it.q || "") || "").trim(), 5);
+            const topErrAll = topFromLogs(errFull, (it) => getErrorLogQuestionKeyForTop(it), 5);
+            lines.push("");
+            for (const it of topLiveAll) {
+                lines.push(["TOP_LIVE", "depuis_toujours", "all", it.label, it.count, "", ""].map(escCell).join(","));
+            }
+            for (const m of allMonths) {
+                const tops = topFromLogs(liveByMonth[m] || [], (it) => String(it && (it.question || it.demande || it.q || "") || "").trim(), 5);
+                for (const it of tops) {
+                    lines.push(["TOP_LIVE", "par_mois", m, it.label, it.count, "", monthKeyToLabel(m)].map(escCell).join(","));
+                }
+            }
+            for (let i = 0; i < weekdayLabels.length; i++) {
+                const tops = topFromLogs(liveByWeekday[i] || [], (it) => String(it && (it.question || it.demande || it.q || "") || "").trim(), 5);
+                for (const it of tops) {
+                    lines.push(["TOP_LIVE", "par_jour_semaine", "all", `${weekdayLabels[i]}::${it.label}`, it.count, "", ""].map(escCell).join(","));
+                }
+            }
+            lines.push("");
+            for (const it of topErrAll) {
+                lines.push(["TOP_ERROR", "depuis_toujours", "all", it.label, it.count, "", ""].map(escCell).join(","));
+            }
+            const errByMonth = splitLogsByMonth(errFull);
+            for (const m of allMonths) {
+                const tops = topFromLogs(errByMonth[m] || [], (it) => getErrorLogQuestionKeyForTop(it), 5);
+                for (const it of tops) {
+                    lines.push(["TOP_ERROR", "par_mois", m, it.label, it.count, "", monthKeyToLabel(m)].map(escCell).join(","));
+                }
+            }
+            const errByWeekday = splitLogsByWeekday(errFull);
+            for (let i = 0; i < weekdayLabels.length; i++) {
+                const tops = topFromLogs(errByWeekday[i] || [], (it) => getErrorLogQuestionKeyForTop(it), 5);
+                for (const it of tops) {
+                    lines.push(["TOP_ERROR", "par_jour_semaine", "all", `${weekdayLabels[i]}::${it.label}`, it.count, "", ""].map(escCell).join(","));
+                }
+            }
+
+            // ---- Répartition des demandes (interaction_counts) ----
+            lines.push("");
+            const ic = raw && raw.interaction_counts && typeof raw.interaction_counts === "object"
+                ? raw.interaction_counts
+                : { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
+            const icTotal = Number(ic.flash || 0) + Number(ic.texte_libre || 0) + Number(ic.ouvrir_carte || 0) + Number(ic.carte_vins || 0);
+            const icRows = [
+                ["flash", Number(ic.flash || 0)],
+                ["texte_libre", Number(ic.texte_libre || 0)],
+                ["ouvrir_carte", Number(ic.ouvrir_carte || 0)],
+                ["carte_vins", Number(ic.carte_vins || 0)]
+            ];
+            for (const [k, n] of icRows) {
+                const pct = icTotal ? Math.round((n / icTotal) * 100) : 0;
+                lines.push(["REPARTITION_DEMANDES", "depuis_toujours", "all", k, n, `${pct}%`, `total=${icTotal}`].map(escCell).join(","));
+            }
+            lines.push(["REPARTITION_DEMANDES", "par_mois", "all", "non_disponible", "Les compteurs interaction_counts ne sont pas historisés par mois.", "", ""].map(escCell).join(","));
+            lines.push(["REPARTITION_DEMANDES", "par_jour_semaine", "all", "non_disponible", "Les compteurs interaction_counts ne sont pas historisés par jour de semaine.", "", ""].map(escCell).join(","));
+
+            // ---- Mouchards complets (brut) ----
+            lines.push("");
+            lines.push("section,type,horodatage,question,vin_ou_message,type_vin");
             for (const it of liveFull) {
                 const q = (it && it.question) || "";
                 const vin = (it && it.vin) || "";
@@ -905,7 +1232,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             const csv = lines.join("\r\n");
-            const fname = `mouchards_${sanitizeRestoId(restoId) || "default"}_${new Date().toISOString().slice(0, 10)}.csv`;
+            const fname = `rapport_complet_${sanitizeRestoId(restoId) || "default"}_${new Date().toISOString().slice(0, 10)}.csv`;
             res.writeHead(200, {
                 "Content-Type": "text/csv; charset=utf-8",
                 "Content-Disposition": `attachment; filename="${fname}"`
@@ -916,9 +1243,9 @@ const server = http.createServer(async (req, res) => {
 
         // API admin protégée (lecture)
         if (req.url.startsWith("/api/admin/menu")) {
-            if (!checkBasicAuth(req)) {
-                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Menu\"" });
-                res.end("Authentification requise.");
+            if (!checkAdminAuth(req)) {
+                res.writeHead(401, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "auth_required" }));
                 return;
             }
             const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
@@ -941,20 +1268,18 @@ const server = http.createServer(async (req, res) => {
 
         const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
-        // Page d'administration protégée par Basic Auth (admin / france)
+        // Page d'administration : session (login) ou Basic Auth
         if (requestUrl.pathname === "/admin.html") {
-            if (!checkBasicAuth(req)) {
-                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Dashboard\"" });
-                res.end("Authentification requise.");
+            if (!checkAdminAuth(req)) {
+                redirectToAdminLogin(req, res);
                 return;
             }
         }
 
         // Route courte : /admin (insensible à la casse) -> renvoie admin.html (protégé)
         if (requestUrl.pathname.toLowerCase() === "/admin") {
-            if (!checkBasicAuth(req)) {
-                res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Dashboard\"" });
-                res.end("Authentification requise.");
+            if (!checkAdminAuth(req)) {
+                redirectToAdminLogin(req, res);
                 return;
             }
 
@@ -996,6 +1321,47 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(200, { "Content-Type": contentType });
             res.end(data);
         });
+        return;
+    }
+
+    if (req.method === "POST" && req.url.startsWith("/api/admin/login")) {
+        let body = "";
+        req.on("data", (chunk) => { body += chunk; });
+        req.on("end", () => {
+            try {
+                const data = JSON.parse(body || "{}");
+                const username = String(data.username || "").trim();
+                const password = String(data.password || "");
+                const restoKey = sanitizeRestoId(data.resto != null ? String(data.resto) : "") || "";
+                const { adminUser, adminPass } = getAdminPasswordForResolvedTenant(restoKey);
+                if (!adminUser || !adminPass || username !== adminUser || password !== adminPass) {
+                    res.writeHead(401, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ ok: false, error: "Identifiants incorrects." }));
+                    return;
+                }
+                const token = signAdminSession(restoKey, username);
+                const sec = cookieSecureSuffix(req);
+                const maxAge = 7 * 24 * 3600;
+                res.writeHead(200, {
+                    "Content-Type": "application/json",
+                    "Set-Cookie": `${ADMIN_SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${sec}`
+                });
+                res.end(JSON.stringify({ ok: true }));
+            } catch (e) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ ok: false, error: "Requête invalide." }));
+            }
+        });
+        return;
+    }
+
+    if (req.method === "POST" && req.url.startsWith("/api/admin/logout")) {
+        const sec = cookieSecureSuffix(req);
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Set-Cookie": `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${sec}`
+        });
+        res.end(JSON.stringify({ ok: true }));
         return;
     }
 
@@ -1549,9 +1915,8 @@ GESTIÓN DE ERRORES:
 
                 // Auth Basic multi-clients après parsing du body (sécurité + resto potentiellement côté requête).
                 req._bodyJson = data;
-                if (!checkBasicAuth(req)) {
-                    res.writeHead(401, { "WWW-Authenticate": "Basic realm=\"Admin Carte\"" });
-                    res.setHeader("Content-Type", "application/json");
+                if (!checkAdminAuth(req)) {
+                    res.writeHead(401, { "Content-Type": "application/json" });
                     res.end(JSON.stringify({ ok: false, error: "Authentification requise." }));
                     return;
                 }

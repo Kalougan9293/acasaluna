@@ -46,7 +46,16 @@
             background-clip: text;
             color: transparent;
         }
-        
+
+        /* Ajustement fin: dans la fiche bouteille, on veut un doré lisible,
+           sans effet de reflet/gradient. */
+        #wine-flash-name.gold-gradient {
+            background: none !important;
+            -webkit-text-fill-color: #b38728 !important;
+            color: #b38728 !important;
+            text-shadow: none;
+        }
+
         .gold-btn { background: linear-gradient(to bottom, #d4af37, #996515); box-shadow: 0 5px 15px rgba(0,0,0,0.4); transition: all 0.4s ease; border: 1px solid #fbf5e6; }
         .gold-btn:active { transform: scale(0.98); }
         .gold-btn.minimized { padding: 0.5rem; height: 3.5rem; flex-direction: row; gap: 1rem; }

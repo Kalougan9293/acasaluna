@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>French Sommelier - Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <style>
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
@@ -60,7 +62,7 @@
             }
 
             /* Masque les filtres (top N / période) pour éviter un rendu “tableur” */
-            #stats-range-select, #top-searches-topN {
+            #stats-range-select, #top-searches-topN, #monthly-year-select {
                 display: none !important;
             }
 
@@ -122,65 +124,87 @@
         <main class="flex-1">
             <div class="max-w-[88rem] mx-auto px-4 py-6 space-y-6">
                 <!-- Onglet 1 : Statistiques -->
-                <section id="panel-stats" class="space-y-6">
+                <section id="panel-stats" class="space-y-6 max-w-5xl mx-auto w-full">
                     <!-- Clients + graphiques (même encadré) -->
                     <div class="grid grid-cols-1 gap-4">
                         <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
-                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
                                 <div>
-                                    <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400 mb-1">
-                                        Clients conseillés (<span id="clients-range-label">30 derniers jours</span>)
+                                    <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">
+                                        Vue d’ensemble conseils
+                                    </h2>
+                                    <p class="mt-1 text-xs font-medium text-slate-400 tracking-wide">
+                                        <span id="clients-range-label">30 derniers jours</span>
                                     </p>
-                                    <p id="stat-clients" class="text-3xl font-semibold text-amber-300">0</p>
-                                    <div class="mt-2 text-[11px] text-slate-500 space-y-0.5">
-                                        <p><span class="text-slate-400">Succès</span> : <span id="stat-live-ok" class="text-emerald-400 font-medium">0</span></p>
-                                        <p><span class="text-slate-400">Erreur / refus</span> : <span id="stat-live-err" class="text-rose-400 font-medium">0</span></p>
-                                    </div>
                                 </div>
-                                <div class="flex flex-col items-end gap-2 text-xs text-slate-400">
-                                    <select id="stats-range-select" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                <div class="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
+                                    <select id="stats-range-select" class="rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400 min-w-[12rem]">
                                         <option value="last7">7 derniers jours</option>
                                         <option value="last30" selected>30 derniers jours</option>
                                         <option value="all">Depuis le début</option>
                                     </select>
-                                    <span class="inline-flex items-center gap-1 text-emerald-400">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-                                        <span id="clients-period-subtitle">Basé sur la période sélectionnée</span>
-                                    </span>
-                                    <span class="mt-1 text-[11px] text-slate-500">Basé sur les requêtes IA</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                                <div class="rounded-2xl border border-amber-500/30 bg-black/55 p-5 min-h-[8.5rem] flex flex-col justify-between shadow-inner shadow-black/30">
+                                    <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Client conseillé</p>
+                                    <p id="stat-clients" class="text-5xl leading-none font-semibold text-amber-300">0</p>
+                                    <p class="text-[11px] text-slate-500">Total sur la période</p>
+                                </div>
+                                <div class="rounded-2xl border border-emerald-500/30 bg-black/55 p-5 min-h-[8.5rem] flex flex-col justify-between shadow-inner shadow-black/30">
+                                    <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Client succès</p>
+                                    <p id="stat-live-ok" class="text-5xl leading-none font-semibold text-emerald-400">0</p>
+                                    <p class="text-[11px] text-slate-500">Réponse exploitable</p>
+                                </div>
+                                <div class="rounded-2xl border border-rose-500/30 bg-black/55 p-5 min-h-[8.5rem] flex flex-col justify-between shadow-inner shadow-black/30">
+                                    <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Client raté</p>
+                                    <p id="stat-live-err" class="text-5xl leading-none font-semibold text-rose-400">0</p>
+                                    <p class="text-[11px] text-slate-500">Refus ou réponse incomplète</p>
                                 </div>
                             </div>
                             <div class="border-t border-white/10 pt-4 space-y-6">
                                 <div>
-                                    <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500 mb-1">Jour de la semaine le plus actif</p>
-                                    <p class="text-[10px] text-slate-500 mb-3">Répartition des demandes (live + erreurs) sur la période sélectionnée.</p>
-                                    <div id="dash-chart-weekday" class="flex items-end gap-2 min-h-[9.5rem] border-b border-white/10 pb-2 text-[11px] text-slate-500">—</div>
+                                    <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 mb-0.5 leading-tight">Jour de la semaine le plus actif</h2>
+                                    <p class="text-[10px] text-slate-500 mb-0 leading-tight">Répartition des demandes (live + erreurs) sur la période sélectionnée.</p>
+                                    <div id="dash-chart-weekday" class="mt-3 flex items-end gap-4 border-b border-white/10 pb-2 text-[11px] text-slate-500">—</div>
                                 </div>
-                                <div>
-                                    <p class="text-[11px] uppercase tracking-[0.2em] text-slate-500 mb-1">Tendance mensuelle</p>
-                                    <p class="text-[10px] text-slate-500 mb-3">Volume mois par mois (historique complet, jusqu’à 24 mois).</p>
-                                    <div class="overflow-x-auto pb-1">
-                                        <div id="dash-chart-monthly" class="flex items-end gap-2 min-h-[7.5rem] min-w-max border-b border-white/10 pb-2 text-[11px] text-slate-500">—</div>
+                                <div class="flex flex-col gap-0 min-h-0">
+                                    <div class="flex items-center justify-between gap-3 mb-0.5">
+                                        <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 leading-tight">Tendance mensuelle</h2>
+                                        <select id="monthly-year-select" class="rounded-lg border border-white/10 bg-black/50 px-2.5 py-1 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                            <option value="2026" selected>2026</option>
+                                            <option value="2027">2027</option>
+                                            <option value="2028">2028</option>
+                                            <option value="2029">2029</option>
+                                            <option value="2030">2030</option>
+                                            <option value="2031">2031</option>
+                                            <option value="2032">2032</option>
+                                            <option value="2033">2033</option>
+                                            <option value="2034">2034</option>
+                                            <option value="2035">2035</option>
+                                        </select>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 mb-0 leading-tight">Volume mois par mois pour l’année sélectionnée.</p>
+                                    <div class="border-b border-white/10 pb-1">
+                                        <div id="dash-chart-monthly" class="mt-3 flex items-end gap-4 text-[11px] text-slate-500">—</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tendances + Top recherches + Répartition -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <!-- Tendances du mois -->
-                        <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40 lg:col-span-2">
+                    <!-- Tendances du mois, puis Top recherches, puis Répartition -->
+                    <div class="space-y-4">
+                        <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
                             <div class="flex items-center justify-between mb-4">
                                 <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Tendances du mois</h2>
-                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 border border-emerald-500/40 uppercase tracking-[0.18em]">Live</span>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                                 <div>
-                                    <div class="flex justify-between text-xs mb-1.5">
+                                    <div class="flex justify-between items-baseline mb-1.5 gap-2 text-sm">
                                         <span class="text-slate-200">Vin rouge</span>
-                                        <span id="trend-rouge-pct" class="text-slate-400">0%</span>
+                                        <span id="trend-rouge-pct" class="text-emerald-400 font-medium tabular-nums shrink-0">0%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
                                         <div id="trend-rouge-bar" class="h-full w-[0%] bg-gradient-to-r from-rose-500 to-red-600"></div>
@@ -188,9 +212,9 @@
                                 </div>
 
                                 <div>
-                                    <div class="flex justify-between text-xs mb-1.5">
+                                    <div class="flex justify-between items-baseline mb-1.5 gap-2 text-sm">
                                         <span class="text-slate-200">Vin blanc</span>
-                                        <span id="trend-blanc-pct" class="text-slate-400">0%</span>
+                                        <span id="trend-blanc-pct" class="text-emerald-400 font-medium tabular-nums shrink-0">0%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
                                         <div id="trend-blanc-bar" class="h-full w-[0%] bg-gradient-to-r from-amber-300 to-yellow-500"></div>
@@ -198,9 +222,9 @@
                                 </div>
 
                                 <div>
-                                    <div class="flex justify-between text-xs mb-1.5">
+                                    <div class="flex justify-between items-baseline mb-1.5 gap-2 text-sm">
                                         <span class="text-slate-200">Rosé</span>
-                                        <span id="trend-rose-pct" class="text-slate-400">0%</span>
+                                        <span id="trend-rose-pct" class="text-emerald-400 font-medium tabular-nums shrink-0">0%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
                                         <div id="trend-rose-bar" class="h-full w-[0%] bg-gradient-to-r from-pink-300 to-rose-400"></div>
@@ -208,9 +232,9 @@
                                 </div>
 
                                 <div>
-                                    <div class="flex justify-between text-xs mb-1.5">
+                                    <div class="flex justify-between items-baseline mb-1.5 gap-2 text-sm">
                                         <span class="text-slate-200">Champagnes &amp; bulles</span>
-                                        <span id="trend-champagne-pct" class="text-slate-400">0%</span>
+                                        <span id="trend-champagne-pct" class="text-emerald-400 font-medium tabular-nums shrink-0">0%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
                                         <div id="trend-champagne-bar" class="h-full w-[0%] bg-gradient-to-r from-amber-100 to-amber-400"></div>
@@ -218,9 +242,9 @@
                                 </div>
 
                                 <div>
-                                    <div class="flex justify-between text-xs mb-1.5">
+                                    <div class="flex justify-between items-baseline mb-1.5 gap-2 text-sm">
                                         <span class="text-slate-200">Spiritueux</span>
-                                        <span id="trend-spiritueux-pct" class="text-slate-400">0%</span>
+                                        <span id="trend-spiritueux-pct" class="text-emerald-400 font-medium tabular-nums shrink-0">0%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
                                         <div id="trend-spiritueux-bar" class="h-full w-[0%] bg-gradient-to-r from-amber-700 to-amber-900"></div>
@@ -228,9 +252,9 @@
                                 </div>
 
                                 <div>
-                                    <div class="flex justify-between text-xs mb-1.5">
+                                    <div class="flex justify-between items-baseline mb-1.5 gap-2 text-sm">
                                         <span class="text-slate-200">Autres</span>
-                                        <span id="trend-autres-pct" class="text-slate-400">0%</span>
+                                        <span id="trend-autres-pct" class="text-emerald-400 font-medium tabular-nums shrink-0">0%</span>
                                     </div>
                                     <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
                                         <div id="trend-autres-bar" class="h-full w-[0%] bg-gradient-to-r from-slate-500 to-slate-600"></div>
@@ -239,36 +263,48 @@
                             </div>
                         </div>
 
-                        <!-- Top 3 recherches -->
-                        <div class="flex flex-col gap-4">
-                            <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Top des recherches</h2>
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Afficher</span>
-                                        <select id="top-searches-topN" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
-                                            <option value="3" selected>Top 3</option>
-                                            <option value="5">Top 5</option>
-                                            <option value="10">Top 10</option>
-                                        </select>
+                        <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
+                            <div class="flex items-center justify-between mb-3">
+                                <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Top des recherches</h2>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Afficher</span>
+                                    <select id="top-searches-topN" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                        <option value="3" selected>Top 3</option>
+                                        <option value="5">Top 5</option>
+                                        <option value="10">Top 10</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <ol id="top-searches-list" class="list-none space-y-2 text-xs text-slate-200">
+                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
+                            </ol>
+                        </div>
+
+                        <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
+                            <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 mb-2">Répartition des demandes</h2>
+                            <p class="text-[10px] text-slate-500 mb-3">Part des interactions sur l’app client (cumul depuis le déploiement).</p>
+                            <div id="interaction-repartition" class="space-y-3">
+                                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
+                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Bouton flash (fiche vin)</span>
+                                        <span id="pct-flash" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
+                                    </div>
+                                    <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
+                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Texte libre / envoi</span>
+                                        <span id="pct-texte" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
+                                    </div>
+                                    <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
+                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Ouvrir la carte (repas)</span>
+                                        <span id="pct-carte-repas" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
+                                    </div>
+                                    <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
+                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Carte des vins</span>
+                                        <span id="pct-carte-vins" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
                                     </div>
                                 </div>
-                                <ol id="top-searches-list" class="list-none space-y-2 text-xs text-slate-200">
-                                    <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
-                                    <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
-                                    <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
-                                </ol>
-                            </div>
-                            <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
-                                <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 mb-2">Répartition des demandes</h2>
-                                <p class="text-[10px] text-slate-500 mb-3">Part des interactions sur l’app client (cumul depuis le déploiement).</p>
-                                <div id="interaction-repartition" class="space-y-2 text-xs text-slate-200">
-                                    <div class="flex justify-between gap-2"><span class="text-slate-400">Bouton flash (fiche vin)</span><span id="pct-flash" class="text-amber-200">0%</span></div>
-                                    <div class="flex justify-between gap-2"><span class="text-slate-400">Texte libre / envoi</span><span id="pct-texte" class="text-amber-200">0%</span></div>
-                                    <div class="flex justify-between gap-2"><span class="text-slate-400">Ouvrir la carte (repas)</span><span id="pct-carte-repas" class="text-amber-200">0%</span></div>
-                                    <div class="flex justify-between gap-2"><span class="text-slate-400">Carte des vins</span><span id="pct-carte-vins" class="text-amber-200">0%</span></div>
-                                    <p id="interaction-repartition-empty" class="text-[10px] text-slate-500 pt-1 hidden">Aucune donnée — les compteurs se remplissent au fil des visites.</p>
-                                </div>
+                                <p id="interaction-repartition-empty" class="text-center text-[10px] text-slate-500 hidden">Aucune donnée — les compteurs se remplissent au fil des visites.</p>
                             </div>
                         </div>
                     </div>
@@ -552,6 +588,27 @@
             box.innerHTML = errHtml + warnHtml;
         }
 
+        /** Libellé jour complet (FR) pour les graphiques admin — l’API envoie souvent Lun, Mar, … */
+        function weekdayLabelFr(shortOrFull) {
+            const raw = String(shortOrFull || '').trim();
+            const abbrev = raw.slice(0, 3).toLowerCase().replace(/\.$/, '');
+            const map = {
+                lun: 'Lundi',
+                mar: 'Mardi',
+                mer: 'Mercredi',
+                jeu: 'Jeudi',
+                ven: 'Vendredi',
+                sam: 'Samedi',
+                dim: 'Dimanche'
+            };
+            if (map[abbrev]) return map[abbrev];
+            const lower = raw.toLowerCase();
+            for (const v of Object.values(map)) {
+                if (v.toLowerCase() === lower) return v;
+            }
+            return raw || '—';
+        }
+
         function normalizeWineName(s) {
             return String(s || '')
                 .toLowerCase()
@@ -658,10 +715,8 @@
             const topNSelect = document.getElementById('top-searches-topN');
             const topN = topNSelect ? parseInt(topNSelect.value, 10) : 3;
             const clientsRangeLabelEl = document.getElementById('clients-range-label');
-            const clientsPeriodSubtitleEl = document.getElementById('clients-period-subtitle');
             const rangeLabel = range === 'all' ? 'Depuis le début' : (range === 'last7' ? '7 derniers jours' : '30 derniers jours');
             if (clientsRangeLabelEl) clientsRangeLabelEl.textContent = rangeLabel;
-            if (clientsPeriodSubtitleEl) clientsPeriodSubtitleEl.textContent = 'Basé sur la période sélectionnée';
             try {
                 const sep = restoQuery ? '&' : '?';
                 const res = await fetch('/api/admin/stats' + restoQuery + sep + 'range=' + encodeURIComponent(range) + '&topN=' + encodeURIComponent(topN));
@@ -679,18 +734,24 @@
                 const countsW = Array.isArray(cw.counts) ? cw.counts.map((x) => Number(x || 0)) : [0, 0, 0, 0, 0, 0, 0];
                 const labelsW = Array.isArray(cw.labels) && cw.labels.length === 7 ? cw.labels : ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
                 const maxW = Math.max(1, ...countsW);
+                const chartBarMaxPx = 220;
+                const chartPlaceholderPx = 108;
                 if (dashWeekdayEl) {
                     dashWeekdayEl.innerHTML = labelsW.map((lab, i) => {
                         const c = countsW[i] || 0;
-                        const barPx = maxW ? Math.max(c > 0 ? 6 : 0, (c / maxW) * 120) : 0;
-                        return `<div class="flex flex-col items-center gap-1 flex-1 min-w-[2rem]">
-                            <div class="w-full max-w-[2.75rem] mx-auto rounded-t bg-gradient-to-t from-amber-700 to-amber-400" style="height:${barPx}px"></div>
-                            <span class="text-[10px] text-slate-400">${escapeHtml(lab)}</span>
-                            <span class="text-[11px] font-semibold text-amber-200">${c}</span>
+                        const barPx = maxW ? Math.max(c > 0 ? 12 : chartPlaceholderPx, (c / maxW) * chartBarMaxPx) : chartPlaceholderPx;
+                        const barClass = c > 0
+                            ? 'w-full rounded-t bg-gradient-to-t from-yellow-500 via-amber-400 to-red-600 shadow-[0_-6px_18px_-4px_rgba(220,38,38,0.35),0_4px_14px_-4px_rgba(234,179,8,0.25)]'
+                            : 'w-full rounded-t bg-slate-800/90 border border-white/5';
+                        const dayFull = weekdayLabelFr(lab);
+                        return `<div class="flex min-w-0 min-w-[2.5rem] flex-1 flex-col items-center gap-2 basis-0">
+                            <div class="${barClass}" style="height:${barPx}px"></div>
+                            <span class="text-[11px] text-slate-400 text-center leading-snug">${escapeHtml(dayFull)}</span>
+                            <span class="text-[11px] font-semibold ${c > 0 ? 'text-amber-100' : 'text-emerald-400'}">${c}</span>
                         </div>`;
                     }).join('');
                 }
-                function formatMonthFr(key) {
+                function formatMonthFr(key, withYear = true) {
                     if (!key || typeof key !== 'string') return '';
                     const parts = key.split('-');
                     if (parts.length < 2) return key;
@@ -698,22 +759,43 @@
                     const mo = parseInt(parts[1], 10);
                     if (Number.isNaN(y) || Number.isNaN(mo)) return key;
                     const d = new Date(Date.UTC(y, mo - 1, 1));
-                    return d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+                    return d.toLocaleDateString('fr-FR', withYear ? { month: 'short', year: 'numeric' } : { month: 'short' });
                 }
-                const maxM = cm.length ? Math.max(1, ...cm.map((m) => Number(m.count || 0))) : 1;
+                function buildMonthlySeriesForYear(source, year) {
+                    const map = {};
+                    for (const it of (Array.isArray(source) ? source : [])) {
+                        if (!it || !it.month) continue;
+                        const key = String(it.month);
+                        map[key] = Number(it.count || 0);
+                    }
+                    const arr = [];
+                    const y = Number(year || 2026);
+                    const startMonth = y === 2026 ? 3 : 1;
+                    for (let mNum = startMonth; mNum <= 12; mNum += 1) {
+                        const m = String(mNum).padStart(2, '0');
+                        const key = `${y}-${m}`;
+                        arr.push({ month: key, count: map[key] || 0 });
+                    }
+                    return arr;
+                }
+                const monthlyYearEl = document.getElementById('monthly-year-select');
+                const selectedYear = monthlyYearEl ? Number(monthlyYearEl.value || 2026) : 2026;
+                const monthlyData = buildMonthlySeriesForYear(cm, selectedYear);
+                const maxM = monthlyData.length ? Math.max(1, ...monthlyData.map((m) => Number(m.count || 0))) : 1;
                 if (dashMonthlyEl) {
-                    dashMonthlyEl.innerHTML = cm.length
-                        ? cm.map((m) => {
+                    const barFillClass = 'w-full rounded-t bg-gradient-to-t from-yellow-500 via-amber-400 to-red-600 shadow-[0_-6px_18px_-4px_rgba(220,38,38,0.35),0_4px_14px_-4px_rgba(234,179,8,0.25)]';
+                    const barEmptyClass = 'w-full rounded-t bg-slate-800/90 border border-white/5';
+                    dashMonthlyEl.innerHTML = monthlyData.map((m) => {
                             const c = Number(m.count || 0);
-                            const barPx = maxM ? Math.max(c > 0 ? 4 : 0, (c / maxM) * 100) : 0;
-                            const lab = formatMonthFr(m.month);
-                            return `<div class="flex flex-col items-center gap-1 flex-1 min-w-[2.75rem]">
-                                <div class="w-full max-w-[3rem] rounded-t bg-gradient-to-t from-slate-600 to-slate-400" style="height:${barPx}px"></div>
-                                <span class="text-[10px] text-slate-400 whitespace-nowrap">${escapeHtml(lab)}</span>
-                                <span class="text-[11px] font-semibold text-slate-200">${c}</span>
+                            const barPx = maxM ? Math.max(c > 0 ? 12 : chartPlaceholderPx, (c / maxM) * chartBarMaxPx) : chartPlaceholderPx;
+                            const lab = formatMonthFr(m.month, false);
+                            const barClass = c > 0 ? barFillClass : barEmptyClass;
+                            return `<div class="flex min-w-0 min-w-[2.25rem] sm:min-w-[2.5rem] flex-1 flex-col items-center gap-2 basis-0">
+                                <div class="${barClass}" style="height:${barPx}px"></div>
+                                <span class="text-[11px] text-slate-400 text-center leading-snug whitespace-nowrap">${escapeHtml(lab)}</span>
+                                <span class="text-[11px] font-semibold ${c > 0 ? 'text-amber-100' : 'text-emerald-400'}">${c}</span>
                             </div>`;
-                        }).join('')
-                        : '<span class="text-slate-500 text-sm">Pas encore assez de données.</span>';
+                        }).join('');
                 }
 
                 const ir = data.interaction_repartition;
@@ -821,6 +903,8 @@
 
         const statsRangeSelectEl = document.getElementById('stats-range-select');
         if (statsRangeSelectEl) statsRangeSelectEl.addEventListener('change', () => loadStats());
+        const monthlyYearSelectEl = document.getElementById('monthly-year-select');
+        if (monthlyYearSelectEl) monthlyYearSelectEl.addEventListener('change', () => loadStats());
 
         const topSearchTopNSelectEl = document.getElementById('top-searches-topN');
         if (topSearchTopNSelectEl) topSearchTopNSelectEl.addEventListener('change', () => loadStats());
@@ -832,26 +916,260 @@
             return d.innerHTML;
         }
 
+        async function downloadCsvReportFallback() {
+            const sep = restoQuery ? '&' : '?';
+            const res = await fetch('/api/admin/export-mouchards' + restoQuery + sep + '_=' + Date.now(), { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const blob = await res.blob();
+            const cd = res.headers.get('Content-Disposition');
+            let fname = 'rapport_complet.csv';
+            const m = cd && cd.match(/filename\*?=(?:UTF-8'')?["']?([^";\n]+)/i);
+            if (m) fname = decodeURIComponent(m[1].replace(/["']/g, '').trim());
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fname;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(a.href);
+        }
+
         async function openReport() {
             try {
                 const sep = restoQuery ? '&' : '?';
-                const res = await fetch('/api/admin/export-mouchards' + restoQuery + sep + '_=' + Date.now(), { credentials: 'same-origin' });
+                const res = await fetch('/api/admin/stats' + restoQuery + sep + 'range=all&topN=10', { credentials: 'same-origin' });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                const blob = await res.blob();
-                const cd = res.headers.get('Content-Disposition');
-                let fname = 'mouchards_export.csv';
-                const m = cd && cd.match(/filename\*?=(?:UTF-8'')?["']?([^";\n]+)/i);
-                if (m) fname = decodeURIComponent(m[1].replace(/["']/g, '').trim());
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = fname;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(a.href);
+                const data = await res.json();
+
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    await downloadCsvReportFallback();
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+                const pageW = doc.internal.pageSize.getWidth();
+                const pageH = doc.internal.pageSize.getHeight();
+                const margin = 34;
+                let y = margin;
+
+                const palette = {
+                    ink: [30, 41, 59],
+                    muted: [100, 116, 139],
+                    accent: [180, 83, 9],
+                    line: [226, 232, 240],
+                    card: [248, 250, 252]
+                };
+
+                function drawHeaderBand() {
+                    doc.setFillColor(15, 23, 42);
+                    doc.rect(0, 0, pageW, 88, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.text('FRENCH SOMMELIER', margin, 32);
+                    doc.setFontSize(22);
+                    doc.text('Rapport Admin Premium', margin, 58);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.text(new Date().toLocaleString('fr-FR'), pageW - margin, 32, { align: 'right' });
+                }
+
+                function startBody() {
+                    y = 112;
+                    doc.setTextColor(...palette.ink);
+                }
+
+                function ensureSpace(px) {
+                    if (y + px > pageH - 48) {
+                        doc.addPage();
+                        drawHeaderBand();
+                        startBody();
+                    }
+                }
+
+                function section(title) {
+                    ensureSpace(36);
+                    doc.setTextColor(...palette.accent);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(13);
+                    doc.text(title, margin, y);
+                    y += 8;
+                    doc.setDrawColor(...palette.line);
+                    doc.line(margin, y, pageW - margin, y);
+                    y += 14;
+                    doc.setTextColor(...palette.ink);
+                }
+
+                function kpiCards(rows) {
+                    ensureSpace(84);
+                    const gap = 10;
+                    const cardW = (pageW - margin * 2 - gap * 2) / 3;
+                    const cardH = 68;
+                    rows.slice(0, 3).forEach((r, i) => {
+                        const x = margin + i * (cardW + gap);
+                        doc.setFillColor(...palette.card);
+                        doc.setDrawColor(...palette.line);
+                        doc.roundedRect(x, y, cardW, cardH, 8, 8, 'FD');
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(9);
+                        doc.setTextColor(...palette.muted);
+                        doc.text(String(r[0]), x + 10, y + 18);
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(21);
+                        doc.setTextColor(...palette.ink);
+                        doc.text(String(r[1]), x + 10, y + 46);
+                    });
+                    y += cardH + 14;
+                }
+
+                function table(head, body, opts = {}) {
+                    ensureSpace(120);
+                    const safeBody = Array.isArray(body) && body.length ? body : [['Aucune donnee', '-', '-'].slice(0, head.length)];
+                    if (typeof doc.autoTable === 'function') {
+                        doc.autoTable({
+                            startY: y,
+                            head: [head],
+                            body: safeBody,
+                            margin: { left: margin, right: margin },
+                            styles: {
+                                fontSize: 9,
+                                cellPadding: 4.5,
+                                textColor: palette.ink
+                            },
+                            headStyles: {
+                                fillColor: opts.headColor || [30, 41, 59],
+                                textColor: [255, 255, 255],
+                                fontStyle: 'bold'
+                            },
+                            alternateRowStyles: { fillColor: [249, 250, 251] },
+                            theme: 'grid'
+                        });
+                        y = doc.lastAutoTable.finalY + 14;
+                    }
+                }
+
+                function pctOf(value, total) {
+                    const v = Number(value || 0);
+                    const t = Number(total || 0);
+                    if (!t) return '0%';
+                    return `${Math.round((v / t) * 100)}%`;
+                }
+
+                drawHeaderBand();
+                startBody();
+
+                const restoLabel = restoId || 'default';
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(...palette.muted);
+                doc.text(`Etablissement : ${restoLabel}`, margin, y);
+                doc.text(`Derniere mise a jour : ${formatDateTime(data.last_updated)}`, pageW - margin, y, { align: 'right' });
+                y += 16;
+
+                section('Vue d\'ensemble');
+                kpiCards([
+                    ['Clients conseilles', String(data.clients_total_range || 0)],
+                    ['Succes', String(data.live_total_range || 0)],
+                    ['Erreurs / refus', String(data.total_errors || 0)]
+                ]);
+
+                const ir = data.interaction_repartition || {};
+                const counts = ir.counts || {};
+                section('Repartition des demandes');
+                table(
+                    ['Canal', 'Compteur', 'Pourcentage'],
+                    [
+                        ['Bouton flash', String(counts.flash || 0), `${ir.flash ?? 0}%`],
+                        ['Texte libre / envoi', String(counts.texte_libre || 0), `${ir.texte_libre ?? 0}%`],
+                        ['Ouvrir la carte (repas)', String(counts.ouvrir_carte || 0), `${ir.ouvrir_carte ?? 0}%`],
+                        ['Carte des vins', String(counts.carte_vins || 0), `${ir.carte_vins ?? 0}%`]
+                    ],
+                    { headColor: [71, 85, 105] }
+                );
+
+                const t = data.tendances || {};
+                const typeRowsRaw = [
+                    ['Rouge', Number(t.Rouge || 0)],
+                    ['Blanc', Number(t.Blanc || 0)],
+                    ['Rose', Number(t['Rosé'] || 0)],
+                    ['Champagnes & bulles', Number(t.ChampagneBulles || 0)],
+                    ['Spiritueux', Number(t.Spiritueux || 0)],
+                    ['Autres', Number(t.Autres || 0)]
+                ];
+                const typeTotalPct = typeRowsRaw.reduce((acc, r) => acc + Number(r[1] || 0), 0);
+                section('Tendance types');
+                table(
+                    ['Type', 'Compteur (base 100)', 'Pourcentage'],
+                    typeRowsRaw.map((r) => [r[0], String(r[1]), pctOf(r[1], typeTotalPct)]),
+                    { headColor: [127, 29, 29] }
+                );
+
+                section('Top recherches');
+                const topSearchesRowsRaw = (Array.isArray(data.top_searches) ? data.top_searches : [])
+                    .map((it) => [String(it.vin || ''), Number(it.count || 0)]);
+                const topSearchesTotal = topSearchesRowsRaw.reduce((acc, r) => acc + Number(r[1] || 0), 0);
+                table(
+                    ['Vin', 'Occurrences', 'Pourcentage'],
+                    topSearchesRowsRaw.map((r) => [r[0], String(r[1]), pctOf(r[1], topSearchesTotal)]),
+                    { headColor: [120, 53, 15] }
+                );
+
+                section('Top 5 demandes live');
+                const topLiveRowsRaw = (Array.isArray(data.top_live_demands_5) ? data.top_live_demands_5 : [])
+                    .map((it) => [String(it.question || ''), Number(it.count || 0)]);
+                const topLiveTotal = topLiveRowsRaw.reduce((acc, r) => acc + Number(r[1] || 0), 0);
+                table(
+                    ['Question', 'Occurrences', 'Pourcentage'],
+                    topLiveRowsRaw.map((r) => [r[0], String(r[1]), pctOf(r[1], topLiveTotal)]),
+                    { headColor: [6, 95, 70] }
+                );
+
+                section('Top 5 echecs / refus');
+                const topErrRowsRaw = (Array.isArray(data.top_error_questions_5) ? data.top_error_questions_5 : [])
+                    .map((it) => [String(it.question || ''), Number(it.count || 0)]);
+                const topErrTotal = topErrRowsRaw.reduce((acc, r) => acc + Number(r[1] || 0), 0);
+                table(
+                    ['Question / motif', 'Occurrences', 'Pourcentage'],
+                    topErrRowsRaw.map((r) => [r[0], String(r[1]), pctOf(r[1], topErrTotal)]),
+                    { headColor: [153, 27, 27] }
+                );
+
+                const cw = data.chart_weekday || { labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'], counts: [0, 0, 0, 0, 0, 0, 0] };
+                const weekdayRowsRaw = (cw.labels || []).map((lab, i) => [String(lab), Number((cw.counts && cw.counts[i]) || 0)]);
+                const weekdayTotal = weekdayRowsRaw.reduce((acc, r) => acc + Number(r[1] || 0), 0);
+                section('Par jour de semaine (depuis toujours)');
+                table(
+                    ['Jour', 'Demandes', 'Pourcentage'],
+                    weekdayRowsRaw.map((r) => [r[0], String(r[1]), pctOf(r[1], weekdayTotal)]),
+                    { headColor: [30, 64, 175] }
+                );
+
+                section('Par mois (historique)');
+                table(
+                    ['Mois', 'Demandes'],
+                    (Array.isArray(data.chart_monthly) ? data.chart_monthly : []).map((m) => [String(m.month || ''), String(m.count || 0)]),
+                    { headColor: [67, 56, 202] }
+                );
+
+                const pageCount = doc.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i += 1) {
+                    doc.setPage(i);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(...palette.muted);
+                    doc.text(`Page ${i}/${pageCount}`, pageW - margin, pageH - 16, { align: 'right' });
+                    doc.text('French Sommelier - Rapport admin confidentiel', margin, pageH - 16);
+                }
+
+                const fname = `rapport_admin_premium_${restoLabel}_${new Date().toISOString().slice(0, 10)}.pdf`;
+                doc.save(fname);
             } catch (e) {
                 console.error(e);
-                alert('Impossible de télécharger l\'export CSV. Réessayez ou vérifiez la session admin.');
+                alert('Impossible de générer le PDF. Export CSV téléchargé à la place.');
+                try {
+                    await downloadCsvReportFallback();
+                } catch (_) {}
             }
         }
 

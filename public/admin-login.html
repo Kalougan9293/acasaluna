@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Admin French Sommelier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+        }
+        .glass {
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.14), rgba(15,23,42,0.96));
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-900 text-slate-50 flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-md glass rounded-2xl border border-white/10 shadow-2xl shadow-black/50 p-8 sm:p-10">
+        <div class="flex flex-col items-center text-center mb-8">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-600 flex items-center justify-center shadow-lg shadow-amber-500/35 text-3xl mb-4">
+                🍷
+            </div>
+            <p class="text-[11px] uppercase tracking-[0.3em] text-amber-300/90 mb-1">French Sommelier</p>
+            <h1 class="text-xl font-semibold text-slate-100 tracking-tight">Espace administration</h1>
+            <p class="text-sm text-slate-400 mt-2 leading-relaxed">Identifiez-vous pour accéder au tableau de bord.</p>
+        </div>
+
+        <form id="login-form" class="space-y-5">
+            <div id="login-error" class="hidden rounded-xl border border-rose-500/40 bg-rose-950/50 px-4 py-3 text-sm text-rose-200"></div>
+
+            <div>
+                <label for="username" class="block text-[11px] uppercase tracking-wider text-slate-400 mb-1.5">Nom d’utilisateur</label>
+                <input id="username" name="username" type="text" autocomplete="username" required
+                    class="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+            </div>
+
+            <div>
+                <label for="password" class="block text-[11px] uppercase tracking-wider text-slate-400 mb-1.5">Mot de passe</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required
+                    class="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+            </div>
+
+            <button type="submit" id="btn-submit"
+                class="w-full rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-900 font-semibold text-sm uppercase tracking-[0.15em] py-3.5 shadow-lg shadow-amber-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Se connecter
+            </button>
+        </form>
+
+        <p class="text-center text-[11px] text-slate-600 mt-8">
+            <a href="/app.html" class="text-amber-200/80 hover:text-amber-100 transition-colors">← Retour à l’app client</a>
+        </p>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        let nextUrl = params.get('next') || '/admin';
+        if (!nextUrl.startsWith('/') || nextUrl.startsWith('//')) nextUrl = '/admin';
+        let restoForLogin = params.get('resto') || '';
+        if (!restoForLogin) {
+            try {
+                restoForLogin = new URL(nextUrl, window.location.origin).searchParams.get('resto') || '';
+            } catch (e) {
+                restoForLogin = '';
+            }
+        }
+
+        const form = document.getElementById('login-form');
+        const errEl = document.getElementById('login-error');
+        const btn = document.getElementById('btn-submit');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errEl.classList.add('hidden');
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ username, password, resto: restoForLogin })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) {
+                    errEl.textContent = data.error || 'Connexion refusée.';
+                    errEl.classList.remove('hidden');
+                    return;
+                }
+                window.location.href = nextUrl;
+            } catch (err) {
+                errEl.textContent = 'Erreur réseau. Réessayez.';
+                errEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
