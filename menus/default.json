@@ -4,7 +4,12 @@
     "logo_url": "sommelier.png",
     "couleur_principale": "#8B0000",
     "admin_user": "admin",
-    "admin_pass": "france"
+    "admin_pass": "france",
+    "aperitif_stock": {
+      "hint_fr": "Carte démo : rouges variés ; blancs secs + un Sauternes (liquoreux) ; rosés ; effervescents / Champagne ; un whisky fumé en « Autres ». Pas de gamme complète de spiritueux (vodka, gin, mezcal, etc.) : si la demande sort du stock réel, répondre par [STOP] honnête ou proposer une alternative réelle avec l’écart expliqué en tête de [EXPLICATION].",
+      "hint_en": "Demo list: varied reds; dry whites plus one sweet Sauternes; rosés; sparkling/Champagne; one peated whisky under Other. No full spirits range (vodka, gin, mezcal, etc.): if the request is off-list, honest [STOP] or a real alternative with the gap explained first in [EXPLICATION].",
+      "hint_es": "Carta demo: tintos variados; blancos secos + un Sauternes dulce; rosados; burbujas/Champagne; un whisky ahumado en Otros. Sin gama completa de destilados: si la petición no encaja, [STOP] honesto o alternativa real con el desfase al inicio de [EXPLICATION]."
+    }
   },
   "carte_des_plats": {
     "Entrées": [

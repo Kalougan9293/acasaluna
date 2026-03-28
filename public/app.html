@@ -125,6 +125,84 @@
         .menu-item input { margin-right: 15px; accent-color: #d4af37; transform: scale(1.3); }
         .menu-item span { font-family: 'Montserrat', sans-serif; font-size: 0.95rem; color: #f3e7c8; font-weight: 300; }
 
+        .aperitif-step-title { font-family: 'Cinzel', serif; color: #d4af37; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 0.85rem; font-weight: 700; }
+        .menu-modal-panel--aperitif { height: auto !important; max-height: min(92vh, 44rem) !important; border-radius: 1rem; box-shadow: 0 0 28px rgba(0,0,0,0.65); }
+        .menu-modal--aperitif { padding: 0.5rem !important; align-items: flex-start; padding-top: 0.75rem !important; }
+        @media (min-width: 640px) {
+            .menu-modal--aperitif { padding: 1rem !important; align-items: center; padding-top: 1.25rem !important; }
+        }
+        #aperitif-wizard-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.35rem 0.5rem; padding-left: 0.35rem; padding-right: 0.35rem; }
+        .aperitif-wizard-head-side { display: flex; align-items: center; min-width: 0; }
+        .aperitif-wizard-head-side--left { justify-content: flex-start; }
+        .aperitif-wizard-head-side--right { justify-content: flex-end; gap: 0.25rem; }
+        #aperitif-step-heading.aperitif-step-heading { grid-column: 2; margin: 0; max-width: min(72vw, 22rem); justify-self: center; text-align: center; font-family: 'Cinzel', serif; font-size: clamp(0.82rem, 3.1vw, 1.05rem); font-weight: 700; line-height: 1.28; letter-spacing: 0.11em; text-transform: uppercase; color: #fff4dc; text-shadow: 0 1px 2px rgba(26, 15, 10, 0.9), 0 0 18px rgba(238, 193, 83, 0.35); }
+        .menu-modal-panel--aperitif #aperitif-wizard { flex: 0 1 auto; min-height: 0; max-height: min(90vh, 44rem); width: 100%; }
+        .aperitif-nav-icon { flex-shrink: 0; width: 2.35rem; height: 2.35rem; display: flex; align-items: center; justify-content: center; border-radius: 0.65rem; line-height: 1; transition: background 0.2s, color 0.2s; }
+        @media (min-width: 640px) {
+            .aperitif-nav-icon { width: 2.6rem; height: 2.6rem; }
+        }
+        .aperitif-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 0.55rem; }
+        .aperitif-grid-2 > .aperitif-tile:last-child:nth-child(odd) { grid-column: 1 / -1; width: 100%; max-width: calc(50% - 0.3rem); justify-self: center; }
+        .aperitif-family-grid { display: flex; flex-direction: column; gap: 0.55rem; }
+        .aperitif-card {
+            border-radius: 0.85rem; padding: 0.75rem 1rem; text-align: left; cursor: pointer; border: 2px solid transparent;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .aperitif-tile { position: relative; overflow: hidden; border-radius: 0.85rem; padding: 0.75rem 0.6rem 0.85rem; min-height: 5.75rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s, box-shadow 0.2s, transform 0.12s; }
+        .aperitif-tile::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.2; transition: opacity 0.25s ease; background: var(--aper-glow, none); }
+        .aperitif-tile:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28); }
+        .aperitif-tile:hover::after { opacity: 0.85; }
+        .aperitif-tile-emoji { position: relative; z-index: 1; font-size: clamp(1.35rem, 5vw, 1.65rem); line-height: 1; margin-bottom: 0.35rem; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25)); }
+        .aperitif-tile .aperitif-card-title { position: relative; z-index: 1; font-size: clamp(0.82rem, 3.2vw, 1rem); letter-spacing: 0.06em; line-height: 1.15; }
+        .aperitif-tile .aperitif-card-desc { position: relative; z-index: 1; font-size: clamp(0.7rem, 2.6vw, 0.88rem); margin-top: 0.3rem; line-height: 1.28; opacity: 0.95; font-weight: 600; }
+        .aperitif-tone--fam-rouge { --aper-glow: radial-gradient(ellipse 90% 70% at 30% 0%, rgba(255, 120, 140, 0.5), transparent 62%); }
+        .aperitif-tone--fam-blanc { --aper-glow: radial-gradient(ellipse 90% 70% at 70% 10%, rgba(255, 248, 200, 0.65), transparent 60%); }
+        .aperitif-tone--fam-rose { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255, 190, 210, 0.55), transparent 58%); }
+        .aperitif-tone--fam-bulle { --aper-glow: radial-gradient(ellipse 80% 70% at 50% 0%, rgba(255, 230, 150, 0.55), transparent 55%); }
+        .aperitif-tone--fam-spirit { --aper-glow: radial-gradient(ellipse 90% 70% at 40% 100%, rgba(255, 170, 90, 0.35), transparent 55%); }
+        .aperitif-tone--citrus { --aper-glow: radial-gradient(ellipse 100% 80% at 20% 0%, rgba(255, 220, 100, 0.45), transparent 55%); }
+        .aperitif-tone--fruit { --aper-glow: radial-gradient(ellipse 100% 85% at 30% 0%, rgba(255, 130, 160, 0.42), rgba(255, 200, 120, 0.2) 45%, transparent 65%); }
+        .aperitif-tone--fresh { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(120, 220, 255, 0.28), transparent 58%); }
+        .aperitif-tone--warm { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 100%, rgba(255, 180, 100, 0.4), transparent 55%); }
+        .aperitif-tone--spark { --aper-glow: radial-gradient(ellipse 80% 70% at 50% 0%, rgba(255, 245, 180, 0.55), transparent 50%); }
+        .aperitif-tone--sweet { --aper-glow: radial-gradient(ellipse 100% 80% at 70% 20%, rgba(255, 210, 140, 0.45), transparent 58%); }
+        .aperitif-tone--party { --aper-glow: radial-gradient(ellipse 100% 90% at 50% 0%, rgba(255, 140, 200, 0.35), rgba(255, 220, 100, 0.25) 40%, transparent 65%); }
+        .aperitif-tone--oak { --aper-glow: radial-gradient(ellipse 90% 70% at 50% 100%, rgba(200, 140, 80, 0.4), transparent 55%); }
+        .aperitif-tone--smoke { --aper-glow: radial-gradient(ellipse 100% 80% at 30% 0%, rgba(180, 120, 90, 0.35), rgba(80, 60, 50, 0.25) 50%, transparent 65%); }
+        .aperitif-tone--ice { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(200, 230, 255, 0.35), transparent 58%); }
+        .aperitif-tone--herb { --aper-glow: radial-gradient(ellipse 100% 80% at 20% 0%, rgba(140, 200, 140, 0.35), transparent 58%); }
+        .aperitif-tone--soft { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255, 200, 200, 0.3), transparent 58%); }
+        .aperitif-tone--power { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255, 80, 60, 0.35), transparent 55%); }
+        .aperitif-tone--balance { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 50%, rgba(255, 215, 120, 0.3), transparent 60%); }
+        .aperitif-tone--deep { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(220, 100, 150, 0.35), transparent 58%); }
+        .aperitif-tone--pinkfizz { --aper-glow: radial-gradient(ellipse 100% 85% at 60% 0%, rgba(255, 160, 190, 0.45), transparent 58%); }
+        .aperitif-tone--round { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 100%, rgba(255, 200, 160, 0.38), transparent 55%); }
+        .aperitif-tone--rich { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255, 210, 120, 0.4), transparent 55%); }
+        .aperitif-tone--pale { --aper-glow: radial-gradient(ellipse 100% 80% at 80% 0%, rgba(255, 250, 255, 0.35), transparent 58%); }
+        .aperitif-tone--neutral { --aper-glow: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(212, 175, 55, 0.25), transparent 58%); }
+        .aperitif-card:hover { transform: translateY(-1px); }
+        .aperitif-card.selected { border-color: #eec153; box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.35), 0 6px 20px rgba(0,0,0,0.35); }
+        .aperitif-card-rouge { background: linear-gradient(145deg, #6b1f2e 0%, #4a1520 38%, #1a0608 100%); color: #fce8e8; border-color: rgba(255, 140, 160, 0.4); }
+        .aperitif-card-blanc { background: linear-gradient(145deg, #fff9ee 0%, #e8d4b0 45%, #b89a6e 100%); color: #2a1810; border-color: rgba(255, 220, 150, 0.55); }
+        .aperitif-card-rose { background: linear-gradient(145deg, #ffd0e0 0%, #e8a0b8 42%, #904060 100%); color: #2a0a12; border-color: rgba(255, 180, 200, 0.55); }
+        .aperitif-card-bulle { background: linear-gradient(145deg, #fff8e0 0%, #e8d090 40%, #b8923a 100%); color: #2a1810; border-color: rgba(255, 215, 120, 0.6); }
+        .aperitif-card-spirit { background: linear-gradient(145deg, #5c3d22 0%, #3a2818 40%, #0f0804 100%); color: #f3e7c8; border-color: rgba(255, 180, 100, 0.35); }
+        .aperitif-card-step2 { background: linear-gradient(155deg, #4a3228 0%, #352218 40%, #1f1410 100%); color: #fff8f0; border: 2px solid rgba(255, 200, 120, 0.35); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+        .aperitif-tile.aperitif-card-step2 .aperitif-card-title { color: #fffdf8; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); letter-spacing: 0.05em; }
+        .aperitif-tile.aperitif-card-step2 .aperitif-card-desc { color: rgba(255, 248, 240, 0.92); opacity: 1; font-weight: 600; }
+        .aperitif-card-title { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.06em; text-transform: uppercase; }
+        .aperitif-card-desc { font-size: 0.78rem; opacity: 0.92; margin-top: 0.25rem; line-height: 1.35; }
+        .aperitif-footnote { font-size: 0.72rem; color: rgba(243, 231, 200, 0.62); font-style: italic; margin-top: 0.85rem; text-align: center; line-height: 1.35; }
+        #aperitif-wizard-body { background: radial-gradient(ellipse 120% 70% at 50% -15%, rgba(212, 175, 55, 0.14), transparent 55%), linear-gradient(180deg, rgba(55, 32, 22, 0.5) 0%, #2c1a12 22%); }
+        .aperitif-subgrid { display: flex; flex-direction: column; gap: 0.45rem; }
+        .aperitif-opt-row { font-size: 0.7rem; color: #d4af37; text-transform: uppercase; letter-spacing: 0.12em; margin: 0.75rem 0 0.35rem; font-weight: 600; }
+        .aperitif-opts { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .aperitif-chip { padding: 0.45rem 0.65rem; border-radius: 999px; border: 1px solid rgba(212, 175, 55, 0.35); font-size: 0.78rem; color: #f3e7c8; cursor: pointer; font-family: 'Montserrat', sans-serif; transition: background 0.2s, border-color 0.2s; }
+        .aperitif-chip:hover { border-color: #d4af37; background: rgba(212, 175, 55, 0.1); }
+        .aperitif-chip.selected { background: rgba(212, 175, 55, 0.22); border-color: #eec153; color: #fff; }
+        .aperitif-chip-multi.selected { background: rgba(212, 175, 55, 0.28); border-color: #f5d78a; }
+
         .demo-banner {
             position: fixed; top: 0; left: 0; width: 100%;
             background: linear-gradient(to right, #b8860b, #eec153, #b8860b);
@@ -175,17 +253,64 @@
         .progress-bar-fill { height: 100%; background: #d4af37; }
 
         .carte-vins-link {
-            font-family: 'Montserrat', sans-serif; font-size: 0.65rem; letter-spacing: 0.35em;
-            text-transform: uppercase; background: none; border: none;
-            cursor: pointer; padding: 0.35rem 0.5rem;
-            /* Même aspect qu’avant au survol : doré + lueur en permanence */
-            color: rgba(212, 175, 55, 0.95);
-            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5), 0 0 22px rgba(212, 175, 55, 0.25);
-            transition: color 0.25s ease, text-shadow 0.25s ease;
+            font-family: 'Montserrat', sans-serif;
+            font-size: clamp(0.8rem, 2.8vw, 0.95rem);
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0.7rem 1.35rem;
+            border-radius: 999px;
+            border: 2px solid rgba(238, 193, 83, 0.95);
+            background: rgba(18, 10, 8, 0.72);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            color: #fff8ec;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 18px rgba(212, 175, 55, 0.45);
+            box-shadow:
+                0 4px 24px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+                0 0 28px rgba(212, 175, 55, 0.2);
+            transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease,
+                box-shadow 0.2s ease, transform 0.15s ease;
         }
         .carte-vins-link:hover {
-            color: rgba(255, 245, 210, 1);
-            text-shadow: 0 0 14px rgba(212, 175, 55, 0.65), 0 0 32px rgba(212, 175, 55, 0.35);
+            color: #ffffff;
+            border-color: #f5d78a;
+            background: rgba(32, 18, 14, 0.88);
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 0 22px rgba(255, 220, 150, 0.55);
+            box-shadow:
+                0 6px 28px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+                0 0 36px rgba(212, 175, 55, 0.35);
+            transform: translateY(-1px);
+        }
+        .carte-vins-link:focus-visible {
+            outline: 2px solid #eec153;
+            outline-offset: 3px;
+        }
+        /* Dans le cadre blanc : bloc encore plus sombre (presque noir) */
+        .carte-vins-link--in-main {
+            background: linear-gradient(165deg, #0c0608 0%, #040102 42%, #070305 100%);
+            border-color: rgba(170, 130, 45, 0.7);
+            color: #fdf6e8;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 1), 0 0 16px rgba(212, 175, 55, 0.2);
+            box-shadow:
+                0 8px 36px rgba(0, 0, 0, 0.72),
+                0 0 0 1px rgba(255, 255, 255, 0.035) inset,
+                0 0 20px rgba(0, 0, 0, 0.4);
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+        }
+        .carte-vins-link--in-main:hover {
+            background: linear-gradient(165deg, #060304 0%, #000000 48%, #050203 100%);
+            border-color: rgba(238, 193, 83, 0.88);
+            color: #ffffff;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 1), 0 0 22px rgba(255, 220, 140, 0.35);
+            box-shadow:
+                0 10px 40px rgba(0, 0, 0, 0.78),
+                0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+                0 0 32px rgba(212, 175, 55, 0.22);
         }
 
         /* Carte des vins : bottom-sheet mobile + carte centrée desktop */
@@ -194,14 +319,17 @@
             -webkit-backdrop-filter: blur(4px);
             backdrop-filter: blur(4px);
             padding-bottom: env(safe-area-inset-bottom, 0px);
+            overscroll-behavior: none;
         }
         .wine-list-sheet {
             width: calc(100% - 1.25rem);
             max-width: 22rem;
             margin: 0 auto;
             max-height: min(85vh, 32rem);
+            min-height: 0;
             border-radius: 1.15rem 1.15rem 0 0;
             box-shadow: 0 -12px 48px rgba(0,0,0,0.35);
+            overscroll-behavior: contain;
         }
         @media (min-width: 640px) {
             .wine-list-sheet {
@@ -270,7 +398,10 @@
             flex: 1 1 auto;
             min-height: 0;
             max-height: none;
+            overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y;
         }
         #wine-list-inner .wine-row { padding-top: 0.55rem !important; padding-bottom: 0.55rem !important; }
         #wine-list-inner .wine-row-name { font-size: 0.95rem !important; line-height: 1.3 !important; }
@@ -333,29 +464,21 @@
 
     <div class="w-full max-w-md main-card rounded-[2rem] px-6 pt-6 pb-4 relative z-20 text-gray-800">
 
-        <div class="relative mb-2">
-            <input type="text" id="search-bar" placeholder="" class="w-full border border-[#d4af37]/30 rounded-2xl p-4 pr-12 focus:outline-none focus:border-[#d4af37] transition-colors text-lg font-sans bg-white text-[#4a2c20] placeholder-[#4a2c20]/40 shadow-inner">
-            <div id="clear-btn" onclick="clearInput()" class="absolute right-12 top-5 cursor-pointer text-gray-400 hover:text-[#4a2c20] hidden font-bold text-xl px-2">✕</div>
-            <div id="search-trigger" onclick="demanderIA()" class="absolute right-4 top-5 cursor-pointer text-[#4a2c20] hover:text-[#d4af37] transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            </div>
-        </div>
+        <button onclick="openMenuModal()" id="photo-btn" class="gold-btn w-full py-5 rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 cursor-pointer shadow-lg mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#2a0303] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span id="photo-label" class="text-[#2a0303] font-bold text-lg md:text-xl uppercase tracking-[0.15em] font-[Cinzel]">OUVRIR LA CARTE</span>
+        </button>
 
-        <div id="quick-actions" class="flex flex-col gap-2 mb-2 px-1 transition-opacity duration-300"></div>
-        
+        <div id="quick-actions" class="flex flex-col gap-2 mb-3 px-1 transition-opacity duration-300"></div>
+
         <div id="loader" class="hidden flex flex-col items-center py-4 mb-2">
             <div class="w-10 h-14 border-2 border-[#4a2c20] rounded-b-lg relative overflow-hidden shadow-md">
                 <div class="wine-fill absolute bottom-0 left-0 w-full bg-[#800020]"></div>
             </div>
             <p id="loader-text" class="text-[#4a2c20] text-xs mt-3 font-bold uppercase tracking-widest">Recherche...</p>
         </div>
-
-        <button onclick="openMenuModal()" id="photo-btn" class="gold-btn w-full py-5 rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 cursor-pointer shadow-lg mt-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#2a0303] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span id="photo-label" class="text-[#2a0303] font-bold text-lg md:text-xl uppercase tracking-[0.15em] font-[Cinzel]">OUVRIR LA CARTE</span>
-        </button>
 
             <div id="response-card" class="text-left space-y-5">
                 <div id="response-content"></div>
@@ -368,11 +491,11 @@
                 </div>
             </div>
 
+        <button type="button" id="carte-vins-link" class="carte-vins-link carte-vins-link--in-main w-full flex items-center justify-center text-center mt-5 mb-2" onclick="openWineListPanel()">Carte des vins</button>
+
     </div>
 
-    <button type="button" id="carte-vins-link" class="carte-vins-link mt-2 mb-10 max-w-md w-full" onclick="openWineListPanel()">Carte des vins</button>
-
-    <footer class="mt-0 mb-8 space-y-4">
+    <footer class="mt-6 mb-8 space-y-4">
         <p id="footer-quote" class="gold-gradient text-sm md:text-base font-[Cinzel] uppercase tracking-[0.2em] mb-4 font-bold opacity-90">L'excellence, sans la complexité.</p>
         
         <p id="copyright-text" class="text-[#d4c5a5]/60 text-[10px] uppercase tracking-[0.2em] font-sans">© 2026 Powered by French Sommelier. Tous droits réservés.</p>
@@ -405,13 +528,30 @@
     </div>
 
     <div id="menu-modal" class="hidden fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 modal-overlay">
-        <div class="bg-[#2c1a12] border-2 border-[#d4af37] rounded-2xl w-full max-w-md h-[85vh] flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.8)]">
-            <div class="p-5 border-b-2 border-[#d4af37]/30 flex justify-between items-center bg-[#1a0f0a] rounded-t-xl">
-                <h2 id="modal-title" class="gold-gradient font-bold uppercase tracking-[0.2em] text-xl font-[Cinzel]">Votre Repas</h2>
-                <button onclick="closeMenuModal()" class="text-[#d4af37] text-3xl hover:text-white transition-colors">&times;</button>
+        <div id="menu-modal-panel" class="bg-[#2c1a12] border-2 border-[#d4af37] rounded-2xl w-full max-w-md h-[85vh] flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
+            <div id="menu-modal-topbar" class="p-4 sm:p-5 border-b-2 border-[#d4af37]/30 bg-[#1a0f0a] shrink-0">
+                <div class="flex items-start justify-between gap-2">
+                    <h2 id="modal-title" class="gold-gradient font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-lg sm:text-xl font-[Cinzel] leading-tight min-w-0 pr-1 pt-0.5">Votre Repas</h2>
+                    <div class="flex items-center gap-3 sm:gap-4 shrink-0">
+                        <button type="button" id="btn-aperitif-open" onclick="startAperitifWizard()" class="rounded-lg border-2 border-[#d4af37] bg-[#2a0303]/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-[#fceeb8] shadow-[0_0_18px_rgba(212,175,55,0.35)] hover:bg-[#4c0519] hover:text-white hover:border-[#f5d78a] transition-colors font-[Montserrat] whitespace-nowrap">Apéritif ?</button>
+                        <button type="button" onclick="closeMenuModal()" class="text-[#d4af37] text-2xl sm:text-3xl leading-none hover:text-white transition-colors px-0.5" aria-label="Fermer">&times;</button>
+                    </div>
+                </div>
             </div>
-            <div id="menu-content" class="flex-1 overflow-y-auto p-6 text-left bg-[#2c1a12]"></div>
-            <div class="p-5 border-t-2 border-[#d4af37]/30 bg-[#1a0f0a] rounded-b-xl">
+            <div id="menu-content" class="flex-1 overflow-y-auto p-6 text-left bg-[#2c1a12] min-h-0"></div>
+            <div id="aperitif-wizard" class="hidden flex-1 flex flex-col min-h-0 bg-[#2c1a12]">
+                <div id="aperitif-wizard-head" class="shrink-0 py-2.5 sm:py-3 border-b border-[#d4af37]/25 bg-[#1a0f0a]">
+                    <div class="aperitif-wizard-head-side aperitif-wizard-head-side--left">
+                        <button type="button" id="aperitif-nav-back" onclick="aperitifWizardBack()" class="aperitif-nav-icon text-[#d4af37] text-xl sm:text-2xl hover:bg-[#2c1a12] hover:text-white" aria-label="Retour">←</button>
+                    </div>
+                    <h3 id="aperitif-step-heading" class="aperitif-step-heading"></h3>
+                    <div class="aperitif-wizard-head-side aperitif-wizard-head-side--right">
+                        <button type="button" id="aperitif-nav-close" onclick="resetAperitifWizardToMenu()" class="aperitif-nav-icon text-[#d4af37] text-2xl sm:text-3xl font-light leading-none hover:bg-[#2c1a12] hover:text-white">&times;</button>
+                    </div>
+                </div>
+                <div id="aperitif-wizard-body" class="flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-3.5 min-h-0"></div>
+            </div>
+            <div id="menu-modal-footer" class="p-5 border-t-2 border-[#d4af37]/30 bg-[#1a0f0a] shrink-0">
                 <button id="modal-validate" onclick="validerMenu()" class="gold-btn w-full py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-lg shadow-lg font-[Cinzel] text-white">
                     Trouver le Vin Idéal
                 </button>
@@ -458,6 +598,10 @@
                 <div>
                     <p id="wine-flash-profile-label" class="text-[0.65rem] font-[Montserrat] font-bold uppercase tracking-[0.2em] text-[#800020] mb-2"></p>
                     <div id="wine-flash-gauges" class="space-y-2"></div>
+                </div>
+                <div>
+                    <p id="wine-flash-criteria-label" class="text-[0.65rem] font-[Montserrat] font-bold uppercase tracking-[0.2em] text-[#800020] mb-2"></p>
+                    <p id="wine-flash-criteria" class="text-sm font-[Montserrat] leading-relaxed text-[#5c3d2e]"></p>
                 </div>
                 <div class="pt-3 border-t border-[#d4af37]/25">
                     <p id="wine-flash-ideal-label" class="text-[0.65rem] font-[Montserrat] font-bold uppercase tracking-[0.2em] text-[#800020] mb-2"></p>
@@ -589,7 +733,7 @@
 
         const langData = {
             fr: {
-                flag: "🇫🇷", main_title: "LE RESTAURANT ÉTOILÉ", subtitle: "ACCORDS METS-VINS", photo_label: "OUVRIR LA CARTE", loader: "Recherche...", footer_quote: "L'excellence, sans la complexité.", copyright: "© 2026 Powered by French Sommelier. Tous droits réservés.", tagline: "L'accord parfait selon vos plats et vos envies.", phrases: ["Entrecôte Frites", "Pavé de Saumon", "Vin Rouge léger", "Blanquette de Veau"],
+                flag: "🇫🇷", main_title: "LE RESTAURANT ÉTOILÉ", subtitle: "ACCORDS METS-VINS", photo_label: "OUVRIR LA CARTE", loader: "Recherche...", footer_quote: "L'excellence, sans la complexité.", copyright: "© 2026 Powered by French Sommelier. Tous droits réservés.", tagline: "L'accord parfait selon vos plats et vos envies.",
                 legal_btn: "mentions légales", modal_title: "Votre Repas", modal_validate: "Trouver le Vin Idéal", feedback_label: "", sw_rouge: "🍷 Plutôt Rouge", sw_blanc: "🥂 Plutôt Blanc", sw_similaire: "♻️ Autre Suggestion", sw_surprends: "💎 Version Prestige",
                 legal_title: "Mentions Légales", legal_editor: "Éditeur", legal_contact: "Contact", legal_host: "Hébergement", legal_analytics: "",
                 legal_sulfites: "Nos vins contiennent des sulfites. Pour toute autre allergie ou intolérance, merci de vous rapprocher de notre équipe en salle",
@@ -604,10 +748,25 @@
                 carte_empty: "Aucun vin disponible pour le moment.",
                 wine_aromas_label: "Arômes principaux",
                 wine_profile_label: "Profil",
+                wine_criteria_label: "Critères",
                 wine_ideal_label: "Idéal avec…",
                 wine_close: "Fermer",
                 wine_power: "Puissance",
                 wine_fruit: "Fruité",
+                wine_crit: {
+                    dry: "Sec",
+                    sweet: "Sucré",
+                    off_dry: "Demi-sec",
+                    acid_low: "Peu acide",
+                    acid_mid: "Acidité équilibrée",
+                    acid_high: "Acidité marquée",
+                    tannin_light: "Tanins légers",
+                    tannin_mid: "Tanins fondus",
+                    tannin_powerful: "Tanins puissants",
+                    body_light: "Léger",
+                    body_mid: "Mi-corsé",
+                    body_full: "Corsé"
+                },
                 wine_derived: {
                     rouge: { badge: "Corsé & Charpenté", aromas: "Fruits noirs mûrs, épices douces et notes boisées.", ideal: "viandes rouges, gibiers, fromages affinés, plats en sauce.", power: 4, fruit: 3 },
                     blanc: { badge: "Frais & Minéral", aromas: "Agrumes, fleurs blanches et belle minéralité.", ideal: "poissons, fruits de mer, volaille, fromages de chèvre.", power: 2, fruit: 4 },
@@ -631,10 +790,102 @@
                     { text: "Je cherche un vin Doux Sucré", label: "🍯 Vin Doux" },
                     { text: "Je cherche un vin au Verre", label: "🍷 Au Verre" }
                 ],
-                sections: { '[DEMANDE]': 'Votre repas', '[SUGGESTION]': 'Notre Suggestion', '[EXPLICATION]': "Pourquoi ce choix ?", '[AROMES]': "Au nez & en bouche", '[PROFIL_VIN]': 'Profil', '[DEGRE]': 'Caractère', '[AVIS]': 'Note', '[AVIS_SOMMELIER]': "Le Secret du Sommelier" }
+                aperitif: {
+                    btn: "Apéritif ?",
+                    step1_title: "Étape 1/3 — Votre envie",
+                    footnote: "* Conseils hors cocktails",
+                    families: [
+                        { id: "rouge", title: "Rouge", desc: "Structure & tanins", cardClass: "aperitif-card-rouge" },
+                        { id: "blanc", title: "Blanc", desc: "Sec, parfum ou riche", cardClass: "aperitif-card-blanc" },
+                        { id: "rose", title: "Rosé", desc: "Du plus sec au plus gourmand", cardClass: "aperitif-card-rose" },
+                        { id: "bulle", title: "Bulles", desc: "Sucre & type de bulles", cardClass: "aperitif-card-bulle" },
+                        { id: "spirit", title: "Spiritueux", desc: "Profil du spirit", cardClass: "aperitif-card-spirit" }
+                    ],
+                    step2_title: "Étape 2/3 — Le style",
+                    step2_options: {
+                        rouge: [
+                            { id: "r1", title: "Souple", desc: "Peu de tanin, facile" },
+                            { id: "r2", title: "Milieu", desc: "Fruit et structure équilibrés" },
+                            { id: "r3", title: "Charpenté", desc: "Tanins bien présents" },
+                            { id: "r4", title: "Très puissant", desc: "Maximum d’intensité" }
+                        ],
+                        blanc: [
+                            { id: "b1", title: "Très sec & citronné", desc: "Vif, coupe la soif" },
+                            { id: "b2", title: "Sec & parfumé", desc: "Fleurs, fruits blancs" },
+                            { id: "b3", title: "Rond en bouche", desc: "Moins d’acidité, plus de gras" },
+                            { id: "b4", title: "Riche & long", desc: "Beaucoup de matière" }
+                        ],
+                        rose: [
+                            { id: "p1", title: "Pâle & très sec", desc: "Style léger, peu de sucre" },
+                            { id: "p2", title: "Fruits rouges frais", desc: "Gouleyant, fruité" },
+                            { id: "p3", title: "Plus soutenu", desc: "Couleur et goût marqués" },
+                            { id: "p4", title: "Gourmand", desc: "Un peu plus doux" }
+                        ],
+                        bulle: [
+                            { id: "u1", title: "Extra sec", desc: "Presque pas de sucre" },
+                            { id: "u2", title: "Brut", desc: "Le grand classique apéro" },
+                            { id: "u3", title: "Plus doux", desc: "Demi-sec ou tendance sucrée" },
+                            { id: "u4", title: "Rosé pétillant", desc: "Bulles roses" }
+                        ],
+                        spirit: [
+                            { id: "s1", title: "Neutre / très sec", desc: "Vodka, gin très sec" },
+                            { id: "s2", title: "Plantes & amer", desc: "Gin aromatique, apéro amer" },
+                            { id: "s3", title: "Vieux & boisé", desc: "Whisky, rhum vieux" },
+                            { id: "s4", title: "Fumé ou très fort", desc: "Mezcal, fort en alcool" }
+                        ]
+                    },
+                    step3_title: "Étape 3/3 — En bouche",
+                    step3_presets: {
+                        rouge: [
+                            { id: "sec_vif", title: "Sec & nerveux", desc: "Peu sucré, sensations vives" },
+                            { id: "equilibre", title: "Équilibré", desc: "Ni trop sec ni trop rond" },
+                            { id: "rond", title: "Plutôt rond", desc: "Fruits mûrs, moins vif" },
+                            { id: "neutral", title: "Peu importe", desc: "Tu choisis pour moi" }
+                        ],
+                        blanc: [
+                            { id: "sec_vif", title: "Maximum fraîcheur", desc: "Sec, tranchant" },
+                            { id: "equilibre", title: "Équilibré", desc: "Sec mais pas agressif" },
+                            { id: "rond", title: "Plus doux & enveloppant", desc: "Moins d’acidité" },
+                            { id: "neutral", title: "Peu importe", desc: "Tu choisis pour moi" }
+                        ],
+                        rose: [
+                            { id: "sec_vif", title: "Sec & frais", desc: "Coupe soif" },
+                            { id: "equilibre", title: "Juste milieu", desc: "Fruit sans lourdeur" },
+                            { id: "rond", title: "Plus doux", desc: "Rondeur en bouche" },
+                            { id: "neutral", title: "Peu importe", desc: "Tu choisis pour moi" }
+                        ],
+                        bulle: [
+                            { id: "sec_vif", title: "Bulles fines & fraîches", desc: "Légère, pétillante" },
+                            { id: "equilibre", title: "Équilibre mousse & goût", desc: "Ni trop lourde ni plate" },
+                            { id: "rond", title: "Mousse crémeuse", desc: "Sensation ronde" },
+                            { id: "neutral", title: "Peu importe", desc: "Tu choisis pour moi" }
+                        ],
+                        spirit: [
+                            { id: "sec_vif", title: "Sec & direct", desc: "Net, sans fioritures" },
+                            { id: "equilibre", title: "Classique", desc: "Équilibré, facile" },
+                            { id: "rond", title: "Plus doux / arrondi", desc: "Moins agressif" },
+                            { id: "neutral", title: "Peu importe", desc: "Tu choisis pour moi" }
+                        ]
+                    },
+                    step3_any: "Peu importe",
+                    step3_sweet: { label: "Sucré ou sec", opts: [{ id: "sec", l: "Plutôt sec" }, { id: "demi", l: "Un peu sucré" }, { id: "doux", l: "Sucré" }, { id: "any", l: "Peu importe" }] },
+                    step3_acid: { label: "Acidité (le côté citron)", opts: [{ id: "low", l: "Peu acidulé" }, { id: "mid", l: "Équilibré" }, { id: "high", l: "Bien frais, citronné" }, { id: "any", l: "Peu importe" }] },
+                    step3_tannin: { label: "Effet en bouche (vins rouges)", opts: [{ id: "light", l: "Doux" }, { id: "mid", l: "Moyen" }, { id: "pow", l: "Fort" }, { id: "any", l: "Peu importe" }] },
+                    step3_body: { label: "Lourd ou léger en bouche", opts: [{ id: "light", l: "Léger" }, { id: "mid", l: "Moyen" }, { id: "full", l: "Fort / lourd" }, { id: "any", l: "Peu importe" }] },
+                    back: "Retour", next: "Suivant", submit: "Obtenir le conseil", close_wizard: "Quitter l'assistant apéritif",
+                    err_family: "Choisis une famille pour continuer.",
+                    err_step2: "Choisis une nuance pour continuer.",
+                    query_intro: "Votre demande : Apéritif.",
+                    q_famille: "• Ce que je veux : ",
+                    q_style: "• Style : ",
+                    q_crit: "• Au goût : ",
+                    query_suffix: "Propose le ou les vins / spiritueux de notre carte les plus adaptés à mon apéritif, en t’appuyant uniquement sur notre carte. Si rien ne correspond vraiment à mon profil, dis-le clairement ; sinon propose la meilleure alternative réelle et explique l’écart dans « Pourquoi ce choix ? ». Que me conseilles-tu ?"
+                },
+                sections: { '[DEMANDE]': 'Votre repas', '[SUGGESTION]': 'Notre Suggestion', '[EXPLICATION]': "Pourquoi ce choix ?", '[AROMES]': "Au nez & en bouche", '[PROFIL_VIN]': 'Profil', '[DEGRE]': 'Caractère', '[AVIS]': 'Note', '[AVIS_SOMMELIER]': "Le Secret du Sommelier" },
+                sections_aperitif: { '[DEMANDE]': 'Votre apéritif', '[SUGGESTION]': 'Notre Suggestion', '[EXPLICATION]': "Pourquoi ce choix ?", '[AROMES]': "Au nez & en bouche", '[PROFIL_VIN]': 'Profil', '[DEGRE]': 'Caractère', '[AVIS]': 'Note', '[AVIS_SOMMELIER]': "Le Secret du Sommelier" }
             },
             en: {
-                flag: "🇺🇸", main_title: "STARRED RESTAURANT", subtitle: "WINE PAIRING", photo_label: "Open Menu", loader: "Searching...", footer_quote: "Excellence, without complexity.", copyright: "© 2026 Powered by French Sommelier. All rights reserved.", tagline: "The perfect match for your meal and taste.", phrases: ["Steak", "Salmon", "Light Red Wine", "Veal Stew"],
+                flag: "🇺🇸", main_title: "STARRED RESTAURANT", subtitle: "WINE PAIRING", photo_label: "Open Menu", loader: "Searching...", footer_quote: "Excellence, without complexity.", copyright: "© 2026 Powered by French Sommelier. All rights reserved.", tagline: "The perfect match for your meal and taste.",
                 legal_btn: "legal notice", modal_title: "Your Meal", modal_validate: "Find the Perfect Wine", feedback_label: "", sw_rouge: "🍷 Rather Red", sw_blanc: "🥂 Rather White", sw_similaire: "♻️ Another Suggestion", sw_surprends: "💎 Prestige Version",
                 legal_title: "Legal Notice", legal_editor: "Publisher", legal_contact: "Contact", legal_host: "Hosting", legal_analytics: "This site uses Google Analytics for anonymous audience measurement.",
                 legal_sulfites: "Our wines contain sulfites. For any other allergy or intolerance, please speak to our team in the dining room.",
@@ -649,10 +900,25 @@
                 carte_empty: "No wines available at the moment.",
                 wine_aromas_label: "Key aromas",
                 wine_profile_label: "Profile",
+                wine_criteria_label: "Criteria",
                 wine_ideal_label: "Ideal with…",
                 wine_close: "Close",
                 wine_power: "Power",
                 wine_fruit: "Fruitiness",
+                wine_crit: {
+                    dry: "Dry",
+                    sweet: "Sweet",
+                    off_dry: "Off-dry",
+                    acid_low: "Low acidity",
+                    acid_mid: "Balanced acidity",
+                    acid_high: "Crisp / high acidity",
+                    tannin_light: "Light tannins",
+                    tannin_mid: "Smooth tannins",
+                    tannin_powerful: "Firm tannins",
+                    body_light: "Light-bodied",
+                    body_mid: "Medium-bodied",
+                    body_full: "Full-bodied"
+                },
                 wine_derived: {
                     rouge: { badge: "Bold & Structured", aromas: "Ripe black fruit, soft spice and subtle oak.", ideal: "red meats, game, aged cheeses, rich sauces.", power: 4, fruit: 3 },
                     blanc: { badge: "Fresh & Mineral", aromas: "Citrus, white flowers and clean minerality.", ideal: "fish, shellfish, poultry, goat cheese.", power: 2, fruit: 4 },
@@ -669,10 +935,102 @@
                 },
                 warning: "Alcohol abuse is dangerous for your health, consume in moderation.",
                 quick_actions: [ { text: "Light Red Wine", label: "🍷 Light Red" }, { text: "Fruity White Wine", label: "🥂 Fruity White" }, { text: "Rosé", label: "🌸 Rosé" }, { text: "Powerful Red Wine", label: "🍇 Powerful Red" }, { text: "Sweet Wine", label: "🍯 Sweet Wine" }, { text: "Wine by the glass", label: "🍷 By the Glass" } ],
-                sections: { '[DEMANDE]': 'Your meal', '[SUGGESTION]': 'Our Suggestion', '[EXPLICATION]': "Why this choice?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Profile', '[DEGRE]': 'Character', '[AVIS]': 'Rating', '[AVIS_SOMMELIER]': "Sommelier Secret" }
+                aperitif: {
+                    btn: "Aperitif?",
+                    step1_title: "Step 1/3 — What you want",
+                    footnote: "* Suggestions exclude cocktails",
+                    families: [
+                        { id: "rouge", title: "Red", desc: "Structure & tannin", cardClass: "aperitif-card-rouge" },
+                        { id: "blanc", title: "White", desc: "Dry, aromatic or rich", cardClass: "aperitif-card-blanc" },
+                        { id: "rose", title: "Rosé", desc: "From dry to sweeter", cardClass: "aperitif-card-rose" },
+                        { id: "bulle", title: "Bubbles", desc: "Sweetness & style", cardClass: "aperitif-card-bulle" },
+                        { id: "spirit", title: "Spirits", desc: "Spirit profile", cardClass: "aperitif-card-spirit" }
+                    ],
+                    step2_title: "Step 2/3 — The style",
+                    step2_options: {
+                        rouge: [
+                            { id: "r1", title: "Soft", desc: "Low tannin, easy" },
+                            { id: "r2", title: "Mid", desc: "Fruit and structure balanced" },
+                            { id: "r3", title: "Structured", desc: "Firm tannins" },
+                            { id: "r4", title: "Very powerful", desc: "Maximum intensity" }
+                        ],
+                        blanc: [
+                            { id: "b1", title: "Very dry & zesty", desc: "Sharp, thirst-quenching" },
+                            { id: "b2", title: "Dry & aromatic", desc: "Flowers, white fruit" },
+                            { id: "b3", title: "Round on the palate", desc: "Less acid, more body" },
+                            { id: "b4", title: "Rich & long", desc: "Full on the palate" }
+                        ],
+                        rose: [
+                            { id: "p1", title: "Pale & very dry", desc: "Light style, low sugar" },
+                            { id: "p2", title: "Fresh red fruit", desc: "Juicy, fruity" },
+                            { id: "p3", title: "More intense", desc: "Deeper color and flavor" },
+                            { id: "p4", title: "Easy-drinking sweet", desc: "A touch sweeter" }
+                        ],
+                        bulle: [
+                            { id: "u1", title: "Extra dry", desc: "Almost no residual sugar" },
+                            { id: "u2", title: "Brut", desc: "Classic aperitif style" },
+                            { id: "u3", title: "Sweeter", desc: "Demi-sec or sweeter" },
+                            { id: "u4", title: "Sparkling rosé", desc: "Pink fizz" }
+                        ],
+                        spirit: [
+                            { id: "s1", title: "Neutral / very dry", desc: "Vodka, London dry gin" },
+                            { id: "s2", title: "Botanical & bitter", desc: "Aromatic gin, bitter aperitif" },
+                            { id: "s3", title: "Aged & oaky", desc: "Whisky, aged rum" },
+                            { id: "s4", title: "Smoky or high-proof", desc: "Mezcal, strong spirit" }
+                        ]
+                    },
+                    step3_title: "Step 3/3 — On the palate",
+                    step3_presets: {
+                        rouge: [
+                            { id: "sec_vif", title: "Dry & lively", desc: "Low sugar, bright feel" },
+                            { id: "equilibre", title: "Balanced", desc: "Neither too dry nor too round" },
+                            { id: "rond", title: "Rounder", desc: "Riper fruit, less sharp" },
+                            { id: "neutral", title: "No preference", desc: "You pick for me" }
+                        ],
+                        blanc: [
+                            { id: "sec_vif", title: "Maximum freshness", desc: "Dry, crisp" },
+                            { id: "equilibre", title: "Balanced", desc: "Dry but not harsh" },
+                            { id: "rond", title: "Softer & broader", desc: "Less acidity" },
+                            { id: "neutral", title: "No preference", desc: "You pick for me" }
+                        ],
+                        rose: [
+                            { id: "sec_vif", title: "Dry & fresh", desc: "Thirst-quenching" },
+                            { id: "equilibre", title: "Middle ground", desc: "Fruit without heaviness" },
+                            { id: "rond", title: "Softer", desc: "More roundness" },
+                            { id: "neutral", title: "No preference", desc: "You pick for me" }
+                        ],
+                        bulle: [
+                            { id: "sec_vif", title: "Fine & fresh bubbles", desc: "Light, lively" },
+                            { id: "equilibre", title: "Balance foam & flavor", desc: "Not too heavy or flat" },
+                            { id: "rond", title: "Creamy mousse", desc: "Rounder mouthfeel" },
+                            { id: "neutral", title: "No preference", desc: "You pick for me" }
+                        ],
+                        spirit: [
+                            { id: "sec_vif", title: "Dry & straight", desc: "Clean, no fuss" },
+                            { id: "equilibre", title: "Classic", desc: "Balanced, easy" },
+                            { id: "rond", title: "Softer / rounded", desc: "Less bite" },
+                            { id: "neutral", title: "No preference", desc: "You pick for me" }
+                        ]
+                    },
+                    step3_any: "No preference",
+                    step3_sweet: { label: "Sweet or dry", opts: [{ id: "sec", l: "Rather dry" }, { id: "demi", l: "A bit sweet" }, { id: "doux", l: "Sweet" }, { id: "any", l: "No preference" }] },
+                    step3_acid: { label: "Acidity (lemon tang)", opts: [{ id: "low", l: "Soft" }, { id: "mid", l: "Balanced" }, { id: "high", l: "Fresh, lemony" }, { id: "any", l: "No preference" }] },
+                    step3_tannin: { label: "Dryness on reds", opts: [{ id: "light", l: "Light" }, { id: "mid", l: "Medium" }, { id: "pow", l: "Strong" }, { id: "any", l: "No preference" }] },
+                    step3_body: { label: "Light or heavy", opts: [{ id: "light", l: "Light" }, { id: "mid", l: "Medium" }, { id: "full", l: "Heavy / strong" }, { id: "any", l: "No preference" }] },
+                    back: "Back", next: "Next", submit: "Get recommendation", close_wizard: "Exit aperitif assistant",
+                    err_family: "Pick a style to continue.",
+                    err_step2: "Pick an option to continue.",
+                    query_intro: "Your request: Aperitif.",
+                    q_famille: "• What I want: ",
+                    q_style: "• Style: ",
+                    q_crit: "• Taste: ",
+                    query_suffix: "Recommend the best match(es) from our list for my aperitif, using only our wine list. If nothing truly fits my profile, say so clearly; otherwise suggest the best real alternative and explain the gap under “Why this choice?”. What do you suggest?"
+                },
+                sections: { '[DEMANDE]': 'Your meal', '[SUGGESTION]': 'Our Suggestion', '[EXPLICATION]': "Why this choice?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Profile', '[DEGRE]': 'Character', '[AVIS]': 'Rating', '[AVIS_SOMMELIER]': "Sommelier Secret" },
+                sections_aperitif: { '[DEMANDE]': 'Your aperitif', '[SUGGESTION]': 'Our Suggestion', '[EXPLICATION]': "Why this choice?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Profile', '[DEGRE]': 'Character', '[AVIS]': 'Rating', '[AVIS_SOMMELIER]': "Sommelier Secret" }
             },
             es: {
-                flag: "🇪🇸", main_title: "RESTAURANTE ESTRELLA", subtitle: "MARIDAJE DE VINOS", photo_label: "Abrir la Carta", loader: "Buscando...", footer_quote: "Excelencia, sin complejidad.", copyright: "© 2026 Powered by French Sommelier. Todos los derechos reservados.", tagline: "El maridaje perfecto para su comida.", phrases: ["Entrecot", "Salmón", "Vino tinto ligero", "Guiso de Ternera"],
+                flag: "🇪🇸", main_title: "RESTAURANTE ESTRELLA", subtitle: "MARIDAJE DE VINOS", photo_label: "Abrir la Carta", loader: "Buscando...", footer_quote: "Excelencia, sin complejidad.", copyright: "© 2026 Powered by French Sommelier. Todos los derechos reservados.", tagline: "El maridaje perfecto para su comida.",
                 legal_btn: "avisos legales", modal_title: "Su Comida", modal_validate: "Encontrar el Vino Ideal", feedback_label: "", sw_rouge: "🍷 Más bien Tinto", sw_blanc: "🥂 Más bien Blanco", sw_similaire: "♻️ Otra Sugerencia", sw_surprends: "💎 Versión Prestigio",
                 legal_title: "Avisos Legales", legal_editor: "Editor", legal_contact: "Contacto", legal_host: "Alojamiento", legal_analytics: "Este sitio utiliza Google Analytics para medir la audiencia de forma anónima.",
                 legal_sulfites: "Nuestros vinos contienen sulfitos. Para cualquier otra alergia o intolerancia, diríjase a nuestro equipo en sala.",
@@ -687,10 +1045,25 @@
                 carte_empty: "No hay vinos disponibles por el momento.",
                 wine_aromas_label: "Aromas principales",
                 wine_profile_label: "Perfil",
+                wine_criteria_label: "Criterios",
                 wine_ideal_label: "Ideal con…",
                 wine_close: "Cerrar",
                 wine_power: "Potencia",
                 wine_fruit: "Fruidad",
+                wine_crit: {
+                    dry: "Más bien seco",
+                    sweet: "Más bien dulce",
+                    off_dry: "Semiseco",
+                    acid_low: "Poca acidez",
+                    acid_mid: "Acidez equilibrada",
+                    acid_high: "Acidez marcada",
+                    tannin_light: "Taninos ligeros",
+                    tannin_mid: "Taninos fundidos",
+                    tannin_powerful: "Taninos potentes",
+                    body_light: "Ligero",
+                    body_mid: "Medio cuerpo",
+                    body_full: "Con cuerpo"
+                },
                 wine_derived: {
                     rouge: { badge: "Con cuerpo y estructura", aromas: "Frutos negros maduros, especias suaves y notas de madera.", ideal: "carnes rojas, caza, quesos curados, salsas reducidas.", power: 4, fruit: 3 },
                     blanc: { badge: "Fresco y mineral", aromas: "Cítricos, flores blancas y mineralidad limpia.", ideal: "pescados, mariscos, aves, quesos de cabra.", power: 2, fruit: 4 },
@@ -707,12 +1080,102 @@
                 },
                 warning: "El abuso de alcohol es peligroso para la salud, consumir con moderación.",
                 quick_actions: [ { text: "Vino tinto ligero", label: "🍷 Tinto Ligero" }, { text: "Vino blanco frutal", label: "🥂 Blanco Frutal" }, { text: "Rosado", label: "🌸 Rosado" }, { text: "Vino tinto potente", label: "🍇 Tinto Potente" }, { text: "Vino dulce", label: "🍯 Vino Dulce" }, { text: "Vino por copa", label: "🍷 Por Copa" } ],
-                sections: { '[DEMANDE]': 'Su pedido', '[SUGGESTION]': 'Nuestra Sugerencia', '[EXPLICATION]': "¿Por qué esta elección?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Perfil', '[DEGRE]': 'Carácter', '[AVIS]': 'Nota', '[AVIS_SOMMELIER]': "El Secreto del Sommelier" }
+                aperitif: {
+                    btn: "¿Aperitivo?",
+                    step1_title: "Paso 1/3 — Tu gusto",
+                    footnote: "* Consejos sin cócteles",
+                    families: [
+                        { id: "rouge", title: "Tinto", desc: "Estructura y tanino", cardClass: "aperitif-card-rouge" },
+                        { id: "blanc", title: "Blanco", desc: "Seco, aromático o intenso", cardClass: "aperitif-card-blanc" },
+                        { id: "rose", title: "Rosado", desc: "Del más seco al más goloso", cardClass: "aperitif-card-rose" },
+                        { id: "bulle", title: "Burbujas", desc: "Azúcar y estilo", cardClass: "aperitif-card-bulle" },
+                        { id: "spirit", title: "Destilados", desc: "Perfil del destilado", cardClass: "aperitif-card-spirit" }
+                    ],
+                    step2_title: "Paso 2/3 — El estilo",
+                    step2_options: {
+                        rouge: [
+                            { id: "r1", title: "Suave", desc: "Poco tanino, fácil" },
+                            { id: "r2", title: "Intermedio", desc: "Fruta y estructura equilibrados" },
+                            { id: "r3", title: "Estructurado", desc: "Taninos marcados" },
+                            { id: "r4", title: "Muy potente", desc: "Máxima intensidad" }
+                        ],
+                        blanc: [
+                            { id: "b1", title: "Muy seco y cítrico", desc: "Vivo, quita la sed" },
+                            { id: "b2", title: "Seco y aromático", desc: "Flores, fruta blanca" },
+                            { id: "b3", title: "Redondo en boca", desc: "Menos acidez, más cuerpo" },
+                            { id: "b4", title: "Intenso y largo", desc: "Mucha materia" }
+                        ],
+                        rose: [
+                            { id: "p1", title: "Pálido y muy seco", desc: "Estilo ligero, poco azúcar" },
+                            { id: "p2", title: "Frutos rojos frescos", desc: "Jugoso, afrutado" },
+                            { id: "p3", title: "Más intenso", desc: "Color y sabor marcados" },
+                            { id: "p4", title: "Goloso", desc: "Un poco más dulce" }
+                        ],
+                        bulle: [
+                            { id: "u1", title: "Extra seco", desc: "Casi sin azúcar" },
+                            { id: "u2", title: "Brut", desc: "Clásico de aperitivo" },
+                            { id: "u3", title: "Más dulce", desc: "Semiseco o tendencia dulce" },
+                            { id: "u4", title: "Espumoso rosado", desc: "Burbujas rosas" }
+                        ],
+                        spirit: [
+                            { id: "s1", title: "Neutro / muy seco", desc: "Vodka, ginebra seca" },
+                            { id: "s2", title: "Botánico y amargo", desc: "Ginebra aromática, aperitivo amargo" },
+                            { id: "s3", title: "Envejecido y madera", desc: "Whisky, ron añejo" },
+                            { id: "s4", title: "Ahumado o muy fuerte", desc: "Mezcal, mucho alcohol" }
+                        ]
+                    },
+                    step3_title: "Paso 3/3 — En boca",
+                    step3_presets: {
+                        rouge: [
+                            { id: "sec_vif", title: "Seco y vivo", desc: "Poco azúcar, sensaciones vivas" },
+                            { id: "equilibre", title: "Equilibrado", desc: "Ni muy seco ni muy redondo" },
+                            { id: "rond", title: "Más redondo", desc: "Fruta madura, menos filo" },
+                            { id: "neutral", title: "Me da igual", desc: "Tú eliges por mí" }
+                        ],
+                        blanc: [
+                            { id: "sec_vif", title: "Máxima frescura", desc: "Seco, cortante" },
+                            { id: "equilibre", title: "Equilibrado", desc: "Seco sin agresivo" },
+                            { id: "rond", title: "Más suave y envolvente", desc: "Menos acidez" },
+                            { id: "neutral", title: "Me da igual", desc: "Tú eliges por mí" }
+                        ],
+                        rose: [
+                            { id: "sec_vif", title: "Seco y fresco", desc: "Quita la sed" },
+                            { id: "equilibre", title: "Término medio", desc: "Fruta sin pesadez" },
+                            { id: "rond", title: "Más dulce", desc: "Más redondez" },
+                            { id: "neutral", title: "Me da igual", desc: "Tú eliges por mí" }
+                        ],
+                        bulle: [
+                            { id: "sec_vif", title: "Burbujas finas y frescas", desc: "Ligera, viva" },
+                            { id: "equilibre", title: "Equilibrio espuma y sabor", desc: "Ni pesada ni plana" },
+                            { id: "rond", title: "Espuma cremosa", desc: "Sensación redonda" },
+                            { id: "neutral", title: "Me da igual", desc: "Tú eliges por mí" }
+                        ],
+                        spirit: [
+                            { id: "sec_vif", title: "Seco y directo", desc: "Limpio, sin florituras" },
+                            { id: "equilibre", title: "Clásico", desc: "Equilibrado, fácil" },
+                            { id: "rond", title: "Más suave / redondeado", desc: "Menos agresivo" },
+                            { id: "neutral", title: "Me da igual", desc: "Tú eliges por mí" }
+                        ]
+                    },
+                    step3_any: "Me da igual",
+                    step3_sweet: { label: "Dulce o seco", opts: [{ id: "sec", l: "Más seco" }, { id: "demi", l: "Un poco dulce" }, { id: "doux", l: "Dulce" }, { id: "any", l: "Me da igual" }] },
+                    step3_acid: { label: "Acidez (como limón)", opts: [{ id: "low", l: "Poca" }, { id: "mid", l: "Equilibrada" }, { id: "high", l: "Fresca, a limón" }, { id: "any", l: "Me da igual" }] },
+                    step3_tannin: { label: "Astringencia (tintos)", opts: [{ id: "light", l: "Poca" }, { id: "mid", l: "Media" }, { id: "pow", l: "Fuerte" }, { id: "any", l: "Me da igual" }] },
+                    step3_body: { label: "Ligero o pesado", opts: [{ id: "light", l: "Ligero" }, { id: "mid", l: "Medio" }, { id: "full", l: "Fuerte / pesado" }, { id: "any", l: "Me da igual" }] },
+                    back: "Atrás", next: "Siguiente", submit: "Obtener consejo", close_wizard: "Salir del asistente de aperitivo",
+                    err_family: "Elige una familia para continuar.",
+                    err_step2: "Elige una opción para continuar.",
+                    query_intro: "Tu petición: Aperitivo.",
+                    q_famille: "• Lo que quiero: ",
+                    q_style: "• Estilo: ",
+                    q_crit: "• Gusto: ",
+                    query_suffix: "Propón el vino o destilado de nuestra carta más adaptado a mi aperitivo, solo con nuestra carta. Si nada encaja de verdad con mi perfil, dilo con claridad; si no, la mejor alternativa real y explica el desfase en « ¿Por qué esta elección? ». ¿Qué me recomiendas?"
+                },
+                sections: { '[DEMANDE]': 'Su pedido', '[SUGGESTION]': 'Nuestra Sugerencia', '[EXPLICATION]': "¿Por qué esta elección?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Perfil', '[DEGRE]': 'Carácter', '[AVIS]': 'Nota', '[AVIS_SOMMELIER]': "El Secreto del Sommelier" },
+                sections_aperitif: { '[DEMANDE]': 'Tu aperitivo', '[SUGGESTION]': 'Nuestra Sugerencia', '[EXPLICATION]': "¿Por qué esta elección?", '[AROMES]': "Aromas", '[PROFIL_VIN]': 'Perfil', '[DEGRE]': 'Carácter', '[AVIS]': 'Nota', '[AVIS_SOMMELIER]': "El Secreto del Sommelier" }
             }
         };
 
-        const input = document.getElementById('search-bar');
-        const clearBtn = document.getElementById('clear-btn');
         const card = document.getElementById('response-card');
         const contentArea = document.getElementById('response-content');
         const loader = document.getElementById('loader');
@@ -726,15 +1189,18 @@
         
         let currentLang = 'fr';
         let lastQuestionAsked = "";
+        let lastRequestWasAperitif = false;
         let currentSession = [];
-        let typewriterInterval;
-        let typewriterTimeout;
         let cachedMenuData = null;
         let adminEditingPlats = null;
         let adminEditingVins = null;
         let requestInProgress = false;
         let wineFlatList = [];
         let wineListPanelFilter = "rouge";
+        let wineListBodyScrollY = 0;
+        let wineFlashOpenIdx = null;
+        let aperitifStep = 0;
+        let aperitifAnswers = { family: null, step2Id: null, criteria: {}, presetId: null };
 
         const menuCategoryLabels = {
             fr: { Entrées: "🫒 Entrées", Plats: "🍽️ Plats", Desserts: "🧀 Desserts" },
@@ -926,7 +1392,7 @@
 
         const restoIdForTrack = new URLSearchParams(window.location.search).get('resto') || '';
         function trackClientAction(action) {
-            const allowed = ['flash', 'texte_libre', 'ouvrir_carte', 'carte_vins'];
+            const allowed = ['flash', 'ouvrir_carte', 'carte_vins', 'aperitif_complete'];
             if (!allowed.includes(action)) return;
             fetch('/api/track', {
                 method: 'POST',
@@ -952,18 +1418,250 @@
             }).catch(() => {});
         }
 
+        function getAperitifLang() {
+            return langData[currentLang].aperitif || langData.fr.aperitif;
+        }
+
+        function getAperitifStep3Presets(ap) {
+            const fam = aperitifAnswers.family;
+            const m = ap && ap.step3_presets;
+            if (fam && m && typeof m === "object" && !Array.isArray(m) && Array.isArray(m[fam])) return m[fam];
+            return [];
+        }
+
+        function aperitifTileVisual(kind, id) {
+            const fam = {
+                rouge: { emoji: "🍷", tone: "aperitif-tone--fam-rouge" },
+                blanc: { emoji: "🥂", tone: "aperitif-tone--fam-blanc" },
+                rose: { emoji: "🌸", tone: "aperitif-tone--fam-rose" },
+                bulle: { emoji: "✨", tone: "aperitif-tone--fam-bulle" },
+                spirit: { emoji: "🥃", tone: "aperitif-tone--fam-spirit" }
+            };
+            const s2 = {
+                r1: { emoji: "🌿", tone: "aperitif-tone--soft" },
+                r2: { emoji: "⚖️", tone: "aperitif-tone--balance" },
+                r3: { emoji: "🍇", tone: "aperitif-tone--deep" },
+                r4: { emoji: "🔥", tone: "aperitif-tone--power" },
+                b1: { emoji: "🍋", tone: "aperitif-tone--citrus" },
+                b2: { emoji: "🍇", tone: "aperitif-tone--fruit" },
+                b3: { emoji: "☁️", tone: "aperitif-tone--round" },
+                b4: { emoji: "✨", tone: "aperitif-tone--rich" },
+                p1: { emoji: "🫧", tone: "aperitif-tone--pale" },
+                p2: { emoji: "🍓", tone: "aperitif-tone--fruit" },
+                p3: { emoji: "🌺", tone: "aperitif-tone--deep" },
+                p4: { emoji: "🎉", tone: "aperitif-tone--party" },
+                u1: { emoji: "💎", tone: "aperitif-tone--fresh" },
+                u2: { emoji: "🥂", tone: "aperitif-tone--spark" },
+                u3: { emoji: "🍯", tone: "aperitif-tone--sweet" },
+                u4: { emoji: "💗", tone: "aperitif-tone--pinkfizz" },
+                s1: { emoji: "🧊", tone: "aperitif-tone--ice" },
+                s2: { emoji: "🌿", tone: "aperitif-tone--herb" },
+                s3: { emoji: "🪵", tone: "aperitif-tone--oak" },
+                s4: { emoji: "🔥", tone: "aperitif-tone--smoke" }
+            };
+            const s3 = {
+                sec_vif: { emoji: "⚡", tone: "aperitif-tone--fresh" },
+                equilibre: { emoji: "⚖️", tone: "aperitif-tone--balance" },
+                rond: { emoji: "🌅", tone: "aperitif-tone--warm" },
+                neutral: { emoji: "🎲", tone: "aperitif-tone--neutral" }
+            };
+            if (kind === "family") return fam[id] || { emoji: "", tone: "" };
+            if (kind === "step2") return s2[id] || { emoji: "", tone: "" };
+            if (kind === "step3") return s3[id] || { emoji: "", tone: "" };
+            return { emoji: "", tone: "" };
+        }
+
+        function aperitifEmojiSpan(emoji) {
+            if (!emoji) return "";
+            return `<span class="aperitif-tile-emoji" aria-hidden="true">${emoji}</span>`;
+        }
+
+        const APERITIF_PRESET_MAP = {
+            neutral: { sweet: "any", acid: "any", tannin: "any", body: "any" },
+            sec_vif: { sweet: "sec", acid: "high", tannin: "light", body: "light" },
+            equilibre: { sweet: "sec", acid: "mid", tannin: "mid", body: "mid" },
+            rond: { sweet: "demi", acid: "low", tannin: "light", body: "mid" },
+            corse: { sweet: "sec", acid: "mid", tannin: "pow", body: "full" }
+        };
+
+        function setMenuModalAperitifMode(active) {
+            const mm = document.getElementById('menu-modal');
+            const panel = document.getElementById('menu-modal-panel');
+            const topbar = document.getElementById('menu-modal-topbar');
+            if (mm) mm.classList.toggle('menu-modal--aperitif', active);
+            if (panel) panel.classList.toggle('menu-modal-panel--aperitif', active);
+            if (topbar) topbar.classList.toggle('hidden', active);
+        }
+
+        function resetAperitifWizardToMenu() {
+            aperitifStep = 0;
+            aperitifAnswers = { family: null, step2Id: null, criteria: {}, presetId: null };
+            const mc = document.getElementById('menu-content');
+            const mf = document.getElementById('menu-modal-footer');
+            const aw = document.getElementById('aperitif-wizard');
+            setMenuModalAperitifMode(false);
+            if (mc) mc.classList.remove('hidden');
+            if (mf) mf.classList.remove('hidden');
+            if (aw) aw.classList.add('hidden');
+        }
+
         function openMenuModal() {
             trackClientAction('ouvrir_carte');
-            if(menuModal) {
+            resetAperitifWizardToMenu();
+            if (menuModal) {
                 menuModal.classList.remove('hidden');
                 document.querySelectorAll('.menu-checkbox').forEach(cb => {
                     cb.checked = false;
-                    cb.closest('.menu-item').style.display = 'flex';
+                    const mi = cb.closest('.menu-item');
+                    if (mi) mi.style.display = 'flex';
                 });
             }
         }
 
-        function closeMenuModal() { if(menuModal) menuModal.classList.add('hidden'); }
+        function closeMenuModal() {
+            if (menuModal) menuModal.classList.add('hidden');
+            resetAperitifWizardToMenu();
+        }
+
+        function startAperitifWizard() {
+            aperitifStep = 1;
+            aperitifAnswers = { family: null, step2Id: null, criteria: {}, presetId: null };
+            const mc = document.getElementById('menu-content');
+            const mf = document.getElementById('menu-modal-footer');
+            const aw = document.getElementById('aperitif-wizard');
+            setMenuModalAperitifMode(true);
+            if (mc) mc.classList.add('hidden');
+            if (mf) mf.classList.add('hidden');
+            if (aw) aw.classList.remove('hidden');
+            renderAperitifWizardStep();
+        }
+
+        function aperitifSelectFamily(id) {
+            if (aperitifAnswers.family !== id) aperitifAnswers.step2Id = null;
+            aperitifAnswers.family = id;
+            aperitifStep = 2;
+            renderAperitifWizardStep();
+        }
+
+        function aperitifSelectStep2(id) {
+            aperitifAnswers.step2Id = id;
+            aperitifStep = 3;
+            aperitifAnswers.presetId = null;
+            aperitifAnswers.criteria = {};
+            renderAperitifWizardStep();
+        }
+
+        function aperitifApplyPresetAndAdvance(presetId) {
+            const base = APERITIF_PRESET_MAP[presetId] || APERITIF_PRESET_MAP.neutral;
+            const c = Object.assign({}, base);
+            if (aperitifAnswers.family !== "rouge") c.tannin = "na";
+            else if (presetId === "neutral") c.tannin = "any";
+            aperitifAnswers.criteria = c;
+            aperitifAnswers.presetId = presetId;
+            submitAperitifWizard();
+        }
+
+        function critOptLabel(groupKey, val) {
+            const ap = getAperitifLang();
+            const g = ap['step3_' + groupKey];
+            if (!g || val == null || val === '' || val === 'na') return '';
+            const hit = g.opts.find((o) => o.id === val);
+            return hit ? hit.l : '';
+        }
+
+        function renderAperitifWizardStep() {
+            const body = document.getElementById('aperitif-wizard-body');
+            const hEl = document.getElementById('aperitif-step-heading');
+            const bEl = document.getElementById('aperitif-nav-back');
+            const xEl = document.getElementById('aperitif-nav-close');
+            const ap = getAperitifLang();
+            if (!body || !ap) return;
+
+            let headText = "";
+            if (aperitifStep === 1) headText = ap.step1_title;
+            else if (aperitifStep === 2) headText = ap.step2_title;
+            else if (aperitifStep === 3) headText = ap.step3_title;
+            if (hEl) hEl.textContent = headText;
+
+            if (bEl && ap.back) bEl.setAttribute('aria-label', ap.back);
+            if (xEl && ap.close_wizard) xEl.setAttribute('aria-label', ap.close_wizard);
+
+            if (aperitifStep === 1) {
+                let html = `<div class="aperitif-grid-2">`;
+                ap.families.forEach((f) => {
+                    const v = aperitifTileVisual("family", f.id);
+                    html += `<div class="aperitif-tile ${f.cardClass} ${v.tone}" role="button" tabindex="0" onclick="aperitifSelectFamily('${escapeMenuAttr(f.id)}')">${aperitifEmojiSpan(v.emoji)}<div class="aperitif-card-title">${escapeHtml(f.title)}</div><div class="aperitif-card-desc">${escapeHtml(f.desc)}</div></div>`;
+                });
+                html += `</div><p class="aperitif-footnote">${escapeHtml(ap.footnote)}</p>`;
+                body.innerHTML = html;
+                return;
+            }
+            if (aperitifStep === 2) {
+                const fam = aperitifAnswers.family;
+                const opts = (ap.step2_options && ap.step2_options[fam]) || [];
+                let html = `<div class="aperitif-grid-2">`;
+                opts.forEach((o) => {
+                    const v = aperitifTileVisual("step2", o.id);
+                    html += `<div class="aperitif-tile aperitif-card-step2 ${v.tone}" role="button" tabindex="0" onclick="aperitifSelectStep2('${escapeMenuAttr(o.id)}')">${aperitifEmojiSpan(v.emoji)}<div class="aperitif-card-title">${escapeHtml(o.title)}</div><div class="aperitif-card-desc">${escapeHtml(o.desc)}</div></div>`;
+                });
+                html += '</div>';
+                body.innerHTML = html;
+                return;
+            }
+            if (aperitifStep === 3) {
+                const presets = getAperitifStep3Presets(ap);
+                let html = `<div class="aperitif-grid-2">`;
+                presets.forEach((p) => {
+                    const v = aperitifTileVisual("step3", p.id);
+                    html += `<div class="aperitif-tile aperitif-card-step2 ${v.tone}" role="button" tabindex="0" onclick="aperitifApplyPresetAndAdvance('${escapeMenuAttr(p.id)}')">${aperitifEmojiSpan(v.emoji)}<div class="aperitif-card-title">${escapeHtml(p.title)}</div><div class="aperitif-card-desc">${escapeHtml(p.desc)}</div></div>`;
+                });
+                html += '</div>';
+                body.innerHTML = html;
+                return;
+            }
+        }
+
+        function aperitifWizardBack() {
+            if (aperitifStep <= 1) {
+                resetAperitifWizardToMenu();
+                return;
+            }
+            if (aperitifStep === 3) {
+                aperitifAnswers.presetId = null;
+                aperitifAnswers.criteria = {};
+            }
+            aperitifStep -= 1;
+            renderAperitifWizardStep();
+        }
+
+        function buildAperitifQuery() {
+            const ap = getAperitifLang();
+            const fam = ap.families.find((f) => f.id === aperitifAnswers.family);
+            const opts = (ap.step2_options && ap.step2_options[aperitifAnswers.family]) || [];
+            const s2 = opts.find((o) => o.id === aperitifAnswers.step2Id);
+            const preset = getAperitifStep3Presets(ap).find((p) => p.id === aperitifAnswers.presetId);
+            const bits = [];
+            if (fam && String(fam.title || '').trim()) bits.push(String(fam.title).trim());
+            if (s2 && String(s2.title || '').trim()) bits.push(String(s2.title).trim());
+            if (preset && String(preset.title || '').trim()) bits.push(String(preset.title).trim());
+            else {
+                const c = aperitifAnswers.criteria || {};
+                const crit = [critOptLabel('sweet', c.sweet), critOptLabel('acid', c.acid)];
+                if (aperitifAnswers.family === 'rouge') crit.push(critOptLabel('tannin', c.tannin));
+                crit.push(critOptLabel('body', c.body));
+                const tail = crit.filter(Boolean).join(' - ');
+                if (tail) bits.push(tail);
+            }
+            const summary = bits.join(' - ');
+            return [ap.query_intro, summary, '', ap.query_suffix].join('\n');
+        }
+
+        function submitAperitifWizard() {
+            trackClientAction('aperitif_complete');
+            const q = buildAperitifQuery();
+            closeMenuModal();
+            setTimeout(() => demanderIA(null, null, q, { fromMenuCarte: true, fromAperitif: true }), 50);
+        }
 
         function toggleFakeAdmin() {
             if (adminModal.classList.contains('hidden')) {
@@ -1118,6 +1816,26 @@
             inner.innerHTML = html;
         }
 
+        function lockBodyScrollForWineList() {
+            wineListBodyScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+            document.body.style.position = "fixed";
+            document.body.style.top = `-${wineListBodyScrollY}px`;
+            document.body.style.left = "0";
+            document.body.style.right = "0";
+            document.body.style.width = "100%";
+            document.body.style.overflow = "hidden";
+        }
+
+        function unlockBodyScrollForWineList() {
+            document.body.style.position = "";
+            document.body.style.top = "";
+            document.body.style.left = "";
+            document.body.style.right = "";
+            document.body.style.width = "";
+            document.body.style.overflow = "";
+            window.scrollTo(0, wineListBodyScrollY);
+        }
+
         function openWineListPanel() {
             trackClientAction('carte_vins');
             const p = document.getElementById("wine-list-panel");
@@ -1129,16 +1847,18 @@
             document.getElementById("wf-label-rose").textContent = data.filter_rose;
             document.getElementById("wf-label-blanc").textContent = data.filter_blanc;
             document.getElementById("wf-label-autre").textContent = data.filter_autres;
+            const wasHidden = p.classList.contains("hidden");
             p.classList.remove("hidden");
-            document.body.style.overflow = "hidden";
+            if (wasHidden) lockBodyScrollForWineList();
             wineListPanelFilter = pickInitialWineFilter();
             setWineListFilter(wineListPanelFilter);
         }
 
         function closeWineListPanel() {
             const p = document.getElementById("wine-list-panel");
+            const wasOpen = p && !p.classList.contains("hidden");
             if (p) p.classList.add("hidden");
-            document.body.style.overflow = "";
+            if (wasOpen) unlockBodyScrollForWineList();
         }
 
         function pickWineBadge(w, tk, d) {
@@ -1153,6 +1873,13 @@
             return def;
         }
 
+        function readFicheLevel(v) {
+            if (v == null || v === "") return null;
+            const n = Number(v);
+            if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1 || n > 5) return null;
+            return n;
+        }
+
         function deriveWineMeta(w, cat) {
             const d = langData[currentLang];
             const tk = wineTypeKeyFromCatAndType(cat, w.type);
@@ -1160,12 +1887,26 @@
             let power = base.power;
             let fruit = base.fruit;
             const t = (w.type || "").toLowerCase();
-            if (/puissant|corsé|charpenté|tanique|potente/.test(t)) power = Math.min(5, power + 1);
-            if (/léger|ligero|light/.test(t)) power = Math.max(1, power - 1);
-            if (/fruité|fruté|fruit|afrutado/.test(t)) fruit = Math.min(5, fruit + 1);
-            if (/minéral|sec\b|mineral/.test(t)) fruit = Math.max(1, fruit - 1);
+            const fPower = readFicheLevel(w.fiche_puissance);
+            const fFruit = readFicheLevel(w.fiche_fruite);
+            if (fPower == null) {
+                if (/puissant|corsé|charpenté|tanique|potente/.test(t)) power = Math.min(5, power + 1);
+                if (/léger|ligero|light/.test(t)) power = Math.max(1, power - 1);
+            }
+            if (fFruit == null) {
+                if (/fruité|fruté|fruit|afrutado/.test(t)) fruit = Math.min(5, fruit + 1);
+                if (/minéral|sec\b|mineral/.test(t)) fruit = Math.max(1, fruit - 1);
+            }
+            if (fPower != null) power = fPower;
+            if (fFruit != null) fruit = fFruit;
             const badge = pickWineBadge(w, tk, d);
-            return { badge, aromas: base.aromas, ideal: base.ideal, power, fruit };
+            let aromas = base.aromas;
+            const fa = w.fiche_aromes != null ? String(w.fiche_aromes).trim() : "";
+            if (fa) aromas = fa;
+            let ideal = base.ideal;
+            const fi = w.fiche_ideal != null ? String(w.fiche_ideal).trim() : "";
+            if (fi) ideal = fi;
+            return { badge, aromas, ideal, power, fruit };
         }
 
         function renderWineGauges(power, fruit) {
@@ -1180,11 +1921,61 @@
             );
         }
 
+        function formatWineCriteria(w, cat, meta, d) {
+            const manual = w && w.fiche_criteres != null ? String(w.fiche_criteres).trim() : "";
+            if (manual) return manual;
+            const wc = d.wine_crit;
+            if (!wc) return "";
+            const t = (w.type || "").toLowerCase();
+            const tk = wineTypeKeyFromCatAndType(cat, w.type);
+            const pow = Math.round(Math.min(5, Math.max(1, meta.power)));
+            const parts = [];
+
+            if (/liquoreux|liquoroso|moelleux|doux|dulce|sweet|dessert|muté|late harvest|vendanges tardives|pedro xim/i.test(t)) {
+                parts.push(wc.sweet);
+            } else if (/demi-sec|demisec|semi-?sec|semiseco|halbtrocken/i.test(t)) {
+                parts.push(wc.off_dry);
+            } else {
+                parts.push(wc.dry);
+            }
+
+            let acidLine = wc.acid_mid;
+            if (/minéral|mineral|vif|vive|nerveu|nerveux|acide|citr|citrus|zeste|sharp|crisp|steely/i.test(t)) {
+                acidLine = wc.acid_high;
+            } else if (/rond|gras|charnu|beurr|crémeux|creamy|opulent|moelleux|velouté|velvety|round/i.test(t)) {
+                acidLine = wc.acid_low;
+            } else if (tk === "blanc" || tk === "bulle") {
+                if (pow <= 2) acidLine = wc.acid_high;
+                else if (pow >= 4) acidLine = wc.acid_low;
+                else acidLine = wc.acid_mid;
+            } else if (tk === "rose") {
+                acidLine = wc.acid_mid;
+            } else if (tk === "rouge") {
+                if (/vif|minéral|mineral|acide/i.test(t)) acidLine = wc.acid_high;
+                else if (/rond|souple|charnu|gras|souples/i.test(t)) acidLine = wc.acid_low;
+                else acidLine = wc.acid_mid;
+            }
+            parts.push(acidLine);
+
+            if (tk === "rouge") {
+                if (pow <= 2) parts.push(wc.tannin_light);
+                else if (pow >= 4) parts.push(wc.tannin_powerful);
+                else parts.push(wc.tannin_mid);
+            }
+
+            if (pow <= 2) parts.push(wc.body_light);
+            else if (pow >= 4) parts.push(wc.body_full);
+            else parts.push(wc.body_mid);
+
+            return parts.filter(Boolean).join(" · ");
+        }
+
         function openWineFlashModal(idx) {
             const wfm = document.getElementById("wine-flash-modal");
             if (!wfm || !wineFlatList[idx]) return;
             const { wine: w, cat } = wineFlatList[idx];
             trackWineListBottleClick(cat, w.nom, w);
+            wineFlashOpenIdx = idx;
             const d = langData[currentLang];
             const meta = deriveWineMeta(w, cat);
             document.getElementById("wine-flash-name").textContent = w.nom || "";
@@ -1199,6 +1990,8 @@
             document.getElementById("wine-flash-gauges").innerHTML = renderWineGauges(meta.power, meta.fruit);
             document.getElementById("wine-flash-aromas-label").textContent = d.wine_aromas_label;
             document.getElementById("wine-flash-profile-label").textContent = d.wine_profile_label;
+            document.getElementById("wine-flash-criteria-label").textContent = d.wine_criteria_label;
+            document.getElementById("wine-flash-criteria").textContent = formatWineCriteria(w, cat, meta, d);
             document.getElementById("wine-flash-ideal-label").textContent = d.wine_ideal_label;
             document.getElementById("wine-flash-close-btn").textContent = d.wine_close;
             wfm.classList.remove("hidden");
@@ -1207,6 +2000,7 @@
         function closeWineFlashModal() {
             const wfm = document.getElementById("wine-flash-modal");
             if (wfm) wfm.classList.add("hidden");
+            wineFlashOpenIdx = null;
         }
 
         function adminAddPlat(cat) {
@@ -1296,7 +2090,6 @@
                 else mains.push(v); // fallback
             });
             closeMenuModal();
-            input.value = selected.map(v => translateDishLabel(v, currentLang)).join(", ");
             setTimeout(() => {
                 const prefix = currentLang === 'en' ? "I'm having: " : currentLang === 'es' ? "Voy a comer: " : "Je vais manger : ";
                 const suffix = currentLang === 'en' ? ". What do you recommend?" : currentLang === 'es' ? ". ¿Qué me recomiendas?" : ". Que me conseilles-tu ?";
@@ -1322,6 +2115,9 @@
             document.getElementById('legal-btn').innerText = data.legal_btn;
             document.getElementById('modal-title').innerText = data.modal_title;
             document.getElementById('modal-validate').innerText = data.modal_validate;
+            const apBtn = document.getElementById('btn-aperitif-open');
+            if (apBtn && data.aperitif) apBtn.textContent = data.aperitif.btn;
+            if (aperitifStep > 0) renderAperitifWizardStep();
             document.getElementById('footer-quote').innerText = data.footer_quote;
             document.getElementById('copyright-text').innerText = data.copyright;
             document.getElementById('legal-warning').innerText = data.warning;
@@ -1360,16 +2156,18 @@
             if (wf && !wf.classList.contains('hidden')) {
                 document.getElementById('wine-flash-aromas-label').textContent = data.wine_aromas_label;
                 document.getElementById('wine-flash-profile-label').textContent = data.wine_profile_label;
-                document.getElementById('wine-flash-ideal-label').textContent = data.wine_ideal_label;
+                document.getElementById('wine-flash-criteria-label').textContent = data.wine_criteria_label;
                 document.getElementById('wine-flash-close-btn').textContent = data.wine_close;
+                if (wineFlashOpenIdx != null && wineFlatList[wineFlashOpenIdx]) {
+                    const { wine: w2, cat: c2 } = wineFlatList[wineFlashOpenIdx];
+                    const meta2 = deriveWineMeta(w2, c2);
+                    document.getElementById('wine-flash-criteria').textContent = formatWineCriteria(w2, c2, meta2, data);
+                }
+                document.getElementById('wine-flash-ideal-label').textContent = data.wine_ideal_label;
             }
             
             initMenu();
             renderQuickActions();
-            
-            idx = 0; input.placeholder = "";
-            stopTypewriter();
-            typeWriter();
         }
         
         function renderQuickActions() {
@@ -1395,34 +2193,31 @@
 
         function handleAvatarClick() { window.location.reload(); }
 
-        input.addEventListener('input', () => { clearBtn.style.display = input.value.length > 0 ? 'block' : 'none'; });
-        function clearInput() { input.value = ''; clearBtn.style.display = 'none'; input.focus(); }
-
         function relancerIA(type) {
             /* Reprendre la demande initiale : sinon l'API ne reçoit que le complément et l'IA peut « oublier » le repas ou le type de vin. */
-            const baseQ = (input.value && input.value.trim()) ? input.value.trim() : (typeof lastQuestionAsked === 'string' ? lastQuestionAsked.trim() : '');
+            const baseQ = (typeof lastQuestionAsked === 'string' ? lastQuestionAsked.trim() : '');
             let suffix = '';
             if (currentLang === 'fr') {
                 if (type === 'similaire') suffix = ' (Propose-moi une autre suggestion : une autre bouteille, mais toujours du même type que ma demande initiale — si j\'avais demandé un vin rouge, reste sur un rouge ; un blanc sur un blanc ; un vin doux ou liquoreux et qu\'il n\'y a pas d\'autre choix cohérent sur la carte, indique-le honnêtement et repropose la même suggestion ou la meilleure approximation réaliste.)';
-                if (type === 'rouge') suffix = ' (Je préfère un vin Rouge avec ce plat)';
-                if (type === 'blanc') suffix = ' (Je préfère un vin Blanc avec ce plat)';
-                if (type === 'prestige') suffix = ' (Je veux une Version Prestige. Propose-moi le meilleur vin, le plus haut de gamme pour ce plat)';
+                if (type === 'rouge') suffix = lastRequestWasAperitif ? ' (Je préfère un vin rouge pour le même apéritif)' : ' (Je préfère un vin Rouge avec ce plat)';
+                if (type === 'blanc') suffix = lastRequestWasAperitif ? ' (Je préfère un vin blanc pour le même apéritif)' : ' (Je préfère un vin Blanc avec ce plat)';
+                if (type === 'prestige') suffix = lastRequestWasAperitif ? ' (Je veux une Version Prestige pour ce même apéritif)' : ' (Je veux une Version Prestige. Propose-moi le meilleur vin, le plus haut de gamme pour ce plat)';
             } else if (currentLang === 'en') {
                 if (type === 'similaire') suffix = ' (Give me another suggestion: a different bottle, but stay on the SAME wine type as my original request — if I asked for red, stay red; white stays white; if I asked for sweet and there is no other suitable bottle on the list, say so honestly and propose the same wine again or the closest honest option.)';
-                if (type === 'rouge') suffix = ' (I prefer Red wine with this meal)';
-                if (type === 'blanc') suffix = ' (I prefer White wine with this meal)';
-                if (type === 'prestige') suffix = ' (I want a Prestige Version. Recommend the best premium wine)';
+                if (type === 'rouge') suffix = lastRequestWasAperitif ? ' (I prefer red wine for the same aperitif)' : ' (I prefer Red wine with this meal)';
+                if (type === 'blanc') suffix = lastRequestWasAperitif ? ' (I prefer white wine for the same aperitif)' : ' (I prefer White wine with this meal)';
+                if (type === 'prestige') suffix = lastRequestWasAperitif ? ' (I want a Prestige pick for the same aperitif)' : ' (I want a Prestige Version. Recommend the best premium wine)';
             } else {
                 if (type === 'similaire') suffix = ' (Dame otra sugerencia: otra botella, pero del MISMO tipo que mi petición inicial — si pedí tinto, sigue en tinto; blanco en blanco; si pedí dulce y no hay otra opción en carta, dilo con honestidad y vuelve a proponer la misma o la mejor aproximación.)';
-                if (type === 'rouge') suffix = ' (Prefiero vino tinto con este plato)';
-                if (type === 'blanc') suffix = ' (Prefiero vino blanco con este plato)';
-                if (type === 'prestige') suffix = ' (Quiero una Versión Prestigio. Recomienda el mejor vino premium)';
+                if (type === 'rouge') suffix = lastRequestWasAperitif ? ' (Prefiero tinto para el mismo aperitivo)' : ' (Prefiero vino tinto con este plato)';
+                if (type === 'blanc') suffix = lastRequestWasAperitif ? ' (Prefiero blanco para el mismo aperitivo)' : ' (Prefiero vino blanco con este plato)';
+                if (type === 'prestige') suffix = lastRequestWasAperitif ? ' (Quiero la versión Prestigio para el mismo aperitivo)' : ' (Quiero una Versión Prestigio. Recomienda el mejor vino premium)';
             }
             const question = baseQ ? (baseQ + suffix) : suffix.trim();
-            demanderIA(null, null, question);
+            demanderIA(null, null, question, lastRequestWasAperitif ? { fromAperitif: true } : null);
         }
 
-        function quickAction(text) { input.value = text; clearBtn.style.display = 'block'; demanderIA(null, null, null, { fromQuickAction: true }); }
+        function quickAction(text) { demanderIA(null, null, text); }
 
         function getGlassSVG(filled) {
             if (filled) return `<svg xmlns="http://www.w3.org/2000/svg" class="glass-icon" viewBox="0 0 24 24" fill="#4c0519" stroke="none"><path d="M19.8 4.2A2.2 2.2 0 0 0 17.6 2h-11a2.2 2.2 0 0 0-2.2 2.2c0 3.8 2.3 7.1 5.6 8.4V18H7a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2h-3v-5.4c3.3-1.3 5.8-4.6 5.8-8.4z"/></svg>`;
@@ -1438,30 +2233,34 @@
         }
 
         async function demanderIA(evt, imageBase64 = null, overrideQuery = null, demanderOpts = null) {
-            let question = overrideQuery ? overrideQuery : input.value;
+            const question = overrideQuery != null && overrideQuery !== '' ? String(overrideQuery).trim() : '';
             if (!question && !imageBase64) return;
             if (requestInProgress) return;
             requestInProgress = true;
-            const searchTrigger = document.getElementById('search-trigger');
-            input.disabled = true;
-            if (searchTrigger) searchTrigger.style.pointerEvents = 'none';
 
             quickActions.classList.add('hidden'); 
             avatarCircle.classList.add('pulse-gold'); loader.classList.remove('hidden'); photoBtn.classList.add('minimized'); contentArea.innerHTML = ""; card.classList.remove('visible'); 
             switchButtons.classList.add('hidden');
 
+            const cvMainLink = document.getElementById('carte-vins-link');
+            if (cvMainLink) cvMainLink.classList.remove('hidden');
+
             lastQuestionAsked = question;
-            if (!imageBase64) {
-                if (demanderOpts && demanderOpts.fromQuickAction) trackClientAction('flash');
-                else if (!(demanderOpts && demanderOpts.fromMenuCarte)) trackClientAction('texte_libre');
-            }
+            lastRequestWasAperitif = !!(demanderOpts && demanderOpts.fromAperitif);
+            if (!imageBase64 && !(demanderOpts && demanderOpts.fromMenuCarte)) trackClientAction('flash');
 
             try {
                 const askUrl = '/ask' + (restoId ? ('?resto=' + encodeURIComponent(restoId)) : '');
                 const res = await fetch(askUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: question, image: imageBase64, context: currentSession, lang: currentLang })
+                    body: JSON.stringify({
+                        question: question,
+                        image: imageBase64,
+                        context: currentSession,
+                        lang: currentLang,
+                        aperitif: !!(demanderOpts && demanderOpts.fromAperitif)
+                    })
                 });
                 const data = await res.json();
                 
@@ -1472,6 +2271,8 @@
                 }
 
                 avatarCircle.classList.remove('pulse-gold'); loader.classList.add('hidden'); card.classList.add('visible');
+                if (cvMainLink) cvMainLink.classList.add('hidden');
+
                 if (data.answer.includes("[ERREUR]")) { contentArea.innerHTML = `<div class="p-4 bg-red-50 text-red-900 rounded-xl text-base font-normal leading-snug">${data.answer.replace("[ERREUR]", "").trim()}</div>`; return; }
                 
                 // GESTION DU [STOP] : Affichage rouge et suppression des boutons
@@ -1481,7 +2282,10 @@
                     return;
                 }
 
-                const currentSections = langData[currentLang].sections;
+                const currentSections =
+                    demanderOpts && demanderOpts.fromAperitif && langData[currentLang].sections_aperitif
+                        ? langData[currentLang].sections_aperitif
+                        : langData[currentLang].sections;
                 const hasTags = Object.keys(currentSections).some(tag => data.answer.includes(tag));
 
                 if (!hasTags) {
@@ -1492,6 +2296,7 @@
 
                 let vinSuggere = ""; let delay = 0;
                 Object.entries(currentSections).forEach(([tag, label]) => {
+                    if (lastRequestWasAperitif && tag === '[DEMANDE]') return;
                     if (data.answer.includes(tag)) {
                         let rawContent = data.answer.split(tag)[1].split('[')[0];
                         rawContent = rawContent.trim().replace(/^[:\-\*\s]+/, '').trim();
@@ -1502,6 +2307,9 @@
                         
                         lines.forEach(line => {
                             let cleanLine = line.replace(/^[-*•]\s*/, '').replace(/\*/g, '').trim();
+                            if (!cleanLine) return;
+                            const low = cleanLine.toLowerCase();
+                            if (/carte\s+des\s+vins/.test(low) || /^wine\s+list\.?$/i.test(cleanLine.trim()) || /carta\s+de\s+vinos/i.test(low)) return;
                             if (tag === '[PROFIL_VIN]') {
                                 const match = cleanLine.match(/(.*?)\s*[\(:]?\s*(\d)\s*[\/]?\s*5\s*[\)]?/);
                                 if (match) {
@@ -1520,6 +2328,8 @@
                             vinSuggere = rawContent.replace(/^[-*•]\s*/, '').replace(/\*/g, '').split('\n')[0].trim();
                             currentWineName = vinSuggere;
                         }
+
+                        if (!String(formattedContent || '').trim()) return;
 
                         setTimeout(() => {
                             const div = document.createElement('div');
@@ -1540,54 +2350,9 @@
             } catch (e) { console.error(e); alert("Erreur de connexion serveur."); avatarCircle.classList.remove('pulse-gold'); loader.classList.add('hidden'); }
             finally {
                 requestInProgress = false;
-                input.disabled = false;
-                if (searchTrigger) searchTrigger.style.pointerEvents = '';
             }
         }
 
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                if (requestInProgress) { e.preventDefault(); return; }
-                demanderIA();
-            }
-        });
-        let idx = 0;
-        
-        function stopTypewriter() {
-            if (typewriterInterval) clearInterval(typewriterInterval);
-            if (typewriterTimeout) clearTimeout(typewriterTimeout);
-            if(input) input.placeholder = "";
-        }
-
-        function typeWriter() {
-            stopTypewriter();
-            let phrases = langData[currentLang].phrases;
-            let p = phrases[idx % phrases.length];
-            let j = 0; input.placeholder = "";
-            
-            typewriterInterval = setInterval(() => {
-                input.placeholder += p[j++];
-                if (j === p.length) {
-                    clearInterval(typewriterInterval);
-                    typewriterTimeout = setTimeout(erase, 1200);
-                }
-            }, 40);
-        }
-
-        function erase() {
-            if (typewriterInterval) clearInterval(typewriterInterval);
-            let c = input.placeholder;
-            typewriterInterval = setInterval(() => {
-                input.placeholder = c.substring(0, c.length - 1);
-                c = input.placeholder;
-                if (c.length === 0) {
-                    clearInterval(typewriterInterval);
-                    idx++;
-                    typewriterTimeout = setTimeout(typeWriter, 300);
-                }
-            }, 20);
-        }
-        
         fetchMenu().then(() => setLanguage('fr'));
     </script>
 </body>

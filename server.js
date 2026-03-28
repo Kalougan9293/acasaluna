@@ -300,9 +300,30 @@ function bumpMonthlySuggestionCounts(stats, monthKey, vinLabel) {
     stats.suggestion_counts_by_month[monthKey] = bucket;
 }
 
+function defaultInteractionMonthBucket() {
+    return { flash: 0, ouvrir_carte: 0, carte_vins: 0, aperitif_complete: 0 };
+}
+
+/** Incrémente interaction_counts_by_month[YYYY-MM] pour la répartition admin filtrée par mois. */
+function bumpInteractionMonth(stats, monthKey, field) {
+    if (!isValidStatsMonthKey(monthKey) || !field) return;
+    const allowed = new Set(["flash", "ouvrir_carte", "carte_vins", "aperitif_complete"]);
+    if (!allowed.has(field)) return;
+    stats.interaction_counts_by_month = stats.interaction_counts_by_month && typeof stats.interaction_counts_by_month === "object"
+        ? stats.interaction_counts_by_month
+        : {};
+    const prev = stats.interaction_counts_by_month[monthKey];
+    const bucket = prev && typeof prev === "object"
+        ? Object.assign(defaultInteractionMonthBucket(), prev)
+        : defaultInteractionMonthBucket();
+    bucket[field] = (Number(bucket[field]) || 0) + 1;
+    stats.interaction_counts_by_month[monthKey] = bucket;
+    pruneMonthlyStatMaps(stats);
+}
+
 /** Limite le nombre de mois stockés (évite fichiers infinis). */
 function pruneMonthlyStatMaps(stats, maxMonths = 48) {
-    for (const prop of ["type_counts_by_month", "suggestion_counts_by_month"]) {
+    for (const prop of ["type_counts_by_month", "suggestion_counts_by_month", "interaction_counts_by_month"]) {
         const o = stats[prop];
         if (!o || typeof o !== "object") continue;
         const keys = Object.keys(o).filter(isValidStatsMonthKey).sort();
@@ -317,8 +338,10 @@ function monthKeysForTrendsStats(statsData) {
     const s = new Set();
     const tbm = statsData.type_counts_by_month;
     const sbm = statsData.suggestion_counts_by_month;
+    const icm = statsData.interaction_counts_by_month;
     if (tbm && typeof tbm === "object") Object.keys(tbm).forEach((k) => isValidStatsMonthKey(k) && s.add(k));
     if (sbm && typeof sbm === "object") Object.keys(sbm).forEach((k) => isValidStatsMonthKey(k) && s.add(k));
+    if (icm && typeof icm === "object") Object.keys(icm).forEach((k) => isValidStatsMonthKey(k) && s.add(k));
     return Array.from(s).sort();
 }
 
@@ -337,9 +360,13 @@ function loadStatsForResto(restoId) {
     if (STATS_CACHE.has(statsFilePath)) return STATS_CACHE.get(statsFilePath);
 
     const d = readJsonSafe(statsFilePath);
-    const defaultInteraction = { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
     const rawIc = d && d.interaction_counts && typeof d.interaction_counts === "object" ? d.interaction_counts : {};
-    const interaction_counts = { ...defaultInteraction, ...rawIc };
+    const interaction_counts = {
+        flash: Number(rawIc.flash) || 0,
+        ouvrir_carte: Number(rawIc.ouvrir_carte) || 0,
+        carte_vins: Number(rawIc.carte_vins) || 0,
+        aperitif_complete: Number(rawIc.aperitif_complete) || 0
+    };
 
     const rawCvLog = d && Array.isArray(d.carte_vins_open_log) ? d.carte_vins_open_log : [];
     const carte_vins_open_log = rawCvLog
@@ -358,6 +385,14 @@ function loadStatsForResto(restoId) {
         suggestion_counts_by_month[k] = v && typeof v === "object" ? { ...v } : {};
     }
 
+    const interaction_counts_by_month = {};
+    const rawIcm = d && d.interaction_counts_by_month && typeof d.interaction_counts_by_month === "object" ? d.interaction_counts_by_month : {};
+    for (const [k, v] of Object.entries(rawIcm)) {
+        if (!isValidStatsMonthKey(k)) continue;
+        interaction_counts_by_month[k] =
+            v && typeof v === "object" ? Object.assign(defaultInteractionMonthBucket(), v) : defaultInteractionMonthBucket();
+    }
+
     const stats = {
         chiffre_affaires_euros: d && typeof d.chiffre_affaires_euros === "number" ? d.chiffre_affaires_euros : 0,
         keyword_counts: d && d.keyword_counts && typeof d.keyword_counts === "object" ? d.keyword_counts : {},
@@ -366,6 +401,7 @@ function loadStatsForResto(restoId) {
         type_counts: mergeTypeCountsFromDisk(d && d.type_counts),
         type_counts_by_month,
         suggestion_counts_by_month,
+        interaction_counts_by_month,
         interaction_counts,
         live_log: d && Array.isArray(d.live_log) ? d.live_log.slice(0, 100) : [],
         error_log: d && Array.isArray(d.error_log) ? d.error_log.slice(0, 100) : [],
@@ -576,6 +612,63 @@ function strictRefusalIfNeeded(question, tenantMenu) {
     return null;
 }
 
+/** Champs optionnels par vin : texte fiche client (arômes, idéal, critères) et niveaux 1–5 pour les jauges. */
+const WINE_FICHE_TEXT_KEYS = ["fiche_aromes", "fiche_ideal", "fiche_criteres"];
+const MAX_WINE_FICHE_TEXT = 2500;
+
+function validateWineFicheFields(w, nomQuote) {
+    const errors = [];
+    if (!w || typeof w !== "object") return errors;
+    for (const key of WINE_FICHE_TEXT_KEYS) {
+        if (w[key] == null || w[key] === "") continue;
+        if (typeof w[key] === "object") {
+            errors.push(`Le champ ${key} doit être une chaîne pour « ${nomQuote} »`);
+            continue;
+        }
+        const s = String(w[key]);
+        if (s.length > MAX_WINE_FICHE_TEXT) {
+            errors.push(`Le champ ${key} dépasse ${MAX_WINE_FICHE_TEXT} caractères pour « ${nomQuote} »`);
+        }
+    }
+    for (const key of ["fiche_puissance", "fiche_fruite"]) {
+        if (w[key] == null || w[key] === "") continue;
+        const n = Number(w[key]);
+        if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1 || n > 5) {
+            errors.push(`Le champ ${key} doit être un entier de 1 à 5 pour « ${nomQuote} »`);
+        }
+    }
+    return errors;
+}
+
+function pickWineRowForClient(w) {
+    const src = w && typeof w === "object" ? w : {};
+    const prixBouteille = (src.prix_bouteille ?? src.prixBouteille ?? "") ?? "";
+    const prixVerre = (src.prix_verre ?? src.prixVerre ?? "") ?? "";
+    const row = {
+        nom: String(src.nom || src.name || "").trim(),
+        domaine: src.domaine != null ? String(src.domaine).trim() : "",
+        annee: src.annee != null ? String(src.annee).trim() : "",
+        prix_bouteille: prixBouteille === 0 || prixBouteille ? String(prixBouteille).trim() : "",
+        prix_verre: prixVerre === 0 || prixVerre ? String(prixVerre).trim() : "",
+        prix: String(
+            (src.prix || src.price || src.prix_bouteille || src.prixBouteille || src.prix_verre || src.prixVerre || "")
+        ).trim(),
+        type: src.type != null ? String(src.type).trim() : "",
+        pousser: !!src.pousser
+    };
+    for (const key of WINE_FICHE_TEXT_KEYS) {
+        if (src[key] == null) continue;
+        const s = String(src[key]).trim();
+        if (s) row[key] = s;
+    }
+    for (const key of ["fiche_puissance", "fiche_fruite"]) {
+        if (src[key] == null || src[key] === "") continue;
+        const n = Number(src[key]);
+        if (Number.isInteger(n) && n >= 1 && n <= 5) row[key] = n;
+    }
+    return row;
+}
+
 function validateMenuPayload(data) {
     const errors = [];
     const warnings = [];
@@ -632,6 +725,7 @@ function validateMenuPayload(data) {
             if (prixVerreStr && !priceDigitsRegex.test(prixVerreStr)) {
                 errors.push(`Prix du verre invalide (chiffres uniquement) pour "${nom}"`);
             }
+            errors.push(...validateWineFicheFields(w, nom));
         });
     });
     return { ok: errors.length === 0, errors, warnings };
@@ -647,16 +741,7 @@ function buildMenuResponseFromTenantJson(tenantJson) {
             const categorie = w && w.categorie ? w.categorie : "";
             if (!categorie) return;
             if (!carte_des_vins[categorie]) carte_des_vins[categorie] = [];
-            carte_des_vins[categorie].push({
-                nom: w.nom || "",
-                domaine: w.domaine || "",
-                annee: w.annee || "",
-                prix_bouteille: w.prix_bouteille || w.prixBouteille || "",
-                prix_verre: w.prix_verre || w.prixVerre || "",
-                prix: w.prix || w.prix_bouteille || w.prixBouteille || w.prix_verre || w.prixVerre || "",
-                type: w.type || "",
-                pousser: !!w.pousser
-            });
+            carte_des_vins[categorie].push(pickWineRowForClient(w));
         });
     }
 
@@ -924,8 +1009,8 @@ const server = http.createServer(async (req, res) => {
             const restoId = u.searchParams.get("resto");
             const range = normalizeStatsRange(u.searchParams.get("range"));
             const statsData = loadStatsForResto(restoId);
-            const topNRaw = parseInt(u.searchParams.get("topN") || "3", 10);
-            const topN = [3, 5, 10].includes(topNRaw) ? topNRaw : 3;
+            const topNRaw = parseInt(u.searchParams.get("topN") || "10", 10);
+            const topN = [3, 5, 10].includes(topNRaw) ? topNRaw : 10;
 
             const trendsMonthRaw = (u.searchParams.get("trends_month") || "all").trim();
             const trends_month_applied = isValidStatsMonthKey(trendsMonthRaw) ? trendsMonthRaw : "all";
@@ -1028,19 +1113,34 @@ const server = http.createServer(async (req, res) => {
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 5);
 
-            const ic = statsData.interaction_counts || { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
-            const icSum = (ic.flash || 0) + (ic.texte_libre || 0) + (ic.ouvrir_carte || 0) + (ic.carte_vins || 0);
+            const icAll = statsData.interaction_counts || {};
+            const icSrc =
+                trends_month_applied === "all"
+                    ? icAll
+                    : Object.assign(
+                          defaultInteractionMonthBucket(),
+                          statsData.interaction_counts_by_month &&
+                              statsData.interaction_counts_by_month[trends_month_applied] &&
+                              typeof statsData.interaction_counts_by_month[trends_month_applied] === "object"
+                              ? statsData.interaction_counts_by_month[trends_month_applied]
+                              : {}
+                      );
+            const icFlash = Number(icSrc.flash) || 0;
+            const icCarte = Number(icSrc.ouvrir_carte) || 0;
+            const icVins = Number(icSrc.carte_vins) || 0;
+            const icAperC = Number(icSrc.aperitif_complete) || 0;
+            const icSum = icFlash + icCarte + icVins + icAperC;
             const icPct = (n) => (icSum ? Math.round((n / icSum) * 100) : 0);
             const interaction_repartition = {
-                flash: icPct(ic.flash || 0),
-                texte_libre: icPct(ic.texte_libre || 0),
-                ouvrir_carte: icPct(ic.ouvrir_carte || 0),
-                carte_vins: icPct(ic.carte_vins || 0),
+                flash: icPct(icFlash),
+                ouvrir_carte: icPct(icCarte),
+                carte_vins: icPct(icVins),
+                aperitif_complete: icPct(icAperC),
                 counts: {
-                    flash: ic.flash || 0,
-                    texte_libre: ic.texte_libre || 0,
-                    ouvrir_carte: ic.ouvrir_carte || 0,
-                    carte_vins: ic.carte_vins || 0
+                    flash: icFlash,
+                    ouvrir_carte: icCarte,
+                    carte_vins: icVins,
+                    aperitif_complete: icAperC
                 },
                 total: icSum
             };
@@ -1065,7 +1165,7 @@ const server = http.createServer(async (req, res) => {
                 error_log: Array.isArray(statsData.error_log) ? statsData.error_log.slice(0, 20) : [],
                 menu_diff,
                 total_errors,
-                interaction_counts: ic,
+                interaction_counts: icAll,
                 interaction_repartition,
                 last_updated: statsData.last_updated || null,
                 range,
@@ -1323,36 +1423,64 @@ const server = http.createServer(async (req, res) => {
             lines.push("");
             const ic = raw && raw.interaction_counts && typeof raw.interaction_counts === "object"
                 ? raw.interaction_counts
-                : { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
-            const icTotal = Number(ic.flash || 0) + Number(ic.texte_libre || 0) + Number(ic.ouvrir_carte || 0) + Number(ic.carte_vins || 0);
+                : {};
+            const icTotal =
+                Number(ic.flash || 0) +
+                Number(ic.ouvrir_carte || 0) +
+                Number(ic.carte_vins || 0) +
+                Number(ic.aperitif_complete || 0);
             const icRows = [
                 ["flash", Number(ic.flash || 0)],
-                ["texte_libre", Number(ic.texte_libre || 0)],
                 ["ouvrir_carte", Number(ic.ouvrir_carte || 0)],
-                ["carte_vins", Number(ic.carte_vins || 0)]
+                ["carte_vins", Number(ic.carte_vins || 0)],
+                ["aperitif_complete", Number(ic.aperitif_complete || 0)]
             ];
             for (const [k, n] of icRows) {
                 const pct = icTotal ? Math.round((n / icTotal) * 100) : 0;
                 lines.push(["REPARTITION_DEMANDES", "depuis_toujours", "all", k, n, `${pct}%`, `total=${icTotal}`].map(escCell).join(","));
             }
-            lines.push(["REPARTITION_DEMANDES", "par_mois", "all", "non_disponible", "Les compteurs interaction_counts ne sont pas historisés par mois.", "", ""].map(escCell).join(","));
+            const icmRaw = raw.interaction_counts_by_month && typeof raw.interaction_counts_by_month === "object" ? raw.interaction_counts_by_month : {};
+            const icmMonthKeys = Object.keys(icmRaw).filter(isValidStatsMonthKey).sort();
+            for (const m of icmMonthKeys) {
+                const bucket = Object.assign(defaultInteractionMonthBucket(), icmRaw[m] && typeof icmRaw[m] === "object" ? icmRaw[m] : {});
+                const icTotalM =
+                    Number(bucket.flash || 0) +
+                    Number(bucket.ouvrir_carte || 0) +
+                    Number(bucket.carte_vins || 0) +
+                    Number(bucket.aperitif_complete || 0);
+                const icRowsM = [
+                    ["flash", Number(bucket.flash || 0)],
+                    ["ouvrir_carte", Number(bucket.ouvrir_carte || 0)],
+                    ["carte_vins", Number(bucket.carte_vins || 0)],
+                    ["aperitif_complete", Number(bucket.aperitif_complete || 0)]
+                ];
+                for (const [k, n] of icRowsM) {
+                    const pctM = icTotalM ? Math.round((n / icTotalM) * 100) : 0;
+                    lines.push(["REPARTITION_DEMANDES", "par_mois", m, k, n, `${pctM}%`, monthKeyToLabel(m)].map(escCell).join(","));
+                }
+            }
+            if (icmMonthKeys.length === 0) {
+                lines.push(["REPARTITION_DEMANDES", "par_mois", "all", "non_disponible", "Aucune ligne par mois tant que interaction_counts_by_month est vide (nouvelles visites uniquement).", "", ""].map(escCell).join(","));
+            }
             lines.push(["REPARTITION_DEMANDES", "par_jour_semaine", "all", "non_disponible", "Les compteurs interaction_counts ne sont pas historisés par jour de semaine.", "", ""].map(escCell).join(","));
 
             // ---- Mouchards complets (brut) ----
             lines.push("");
-            lines.push("section,type,horodatage,question,vin_ou_message,type_vin");
+            lines.push("section,type,horodatage,question,vin_ou_message,type_vin,aperitif");
             for (const it of liveFull) {
                 const q = (it && it.question) || "";
                 const vin = (it && it.vin) || "";
                 const typ = (it && it.type) || "";
-                lines.push(["MOUCHARD_LIVE", "live", it && it.ts ? it.ts : "", q, vin, typ].map(escCell).join(","));
+                const ap = it && it.aperitif ? "oui" : "";
+                lines.push(["MOUCHARD_LIVE", "live", it && it.ts ? it.ts : "", q, vin, typ, ap].map(escCell).join(","));
             }
             lines.push("");
-            lines.push("section,type,horodatage,question,message,");
+            lines.push("section,type,horodatage,question,message,aperitif");
             for (const it of errFull) {
                 const q = (it && it.question) || "";
                 const msg = (it && it.message) || "";
-                lines.push(["MOUCHARD_ERROR", "error", it && it.ts ? it.ts : "", q, msg, ""].map(escCell).join(","));
+                const ap = it && it.aperitif ? "oui" : "";
+                lines.push(["MOUCHARD_ERROR", "error", it && it.ts ? it.ts : "", q, msg, ap].map(escCell).join(","));
             }
 
             const csv = lines.join("\r\n");
@@ -1489,7 +1617,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    /** Comptage interactions UI : flash = raccourcis accueil ; wine_list_row = clic bouteille (carte des vins) */
+    /** Comptage interactions UI : flash, ouvrir_carte, aperitif_complete (+ interaction_counts_by_month) ; carte_vins = ouverture panneau (log uniquement, pas de compteur répartition) ; wine_list_row = clic bouteille (+ carte_vins global et mensuel) */
     if (req.method === "POST" && req.url.startsWith("/api/track")) {
         let body = "";
         req.on("data", chunk => {
@@ -1499,7 +1627,13 @@ const server = http.createServer(async (req, res) => {
             try {
                 const data = JSON.parse(body || "{}");
                 const action = String(data.action || "").trim();
-                const allowed = new Set(["flash", "texte_libre", "ouvrir_carte", "carte_vins", "wine_list_row"]);
+                const allowed = new Set([
+                    "flash",
+                    "ouvrir_carte",
+                    "carte_vins",
+                    "aperitif_complete",
+                    "wine_list_row"
+                ]);
                 if (!allowed.has(action)) {
                     res.writeHead(400, { "Content-Type": "application/json" });
                     res.end(JSON.stringify({ ok: false, error: "action invalide" }));
@@ -1524,19 +1658,36 @@ const server = http.createServer(async (req, res) => {
                     const mkTrack = getUtcMonthKey();
                     bumpMonthlyTypeCounts(stats, mkTrack, tKey);
                     bumpMonthlySuggestionCounts(stats, mkTrack, vinLabel);
-                    pruneMonthlyStatMaps(stats);
+                    stats.interaction_counts = stats.interaction_counts || {
+                        flash: 0,
+                        ouvrir_carte: 0,
+                        carte_vins: 0,
+                        aperitif_complete: 0
+                    };
+                    stats.interaction_counts.carte_vins = (Number(stats.interaction_counts.carte_vins) || 0) + 1;
+                    bumpInteractionMonth(stats, mkTrack, "carte_vins");
                     saveStatsForResto(restoRaw);
                     res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
                     res.end(JSON.stringify({ ok: true }));
                     return;
                 }
-                stats.interaction_counts = stats.interaction_counts || { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
-                stats.interaction_counts[action] = (Number(stats.interaction_counts[action]) || 0) + 1;
                 if (action === "carte_vins") {
                     stats.carte_vins_open_log = Array.isArray(stats.carte_vins_open_log) ? stats.carte_vins_open_log : [];
                     stats.carte_vins_open_log.unshift({ ts: new Date().toISOString() });
                     if (stats.carte_vins_open_log.length > 300) stats.carte_vins_open_log = stats.carte_vins_open_log.slice(0, 300);
+                    saveStatsForResto(restoRaw);
+                    res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                    res.end(JSON.stringify({ ok: true }));
+                    return;
                 }
+                stats.interaction_counts = stats.interaction_counts || {
+                    flash: 0,
+                    ouvrir_carte: 0,
+                    carte_vins: 0,
+                    aperitif_complete: 0
+                };
+                stats.interaction_counts[action] = (Number(stats.interaction_counts[action]) || 0) + 1;
+                bumpInteractionMonth(stats, getUtcMonthKey(), action);
                 saveStatsForResto(restoRaw);
                 res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
                 res.end(JSON.stringify({ ok: true }));
@@ -1558,7 +1709,8 @@ const server = http.createServer(async (req, res) => {
             req.on("data", chunk => { body += chunk; });
             req.on("end", async () => {
                 try {
-                    let { question, image, context, lang } = JSON.parse(body);
+                    let { question, image, context, lang, aperitif } = JSON.parse(body);
+                    const isAperitifRequest = !!aperitif;
                     if (question && question.length > 500) question = question.substring(0, 500);
                     const targetLang = lang || "fr";
 
@@ -1581,7 +1733,8 @@ const server = http.createServer(async (req, res) => {
                             tenantStats.error_log.unshift({
                                 ts: new Date().toISOString(),
                                 question: (question || "").trim().slice(0, 140),
-                                message: cleanMsg
+                                message: cleanMsg,
+                                aperitif: !!isAperitifRequest
                             });
                             if (tenantStats.error_log.length > 60) tenantStats.error_log = tenantStats.error_log.slice(0, 60);
                             saveStatsForResto(restoId);
@@ -1861,6 +2014,50 @@ GESTIÓN DE ERRORES:
 
                     let systemPrompt = langDirective + promptBase + "\n" + formatBlock;
 
+                    if (isAperitifRequest) {
+                        const cfg = tenantMenu.config && typeof tenantMenu.config === "object" ? tenantMenu.config : {};
+                        const ash = cfg.aperitif_stock;
+                        const hintKey = targetLang === "en" ? "hint_en" : targetLang === "es" ? "hint_es" : "hint_fr";
+                        const stockHintRaw = ash && ash[hintKey] != null ? String(ash[hintKey]).trim() : "";
+                        const aperitifStockInject = stockHintRaw
+                            ? targetLang === "en"
+                                ? `\n\nHOUSE WINE LIST NOTE (use together with stock rules below; may describe what this venue actually carries): ${stockHintRaw}`
+                                : targetLang === "es"
+                                  ? `\n\nNOTA DE CARTA / STOCK DEL LOCAL (úsala con las reglas de disponibilidad siguientes): ${stockHintRaw}`
+                                  : `\n\nNOTE CARTE / STOCK DE L'ÉTABLISSEMENT (à croiser avec les règles de disponibilité ci-dessous) : ${stockHintRaw}`
+                            : "";
+
+                        const aperFR = `
+RÈGLE APÉRITIF (prioritaire sur la "logique inverse" ci-dessus pour [DEMANDE]) : Le client demande uniquement un APÉRITIF OU SPIRITUEUX, sans menu ni repas. Son message contient déjà UNE ligne très courte du type « Famille - Nuance - Goût » (ex. Rouge - Léger - Fort). Dans [DEMANDE], recopie cette ligne TELLE QUELLE (même format, tirets, pas de phrases, pas de puces). N'invente pas de plat. N'écris jamais "pour un repas", "avec le repas", "votre repas", "plat principal", ni ne listes des plats du menu. N'écris jamais "Carte des vins", "wine list", "carta de vinos" ni n'invites à ouvrir la carte dans la réponse (le client y accède déjà ailleurs). Dans [EXPLICATION] et [AVIS_SOMMELIER], reste sur l'apéritif seul (pas de repas).
+
+STOCK, INDISPONIBILITÉ & ALTERNATIVES (apéritif — aussi important que pour un repas) :
+- Tu ne proposes JAMAIS une bouteille ou un spiritueux dont le nom n'apparaît pas dans carte_des_vins du JSON (nom réel de la carte).
+- Si AUCUNE référence de la carte ne correspond raisonnablement au profil demandé (ex. blanc très doux / moelleux alors que tous les blancs sont secs, gin aromatique alors qu'il n'y a pas de gin en carte, bulle rosée alors qu'il n'existe que du brut blanc) : réponds par UNE ligne commençant par [STOP] puis un message clair et poli du type : nous n'avons pas sur notre carte de [profil demandé] pour cet apéritif ; invite à demander au personnel en salle ou à reformuler dans l'assistant. Aucun vin inventé, aucun "faux" enthousiasme.
+- Si une ALTERNATIVE honnête existe sur la carte (même couleur ou registre proche, mais pas le profil exact) : réponse au format COMPLET avec tous les blocs [DEMANDE] … [AVIS_SOMMELIER]. Dans [EXPLICATION] (équivalent « Pourquoi ce vin ? »), tu COMMENCES par expliquer l'écart (« Nous n'avons pas exactement… », « Sur notre carte, la bouteille la plus proche est… », « Ce n'est pas un moelleux, mais… ») POURQUOI cette option se rapproche quand même de l'envie pour l'apéritif. Ensuite seulement tu fais saliver. Interdit de prétendre une correspondance parfaite si ce n'est pas vrai.
+- Si la correspondance est bonne ou très proche : [EXPLICATION] classique, sans paragraphe d'excuse inutile.
+- À terme chaque restaurant pourra adapter le parcours apéritif (questions proposées) selon le stock pour limiter ces cas : si une NOTE CARTE / STOCK figure plus bas, elle prime sur tes suppositions sur ce que l'établissement possède.`;
+                        const aperEN = `
+APERITIF RULE (overrides the [DEMANDE] "inverse logic" above for this request): The guest wants only an APERITIF / SPIRITS — not a full meal. Their message already has ONE very short line like "Style - Nuance - Taste" (e.g. Red - Light - Bold). In [DEMANDE], repeat that line EXACTLY (same format, hyphens, no full sentences, no bullet list). Do not invent a dish. Never write "for a meal", "with your meal", "your meal", "main course", and do not list menu dishes. Never write "wine list", "wine menu", "Carte des vins", or tell the guest to open the list in the answer. In [EXPLICATION] and [AVIS_SOMMELIER], stay aperitif-only (no meal pairing).
+
+STOCK, UNAVAILABLE & ALTERNATIVES (aperitif) :
+- NEVER suggest a bottle or spirit whose exact name is not in the JSON carte_des_vins.
+- If NOTHING on the list reasonably matches the requested profile (e.g. sweet white when all whites are dry, aromatic gin when there is no gin, pink fizz when only white brut exists): reply with ONE line starting with [STOP] then a clear polite message that you don't have that profile on the list for this aperitif; invite them to ask staff or refine in the assistant. No invented wines, no fake enthusiasm.
+- If an HONEST alternative exists (close colour or style but not exact): full answer with all blocks [DEMANDE] … [AVIS_SOMMELIER]. In [EXPLICATION] ("Why this wine?"), START by stating the gap ("We don't have exactly…", "The closest on our list is…", "This isn't a dessert wine, but…") THEN why it still fits the aperitif. Then make it appealing. Do not claim a perfect match when there isn't one.
+- If the match is good: normal [EXPLICATION], no unnecessary apology.
+- Each venue may later tailor the aperitif wizard to stock; if a HOUSE WINE LIST NOTE appears below, it overrides guesses about what they carry.`;
+                        const aperES = `
+REGLA APERITIVO (prioritaria sobre la "lógica inversa" de [DEMANDE] en esta petición): El cliente quiere solo un APERITIVO / DESTILADO, sin menú ni comida completa. Su mensaje ya trae UNA línea muy corta tipo « Familia - Matiz - Gusto ». En [DEMANDE], copia esa línea EXACTAMENTE (mismo formato, guiones, sin frases largas ni viñetas). No inventes platos. No escribas nunca "para una comida", "con la comida", "su comida", "plato principal", ni listes platos del menú. No escribas "carta de vinos", "wine list" ni invites a abrir la carta en la respuesta. En [EXPLICATION] y [AVIS_SOMMELIER], quédate solo en el aperitivo (sin maridaje con menú).
+
+STOCK, NO DISPONIBLE Y ALTERNATIVAS (aperitivo) :
+- NUNCA propongas una botella o destilado cuyo nombre exacto no esté en carte_des_vins del JSON.
+- Si NADA en carta encaja razonablemente (ej. blanco muy dulce y solo hay secos, ginebra aromática sin ginebra en carta, espumoso rosado sin rosado) : responde con UNA línea que empiece por [STOP] y un mensaje claro: no tenemos ese perfil en carta para este aperitivo; invita a preguntar en sala o a reformular en el asistente. Sin vinos inventados ni entusiasmo falso.
+- Si existe una ALTERNATIVA honesta: respuesta COMPLETA con todos los bloques. En [EXPLICATION] (« ¿Por qué este vino? ») EMPIEZA explicando el desfase (« No tenemos exactamente… », « Lo más cercano en carta es… ») y POR QUÉ aun así encaja como aperitivo. Luego haz que apetezca.
+- Si encaja bien: [EXPLICATION] normal.
+- Cada local podrá adaptar el asistente de aperitivo al stock; si hay NOTA DE CARTA / STOCK abajo, prevalece sobre suposiciones.`;
+                        systemPrompt +=
+                            (targetLang === "en" ? aperEN : targetLang === "es" ? aperES : aperFR) + aperitifStockInject;
+                    }
+
                     let messages = [{ role: "system", content: systemPrompt }];
                     if (image) {
                         const imageHint =
@@ -2013,7 +2210,8 @@ GESTIÓN DE ERRORES:
                                     ts: new Date().toISOString(),
                                     question: (question || "").trim().slice(0, 140),
                                     vin: extractVin,
-                                    type: extractType
+                                    type: extractType,
+                                    aperitif: !!isAperitifRequest
                                 });
                                 if (tenantStats.live_log.length > 60) tenantStats.live_log = tenantStats.live_log.slice(0, 60);
                             } else {
@@ -2031,7 +2229,8 @@ GESTIÓN DE ERRORES:
                                 tenantStats.error_log.unshift({
                                     ts: new Date().toISOString(),
                                     question: (question || "").trim().slice(0, 140),
-                                    message: cleanMsg || "Requête refusée / réponse non structurée."
+                                    message: cleanMsg || "Requête refusée / réponse non structurée.",
+                                    aperitif: !!isAperitifRequest
                                 });
                                 if (tenantStats.error_log.length > 60) tenantStats.error_log = tenantStats.error_log.slice(0, 60);
                             }
@@ -2092,17 +2291,7 @@ GESTIÓN DE ERRORES:
                 Object.entries(data.carte_des_vins || {}).forEach(([categorie, wines]) => {
                     if (!Array.isArray(wines)) return;
                     wines.forEach(w => {
-                        vins.push({
-                            categorie,
-                            nom: w && (w.nom || w.name || "") || "",
-                            domaine: w && (w.domaine || "") || "",
-                            annee: w && (w.annee || "") || "",
-                            prix_bouteille: w && (w.prix_bouteille || w.prixBouteille || "") || "",
-                            prix_verre: w && (w.prix_verre || w.prixVerre || "") || "",
-                            prix: w && (w.prix || w.price || w.prix_bouteille || w.prixBouteille || w.prix_verre || w.prixVerre || "") || "",
-                            type: w && (w.type || "") || "",
-                            pousser: !!(w && w.pousser)
-                        });
+                        vins.push({ categorie, ...pickWineRowForClient(w) });
                     });
                 });
 

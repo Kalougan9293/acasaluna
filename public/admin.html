@@ -62,7 +62,7 @@
             }
 
             /* Masque les filtres (top N / période) pour éviter un rendu “tableur” */
-            #stats-range-select, #top-searches-topN, #monthly-year-select {
+            #stats-range-select, #monthly-year-select {
                 display: none !important;
             }
 
@@ -133,9 +133,6 @@
                                     <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">
                                         Vue d’ensemble conseils
                                     </h2>
-                                    <p class="mt-1 text-xs font-medium text-slate-400 tracking-wide">
-                                        <span id="clients-range-label">30 derniers jours</span>
-                                    </p>
                                 </div>
                                 <div class="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
                                     <select id="stats-range-select" class="rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400 min-w-[12rem]">
@@ -149,23 +146,19 @@
                                 <div class="rounded-2xl border border-amber-500/30 bg-black/55 p-5 min-h-[8.5rem] flex flex-col justify-between shadow-inner shadow-black/30">
                                     <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Client conseillé</p>
                                     <p id="stat-clients" class="text-5xl leading-none font-semibold text-amber-300">0</p>
-                                    <p class="text-[11px] text-slate-500">Total sur la période</p>
                                 </div>
                                 <div class="rounded-2xl border border-emerald-500/30 bg-black/55 p-5 min-h-[8.5rem] flex flex-col justify-between shadow-inner shadow-black/30">
                                     <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Client succès</p>
                                     <p id="stat-live-ok" class="text-5xl leading-none font-semibold text-emerald-400">0</p>
-                                    <p class="text-[11px] text-slate-500">Réponses IA exploitables + ouvertures « carte des vins »</p>
                                 </div>
                                 <div class="rounded-2xl border border-rose-500/30 bg-black/55 p-5 min-h-[8.5rem] flex flex-col justify-between shadow-inner shadow-black/30">
                                     <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Client raté</p>
                                     <p id="stat-live-err" class="text-5xl leading-none font-semibold text-rose-400">0</p>
-                                    <p class="text-[11px] text-slate-500">Refus ou réponse incomplète</p>
                                 </div>
                             </div>
                             <div class="border-t border-white/10 pt-4 space-y-6">
                                 <div>
                                     <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 mb-0.5 leading-tight">Jour de la semaine le plus actif</h2>
-                                    <p class="text-[10px] text-slate-500 mb-0 leading-tight">Répartition (live + erreurs + ouvertures carte des vins) sur la période sélectionnée.</p>
                                     <div id="dash-chart-weekday" class="mt-3 flex items-end gap-4 border-b border-white/10 pb-2 text-[11px] text-slate-500">—</div>
                                 </div>
                                 <div class="flex flex-col gap-0 min-h-0">
@@ -184,7 +177,6 @@
                                             <option value="2035">2035</option>
                                         </select>
                                     </div>
-                                    <p class="text-[10px] text-slate-500 mb-0 leading-tight">Volume mois par mois (live + erreurs + ouvertures carte des vins) pour l’année sélectionnée.</p>
                                     <div class="border-b border-white/10 pb-1">
                                         <div id="dash-chart-monthly" class="mt-3 flex items-end gap-4 text-[11px] text-slate-500">—</div>
                                     </div>
@@ -196,11 +188,10 @@
                     <!-- Tendances du mois, puis Top recherches, puis Répartition -->
                     <div class="space-y-4">
                         <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                                 <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 shrink-0">Tendances par type</h2>
-                                <div class="flex flex-col gap-1 sm:items-end w-full sm:w-auto sm:min-w-[14rem]">
-                                    <label for="trends-month-select" class="text-[9px] uppercase tracking-[0.2em] text-slate-500">Période (types + top vins)</label>
-                                    <select id="trends-month-select" class="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                <div class="w-full sm:w-auto sm:min-w-[14rem] sm:shrink-0">
+                                    <select id="trends-month-select" aria-label="Période des statistiques : cumul ou un mois" class="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
                                         <option value="all">Cumul depuis le début</option>
                                     </select>
                                 </div>
@@ -267,52 +258,37 @@
                                     </div>
                                 </div>
                             </div>
-                            <p class="mt-4 text-[10px] text-slate-500/90 italic leading-relaxed">* Inclut les conseils IA et les consultations fiche bouteille (carte des vins). Seule l’ouverture du panneau sans clic bouteille ne modifie pas ces barres. Choisis un mois pour voir la répartition de ce mois seul (ex. mars vs avril).</p>
                         </div>
 
                         <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
-                            <div class="flex items-center justify-between mb-3">
-                                <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Top des recherches</h2>
-                                <div class="flex items-center gap-3">
-                                    <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Afficher</span>
-                                    <select id="top-searches-topN" class="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400">
-                                        <option value="3" selected>Top 3</option>
-                                        <option value="5">Top 5</option>
-                                        <option value="10">Top 10</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <p id="top-searches-period-hint" class="text-[9px] text-slate-500 mb-2 italic">Même période que le menu « Période » au-dessus.</p>
+                            <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 mb-3">Top 10 des recherches</h2>
                             <ol id="top-searches-list" class="list-none space-y-2 text-xs text-slate-200">
-                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
-                                <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
                                 <li><span class="font-semibold text-slate-400">Aucune recherche</span> <span class="text-emerald-300">(0%)</span></li>
                             </ol>
                         </div>
 
                         <div class="glass-card rounded-2xl border border-white/10 p-5 shadow-xl shadow-black/40">
                             <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200 mb-2">Répartition des demandes</h2>
-                            <p class="text-[10px] text-slate-500 mb-3">Part des interactions sur l’app client (cumul depuis le déploiement).</p>
+                            <p id="interaction-repartition-hint" class="text-[10px] text-slate-500 mb-3">Part des quatre types d’interaction — suit le filtre mois / cumul de la carte Tendances par type ci-dessus.</p>
                             <div id="interaction-repartition" class="space-y-3">
                                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
-                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Boutons rapides (accueil)</span>
+                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Boutons rapides</span>
                                         <span id="pct-flash" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
                                     </div>
                                     <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
-                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Texte libre / loupe</span>
-                                        <span id="pct-texte" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
-                                    </div>
-                                    <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
-                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Ouvrir la carte (repas)</span>
+                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Ouvrir la carte</span>
                                         <span id="pct-carte-repas" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
                                     </div>
                                     <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
-                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Carte des vins<sup class="text-amber-400/90 font-sans not-italic">*</sup></span>
+                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Carte des vins</span>
                                         <span id="pct-carte-vins" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
                                     </div>
+                                    <div class="flex min-h-[5.5rem] flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-3 text-center shadow-inner shadow-black/25 sm:min-h-[5.75rem] sm:px-3">
+                                        <span class="text-[10px] sm:text-[11px] text-slate-400 leading-snug">Apéritif</span>
+                                        <span id="pct-aperitif-complete" class="text-lg font-semibold tabular-nums text-emerald-400">—</span>
+                                    </div>
                                 </div>
-                                <p class="text-[9px] text-slate-500/85 italic mt-2 leading-snug space-y-1"><span class="block">* Carte des vins : ouverture du panneau uniquement (pas les clics sur les bouteilles).</span><span class="block mt-1">Un clic sur une bouteille alimente aussi « Tendances du mois » et « Top des recherches » (comme une consultation de cette fiche).</span><span class="block mt-1">« Trouver le Vin Idéal » après choix des plats ne compte pas dans « Texte libre / loupe » (seul l’ouverture du modal repas est dans « Ouvrir la carte »).</span></p>
                                 <p id="interaction-repartition-empty" class="text-center text-[10px] text-slate-500 hidden">Aucune donnée — les compteurs se remplissent au fil des visites.</p>
                             </div>
                         </div>
@@ -328,7 +304,6 @@
                             </div>
                             <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Top 5 questions</span>
                         </div>
-                        <p class="text-[10px] text-slate-500 mb-2">Historique complet : bouton <span class="text-amber-200/90">📄 Rapport</span> (export CSV).</p>
                         <ol id="top-live-demands-list" class="list-decimal list-inside space-y-1.5 text-[11px] text-emerald-100 mb-0 min-h-[6rem]">
                             <li class="text-slate-500">—</li>
                         </ol>
@@ -344,7 +319,6 @@
                             </div>
                             <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Top 5 échecs</span>
                         </div>
-                        <p class="text-[10px] text-slate-500 mb-2">Historique complet : bouton <span class="text-amber-200/90">📄 Rapport</span> (export CSV).</p>
                         <ol id="top-error-demands-list" class="list-decimal list-inside space-y-1.5 text-[11px] text-rose-100 mb-0 min-h-[6rem]">
                             <li class="text-slate-500">—</li>
                         </ol>
@@ -721,16 +695,11 @@
             const autresBar = document.getElementById('trend-autres-bar');
             const rangeSelect = document.getElementById('stats-range-select');
             const range = rangeSelect ? rangeSelect.value : 'last30';
-            const topNSelect = document.getElementById('top-searches-topN');
-            const topN = topNSelect ? parseInt(topNSelect.value, 10) : 3;
             const trendsMonthSelect = document.getElementById('trends-month-select');
             const trendsMonth = trendsMonthSelect && trendsMonthSelect.value ? trendsMonthSelect.value : 'all';
-            const clientsRangeLabelEl = document.getElementById('clients-range-label');
-            const rangeLabel = range === 'all' ? 'Depuis le début' : (range === 'last7' ? '7 derniers jours' : '30 derniers jours');
-            if (clientsRangeLabelEl) clientsRangeLabelEl.textContent = rangeLabel;
             try {
                 const sep = restoQuery ? '&' : '?';
-                const res = await fetch('/api/admin/stats' + restoQuery + sep + 'range=' + encodeURIComponent(range) + '&topN=' + encodeURIComponent(topN) + '&trends_month=' + encodeURIComponent(trendsMonth));
+                const res = await fetch('/api/admin/stats' + restoQuery + sep + 'range=' + encodeURIComponent(range) + '&topN=10&trends_month=' + encodeURIComponent(trendsMonth));
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
 
@@ -751,10 +720,11 @@
                     if (prev === 'all' || monthKeys.includes(prev)) trendsMonthSelect.value = prev;
                     else trendsMonthSelect.value = 'all';
                 }
-                const topPeriodHint = document.getElementById('top-searches-period-hint');
-                if (topPeriodHint) {
-                    const lbl = data.trends_month_label ? String(data.trends_month_label) : 'Cumul depuis le début';
-                    topPeriodHint.textContent = 'Période affichée : ' + lbl + '.';
+                const irPeriodHint = document.getElementById('interaction-repartition-hint');
+                const trendsLbl = data.trends_month_label ? String(data.trends_month_label) : 'Cumul depuis le début';
+                if (irPeriodHint) {
+                    irPeriodHint.textContent =
+                        'Part des quatre types d’interaction pour la période : ' + trendsLbl + '.';
                 }
 
                 const clientsTotal = typeof data.clients_total_range === 'number' ? data.clients_total_range : 0;
@@ -835,21 +805,21 @@
 
                 const ir = data.interaction_repartition;
                 const pctFlash = document.getElementById('pct-flash');
-                const pctTexte = document.getElementById('pct-texte');
                 const pctCarteRepas = document.getElementById('pct-carte-repas');
                 const pctCarteVins = document.getElementById('pct-carte-vins');
+                const pctAperDone = document.getElementById('pct-aperitif-complete');
                 const irEmpty = document.getElementById('interaction-repartition-empty');
                 if (ir && typeof ir.total === 'number' && ir.total > 0) {
                     if (pctFlash) pctFlash.textContent = `${ir.flash ?? 0}%`;
-                    if (pctTexte) pctTexte.textContent = `${ir.texte_libre ?? 0}%`;
                     if (pctCarteRepas) pctCarteRepas.textContent = `${ir.ouvrir_carte ?? 0}%`;
                     if (pctCarteVins) pctCarteVins.textContent = `${ir.carte_vins ?? 0}%`;
+                    if (pctAperDone) pctAperDone.textContent = `${ir.aperitif_complete ?? 0}%`;
                     if (irEmpty) irEmpty.classList.add('hidden');
                 } else {
                     if (pctFlash) pctFlash.textContent = '—';
-                    if (pctTexte) pctTexte.textContent = '—';
                     if (pctCarteRepas) pctCarteRepas.textContent = '—';
                     if (pctCarteVins) pctCarteVins.textContent = '—';
+                    if (pctAperDone) pctAperDone.textContent = '—';
                     if (irEmpty) irEmpty.classList.remove('hidden');
                 }
 
@@ -868,27 +838,19 @@
                     return `${num}. <span class="font-semibold">${escapeHtml(item.vin)}</span> <span class="text-emerald-300">(${pct}%)</span>`;
                 }
 
-                // UX : pour Top 10, on affiche 5 lignes, avec 2 réponses par ligne (i et i+5)
-                if (topN === 10) {
-                    const getItem = (idx) => (Array.isArray(topSearches) && idx >= 0 && idx < topSearches.length) ? topSearches[idx] : null;
-                    const rows = Array.from({ length: 5 }, (_, rowIdx) => {
-                        const leftIdx = rowIdx + 1;
-                        const rightIdx = rowIdx + 6;
-                        const left = getItem(rowIdx);
-                        const right = getItem(rowIdx + 5);
-                        return `<li class="flex justify-between gap-6">
-                            <div class="min-w-0 text-left">${renderSearchCell(left, leftIdx)}</div>
-                            <div class="min-w-0 text-right">${renderSearchCell(right, rightIdx)}</div>
-                        </li>`;
-                    }).join('');
-                    topSearchesEl.innerHTML = rows;
-                } else {
-                    // Top 3 / Top 5 : 1 ligne = 1 réponse
-                    const items = Array.from({ length: topN }, (_, idx) => {
-                        return (Array.isArray(topSearches) && idx >= 0 && idx < topSearches.length) ? topSearches[idx] : null;
-                    });
-                    topSearchesEl.innerHTML = items.map((it, idx) => `<li>${renderSearchCell(it, idx + 1)}</li>`).join('');
-                }
+                // Top 10 : 5 lignes, 2 vins par ligne (rangs i et i+5)
+                const getItem = (idx) => (Array.isArray(topSearches) && idx >= 0 && idx < topSearches.length) ? topSearches[idx] : null;
+                const rows = Array.from({ length: 5 }, (_, rowIdx) => {
+                    const leftIdx = rowIdx + 1;
+                    const rightIdx = rowIdx + 6;
+                    const left = getItem(rowIdx);
+                    const right = getItem(rowIdx + 5);
+                    return `<li class="flex justify-between gap-6">
+                        <div class="min-w-0 text-left">${renderSearchCell(left, leftIdx)}</div>
+                        <div class="min-w-0 text-right">${renderSearchCell(right, rightIdx)}</div>
+                    </li>`;
+                }).join('');
+                if (topSearchesEl) topSearchesEl.innerHTML = rows;
 
                 const r = Number(tendances.Rouge || 0);
                 const b = Number(tendances.Blanc || 0);
@@ -942,9 +904,6 @@
         if (trendsMonthSelectEl) trendsMonthSelectEl.addEventListener('change', () => loadStats());
         const monthlyYearSelectEl = document.getElementById('monthly-year-select');
         if (monthlyYearSelectEl) monthlyYearSelectEl.addEventListener('change', () => loadStats());
-
-        const topSearchTopNSelectEl = document.getElementById('top-searches-topN');
-        if (topSearchTopNSelectEl) topSearchTopNSelectEl.addEventListener('change', () => loadStats());
 
         function escapeHtml(s) {
             if (s == null) return '';
@@ -1119,10 +1078,10 @@
                 table(
                     ['Canal', 'Compteur', 'Pourcentage'],
                     [
-                        ['Boutons rapides (accueil)', String(counts.flash || 0), `${ir.flash ?? 0}%`],
-                        ['Texte libre / loupe (hors menu repas)', String(counts.texte_libre || 0), `${ir.texte_libre ?? 0}%`],
-                        ['Ouvrir la carte (repas)', String(counts.ouvrir_carte || 0), `${ir.ouvrir_carte ?? 0}%`],
-                        ['Carte des vins', String(counts.carte_vins || 0), `${ir.carte_vins ?? 0}%`]
+                        ['Boutons rapides', String(counts.flash || 0), `${ir.flash ?? 0}%`],
+                        ['Ouvrir la carte', String(counts.ouvrir_carte || 0), `${ir.ouvrir_carte ?? 0}%`],
+                        ['Carte des vins', String(counts.carte_vins || 0), `${ir.carte_vins ?? 0}%`],
+                        ['Aperitif', String(counts.aperitif_complete || 0), `${ir.aperitif_complete ?? 0}%`]
                     ],
                     { headColor: [71, 85, 105] }
                 );

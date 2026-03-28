@@ -13,13 +13,15 @@
   },
   "interaction_counts": {
     "flash": 0,
-    "texte_libre": 0,
     "ouvrir_carte": 0,
-    "carte_vins": 0
+    "carte_vins": 0,
+    "aperitif_complete": 0
   },
   "live_log": [],
   "error_log": [],
   "carte_vins_open_log": [],
+  "type_counts_by_month": {},
+  "suggestion_counts_by_month": {},
   "daily_clients": {},
   "daily_ca": {},
   "last_updated": null
