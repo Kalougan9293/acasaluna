@@ -1,0 +1,44 @@
+{
+  "config": {
+    "nom_resto": "Nom du restaurant (affiché sur l’app)",
+    "logo_url": "sommelier.png",
+    "couleur_principale": "#8B0000",
+    "admin_user": "A_REMPLACER_utilisateur_admin",
+    "admin_pass": "A_REMPLACER_mot_de_passe_fort"
+  },
+  "carte_des_plats": {
+    "Entrées": [
+      { "nom": "Exemple entrée", "info": "à personnaliser" }
+    ],
+    "Plats": [
+      { "nom": "Exemple plat", "info": "à personnaliser" }
+    ],
+    "Desserts": [
+      { "nom": "Exemple dessert", "info": "à personnaliser" }
+    ]
+  },
+  "vins": [
+    {
+      "categorie": "Vins Rouges",
+      "nom": "Exemple — Domaine — millésime",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "32€",
+      "type": "Rouge",
+      "pousser": false
+    },
+    {
+      "categorie": "Vins Blancs",
+      "nom": "Exemple blanc — Domaine",
+      "domaine": "",
+      "annee": "",
+      "prix_bouteille": "",
+      "prix_verre": "",
+      "prix": "28€",
+      "type": "Blanc",
+      "pousser": false
+    }
+  ]
+}

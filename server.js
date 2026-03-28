@@ -184,6 +184,17 @@ function getErrorLogQuestionKeyForTop(it) {
     return "(Sans détail)";
 }
 
+/** Nom affiché pour les stats (clic bouteille) : wine_nom ou extrait de wine_key « Cat · Nom ». */
+function wineNomFromTrackBody(data) {
+    let n = String(data.wine_nom || "").trim().slice(0, 220);
+    if (n) return n;
+    const k = String(data.wine_key || "").trim();
+    const sep = " · ";
+    const i = k.indexOf(sep);
+    if (i >= 0) return k.slice(i + sep.length).trim().slice(0, 220) || k.slice(0, 220);
+    return k.slice(0, 220);
+}
+
 /** Lundi = 0 … Dimanche = 6 (UTC) */
 function utcTimestampToFrenchWeekdayIndex(tsMs) {
     const d = new Date(tsMs);
@@ -202,10 +213,14 @@ function computeWeekdayCountsFromLogs(logs) {
     return counts;
 }
 
-/** Compte les demandes par mois (YYYY-MM), sur tout l’historique des logs fusionnés. */
-function computeMonthlyCountsFromLogs(live, errors, maxMonths = 24) {
+/** Compte les demandes par mois (YYYY-MM), sur tout l’historique des logs fusionnés (+ entrées `{ ts }` optionnelles). */
+function computeMonthlyCountsFromLogs(live, errors, maxMonths = 24, extraTsLogs = null) {
     const map = {};
-    const merge = [...(Array.isArray(live) ? live : []), ...(Array.isArray(errors) ? errors : [])];
+    const merge = [
+        ...(Array.isArray(live) ? live : []),
+        ...(Array.isArray(errors) ? errors : []),
+        ...(Array.isArray(extraTsLogs) ? extraTsLogs : [])
+    ];
     for (const it of merge) {
         if (!it || !it.ts) continue;
         const t = Date.parse(it.ts);
@@ -253,6 +268,70 @@ function mergeTypeCountsFromDisk(raw) {
     return o;
 }
 
+function getUtcMonthKey(d = new Date()) {
+    return d.toISOString().slice(0, 7);
+}
+
+function isValidStatsMonthKey(k) {
+    return typeof k === "string" && /^\d{4}-\d{2}$/.test(k);
+}
+
+/** Incrémente type_counts pour un mois UTC (YYYY-MM). */
+function bumpMonthlyTypeCounts(stats, monthKey, typeKey) {
+    if (!isValidStatsMonthKey(monthKey) || !typeKey) return;
+    stats.type_counts_by_month = stats.type_counts_by_month && typeof stats.type_counts_by_month === "object"
+        ? stats.type_counts_by_month
+        : {};
+    const cur = stats.type_counts_by_month[monthKey];
+    const merged = mergeTypeCountsFromDisk(cur);
+    merged[typeKey] = (Number(merged[typeKey]) || 0) + 1;
+    stats.type_counts_by_month[monthKey] = merged;
+}
+
+/** Incrémente suggestion_counts pour un mois UTC. */
+function bumpMonthlySuggestionCounts(stats, monthKey, vinLabel) {
+    if (!isValidStatsMonthKey(monthKey) || !vinLabel) return;
+    stats.suggestion_counts_by_month = stats.suggestion_counts_by_month && typeof stats.suggestion_counts_by_month === "object"
+        ? stats.suggestion_counts_by_month
+        : {};
+    const prev = stats.suggestion_counts_by_month[monthKey];
+    const bucket = prev && typeof prev === "object" ? { ...prev } : {};
+    bucket[vinLabel] = (Number(bucket[vinLabel]) || 0) + 1;
+    stats.suggestion_counts_by_month[monthKey] = bucket;
+}
+
+/** Limite le nombre de mois stockés (évite fichiers infinis). */
+function pruneMonthlyStatMaps(stats, maxMonths = 48) {
+    for (const prop of ["type_counts_by_month", "suggestion_counts_by_month"]) {
+        const o = stats[prop];
+        if (!o || typeof o !== "object") continue;
+        const keys = Object.keys(o).filter(isValidStatsMonthKey).sort();
+        if (keys.length <= maxMonths) continue;
+        keys.slice(0, keys.length - maxMonths).forEach((k) => {
+            delete o[k];
+        });
+    }
+}
+
+function monthKeysForTrendsStats(statsData) {
+    const s = new Set();
+    const tbm = statsData.type_counts_by_month;
+    const sbm = statsData.suggestion_counts_by_month;
+    if (tbm && typeof tbm === "object") Object.keys(tbm).forEach((k) => isValidStatsMonthKey(k) && s.add(k));
+    if (sbm && typeof sbm === "object") Object.keys(sbm).forEach((k) => isValidStatsMonthKey(k) && s.add(k));
+    return Array.from(s).sort();
+}
+
+function trendsMonthLabelFr(monthKey) {
+    if (!isValidStatsMonthKey(monthKey)) return monthKey || "";
+    const parts = monthKey.split("-");
+    const y = Number(parts[0] || 0);
+    const mo = Number(parts[1] || 0);
+    if (!y || !mo) return monthKey;
+    const d = new Date(Date.UTC(y, mo - 1, 1));
+    return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
+}
+
 function loadStatsForResto(restoId) {
     const statsFilePath = getStatsFilePath(restoId);
     if (STATS_CACHE.has(statsFilePath)) return STATS_CACHE.get(statsFilePath);
@@ -262,15 +341,35 @@ function loadStatsForResto(restoId) {
     const rawIc = d && d.interaction_counts && typeof d.interaction_counts === "object" ? d.interaction_counts : {};
     const interaction_counts = { ...defaultInteraction, ...rawIc };
 
+    const rawCvLog = d && Array.isArray(d.carte_vins_open_log) ? d.carte_vins_open_log : [];
+    const carte_vins_open_log = rawCvLog
+        .filter((it) => it && it.ts)
+        .slice(0, 300);
+
+    const type_counts_by_month = {};
+    const rawTbm = d && d.type_counts_by_month && typeof d.type_counts_by_month === "object" ? d.type_counts_by_month : {};
+    for (const [k, v] of Object.entries(rawTbm)) {
+        if (isValidStatsMonthKey(k)) type_counts_by_month[k] = mergeTypeCountsFromDisk(v);
+    }
+    const suggestion_counts_by_month = {};
+    const rawSbm = d && d.suggestion_counts_by_month && typeof d.suggestion_counts_by_month === "object" ? d.suggestion_counts_by_month : {};
+    for (const [k, v] of Object.entries(rawSbm)) {
+        if (!isValidStatsMonthKey(k)) continue;
+        suggestion_counts_by_month[k] = v && typeof v === "object" ? { ...v } : {};
+    }
+
     const stats = {
         chiffre_affaires_euros: d && typeof d.chiffre_affaires_euros === "number" ? d.chiffre_affaires_euros : 0,
         keyword_counts: d && d.keyword_counts && typeof d.keyword_counts === "object" ? d.keyword_counts : {},
         suggestion_counts: d && d.suggestion_counts && typeof d.suggestion_counts === "object" ? d.suggestion_counts : {},
         error_reason_counts: d && d.error_reason_counts && typeof d.error_reason_counts === "object" ? d.error_reason_counts : {},
         type_counts: mergeTypeCountsFromDisk(d && d.type_counts),
+        type_counts_by_month,
+        suggestion_counts_by_month,
         interaction_counts,
         live_log: d && Array.isArray(d.live_log) ? d.live_log.slice(0, 100) : [],
         error_log: d && Array.isArray(d.error_log) ? d.error_log.slice(0, 100) : [],
+        carte_vins_open_log,
         daily_clients: d && d.daily_clients && typeof d.daily_clients === "object" ? d.daily_clients : {},
         daily_ca: d && d.daily_ca && typeof d.daily_ca === "object" ? d.daily_ca : {},
         last_updated: d && d.last_updated ? d.last_updated : null
@@ -828,7 +927,20 @@ const server = http.createServer(async (req, res) => {
             const topNRaw = parseInt(u.searchParams.get("topN") || "3", 10);
             const topN = [3, 5, 10].includes(topNRaw) ? topNRaw : 3;
 
-            const suggestionEntries = Object.entries(statsData.suggestion_counts || {})
+            const trendsMonthRaw = (u.searchParams.get("trends_month") || "all").trim();
+            const trends_month_applied = isValidStatsMonthKey(trendsMonthRaw) ? trendsMonthRaw : "all";
+
+            let suggestionSource = statsData.suggestion_counts || {};
+            let typesForBars = mergeTypeCountsFromDisk(statsData.type_counts);
+            if (trends_month_applied !== "all") {
+                const smb =
+                    statsData.suggestion_counts_by_month && statsData.suggestion_counts_by_month[trends_month_applied];
+                suggestionSource = smb && typeof smb === "object" ? smb : {};
+                const tmb = statsData.type_counts_by_month && statsData.type_counts_by_month[trends_month_applied];
+                typesForBars = mergeTypeCountsFromDisk(tmb || {});
+            }
+
+            const suggestionEntries = Object.entries(suggestionSource)
                 .map(([vin, count]) => ({ vin, count: typeof count === "number" ? count : Number(count || 0) }))
                 .sort((a, b) => b.count - a.count);
             const total_suggestions = suggestionEntries.reduce((acc, it) => acc + (it.count || 0), 0);
@@ -837,7 +949,7 @@ const server = http.createServer(async (req, res) => {
             // pour pouvoir associer à chaque vin un plat.
 
             const menu_diff = readMenuDiffForResto(restoId);
-            const types = mergeTypeCountsFromDisk(statsData.type_counts);
+            const types = typesForBars;
             const totalType =
                 (types.Rouge || 0) +
                 (types.Blanc || 0) +
@@ -854,6 +966,10 @@ const server = http.createServer(async (req, res) => {
                 Spiritueux: pct(types.Spiritueux || 0),
                 Autres: pct(types.Autres || 0)
             };
+
+            const trendsMonthOpts = monthKeysForTrendsStats(statsData).sort().reverse();
+            const trends_month_label =
+                trends_month_applied === "all" ? "Cumul depuis le début" : trendsMonthLabelFr(trends_month_applied);
             // "Clients conseillés" = nombre de demandes enregistrées
             // On se base sur les logs (live + error) pour être cohérent même si les buckets daily n'existent pas.
             const live = Array.isArray(statsData.live_log) ? statsData.live_log : [];
@@ -889,13 +1005,18 @@ const server = http.createServer(async (req, res) => {
                 .slice(0, topN);
 
             const total_errors = errorsInRange.length;
-            const live_total_range = range === "all" ? live.length : liveInRange.length;
+
+            const cvOpensAll = Array.isArray(statsData.carte_vins_open_log) ? statsData.carte_vins_open_log : [];
+            const cvOpensInRange = filterLogsByRange(cvOpensAll, range);
+
+            const live_total_range =
+                range === "all" ? live.length + cvOpensAll.length : liveInRange.length + cvOpensInRange.length;
 
             let clients_total_range = 0;
             if (range === "all") {
-                clients_total_range = live.length + errors.length;
+                clients_total_range = live.length + errors.length + cvOpensAll.length;
             } else {
-                clients_total_range = liveInRange.length + errorsInRange.length;
+                clients_total_range = liveInRange.length + errorsInRange.length + cvOpensInRange.length;
             }
 
             const top_live_demands_5 = Object.entries(questionCounts)
@@ -924,10 +1045,10 @@ const server = http.createServer(async (req, res) => {
                 total: icSum
             };
 
-            const combinedRange = [...liveInRange, ...errorsInRange];
+            const combinedRange = [...liveInRange, ...errorsInRange, ...cvOpensInRange];
             const chart_weekday_counts = computeWeekdayCountsFromLogs(combinedRange);
             const chart_weekday_labels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-            const chart_monthly = computeMonthlyCountsFromLogs(live, errors, 24);
+            const chart_monthly = computeMonthlyCountsFromLogs(live, errors, 24, cvOpensAll);
 
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
@@ -949,7 +1070,10 @@ const server = http.createServer(async (req, res) => {
                 last_updated: statsData.last_updated || null,
                 range,
                 chart_weekday: { labels: chart_weekday_labels, counts: chart_weekday_counts },
-                chart_monthly
+                chart_monthly,
+                trends_month_applied,
+                trends_month_label,
+                trends_month_options: trendsMonthOpts
             }));
             return;
         }
@@ -1365,7 +1489,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    /** Comptage interactions UI (app client) : flash, texte libre, carte menu, carte vins */
+    /** Comptage interactions UI : flash = raccourcis accueil ; wine_list_row = clic bouteille (carte des vins) */
     if (req.method === "POST" && req.url.startsWith("/api/track")) {
         let body = "";
         req.on("data", chunk => {
@@ -1375,7 +1499,7 @@ const server = http.createServer(async (req, res) => {
             try {
                 const data = JSON.parse(body || "{}");
                 const action = String(data.action || "").trim();
-                const allowed = new Set(["flash", "texte_libre", "ouvrir_carte", "carte_vins"]);
+                const allowed = new Set(["flash", "texte_libre", "ouvrir_carte", "carte_vins", "wine_list_row"]);
                 if (!allowed.has(action)) {
                     res.writeHead(400, { "Content-Type": "application/json" });
                     res.end(JSON.stringify({ ok: false, error: "action invalide" }));
@@ -1383,8 +1507,36 @@ const server = http.createServer(async (req, res) => {
                 }
                 const restoRaw = data.resto != null ? String(data.resto) : "";
                 const stats = loadStatsForResto(restoRaw);
+                if (action === "wine_list_row") {
+                    const vinLabel = wineNomFromTrackBody(data);
+                    if (!vinLabel) {
+                        res.writeHead(400, { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ ok: false, error: "wine_nom ou wine_key requis" }));
+                        return;
+                    }
+                    stats.suggestion_counts = stats.suggestion_counts && typeof stats.suggestion_counts === "object"
+                        ? stats.suggestion_counts
+                        : {};
+                    stats.suggestion_counts[vinLabel] = (Number(stats.suggestion_counts[vinLabel]) || 0) + 1;
+                    stats.type_counts = mergeTypeCountsFromDisk(stats.type_counts);
+                    const tKey = normalizeTypeForStats(String(data.wine_type || "").trim());
+                    stats.type_counts[tKey] = (Number(stats.type_counts[tKey]) || 0) + 1;
+                    const mkTrack = getUtcMonthKey();
+                    bumpMonthlyTypeCounts(stats, mkTrack, tKey);
+                    bumpMonthlySuggestionCounts(stats, mkTrack, vinLabel);
+                    pruneMonthlyStatMaps(stats);
+                    saveStatsForResto(restoRaw);
+                    res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                    res.end(JSON.stringify({ ok: true }));
+                    return;
+                }
                 stats.interaction_counts = stats.interaction_counts || { flash: 0, texte_libre: 0, ouvrir_carte: 0, carte_vins: 0 };
                 stats.interaction_counts[action] = (Number(stats.interaction_counts[action]) || 0) + 1;
+                if (action === "carte_vins") {
+                    stats.carte_vins_open_log = Array.isArray(stats.carte_vins_open_log) ? stats.carte_vins_open_log : [];
+                    stats.carte_vins_open_log.unshift({ ts: new Date().toISOString() });
+                    if (stats.carte_vins_open_log.length > 300) stats.carte_vins_open_log = stats.carte_vins_open_log.slice(0, 300);
+                }
                 saveStatsForResto(restoRaw);
                 res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
                 res.end(JSON.stringify({ ok: true }));
@@ -1852,6 +2004,10 @@ GESTIÓN DE ERRORES:
                                 tenantStats.suggestion_counts[extractVin] = (tenantStats.suggestion_counts[extractVin] || 0) + 1;
                                 const typeKey = normalizeTypeForStats(extractType);
                                 tenantStats.type_counts[typeKey] = (tenantStats.type_counts[typeKey] || 0) + 1;
+                                const mkAsk = getUtcMonthKey();
+                                bumpMonthlyTypeCounts(tenantStats, mkAsk, typeKey);
+                                bumpMonthlySuggestionCounts(tenantStats, mkAsk, extractVin);
+                                pruneMonthlyStatMaps(tenantStats);
 
                                 tenantStats.live_log.unshift({
                                     ts: new Date().toISOString(),

@@ -20,6 +20,8 @@
   "live_log": [],
   "error_log": [],
   "carte_vins_open_log": [],
+  "type_counts_by_month": {},
+  "suggestion_counts_by_month": {},
   "daily_clients": {},
   "daily_ca": {},
   "last_updated": null

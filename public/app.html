@@ -935,6 +935,23 @@
             }).catch(() => {});
         }
 
+        function trackWineListBottleClick(cat, nom, wine) {
+            const key = `${String(cat || '').trim()} · ${String(nom || '').trim()}`.trim();
+            if (!key || key === '·') return;
+            const w = wine && typeof wine === 'object' ? wine : {};
+            fetch('/api/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    resto: restoIdForTrack,
+                    action: 'wine_list_row',
+                    wine_key: key.slice(0, 220),
+                    wine_nom: String(w.nom || nom || '').trim().slice(0, 220),
+                    wine_type: String(w.type || '').trim().slice(0, 120)
+                })
+            }).catch(() => {});
+        }
+
         function openMenuModal() {
             trackClientAction('ouvrir_carte');
             if(menuModal) {
@@ -1164,10 +1181,10 @@
         }
 
         function openWineFlashModal(idx) {
-            trackClientAction('flash');
             const wfm = document.getElementById("wine-flash-modal");
             if (!wfm || !wineFlatList[idx]) return;
             const { wine: w, cat } = wineFlatList[idx];
+            trackWineListBottleClick(cat, w.nom, w);
             const d = langData[currentLang];
             const meta = deriveWineMeta(w, cat);
             document.getElementById("wine-flash-name").textContent = w.nom || "";
@@ -1288,7 +1305,7 @@
                 const es = `Entradas: ${entries.join(", ")}. Platos Principales: ${mains.join(", ")}. Postres: ${desserts.join(", ")}.`;
                 const mealBlock = currentLang === 'en' ? en : currentLang === 'es' ? es : fr;
                 const query = prefix + mealBlock + suffix;
-                demanderIA(null, null, query);
+                demanderIA(null, null, query, { fromMenuCarte: true });
             }, 50);
         }
 
@@ -1405,7 +1422,7 @@
             demanderIA(null, null, question);
         }
 
-        function quickAction(text) { input.value = text; clearBtn.style.display = 'block'; demanderIA(); }
+        function quickAction(text) { input.value = text; clearBtn.style.display = 'block'; demanderIA(null, null, null, { fromQuickAction: true }); }
 
         function getGlassSVG(filled) {
             if (filled) return `<svg xmlns="http://www.w3.org/2000/svg" class="glass-icon" viewBox="0 0 24 24" fill="#4c0519" stroke="none"><path d="M19.8 4.2A2.2 2.2 0 0 0 17.6 2h-11a2.2 2.2 0 0 0-2.2 2.2c0 3.8 2.3 7.1 5.6 8.4V18H7a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2h-3v-5.4c3.3-1.3 5.8-4.6 5.8-8.4z"/></svg>`;
@@ -1420,7 +1437,7 @@
             return html;
         }
 
-        async function demanderIA(evt, imageBase64 = null, overrideQuery = null) {
+        async function demanderIA(evt, imageBase64 = null, overrideQuery = null, demanderOpts = null) {
             let question = overrideQuery ? overrideQuery : input.value;
             if (!question && !imageBase64) return;
             if (requestInProgress) return;
@@ -1434,7 +1451,10 @@
             switchButtons.classList.add('hidden');
 
             lastQuestionAsked = question;
-            if (!imageBase64) trackClientAction('texte_libre');
+            if (!imageBase64) {
+                if (demanderOpts && demanderOpts.fromQuickAction) trackClientAction('flash');
+                else if (!(demanderOpts && demanderOpts.fromMenuCarte)) trackClientAction('texte_libre');
+            }
 
             try {
                 const askUrl = '/ask' + (restoId ? ('?resto=' + encodeURIComponent(restoId)) : '');
