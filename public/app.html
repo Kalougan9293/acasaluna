@@ -408,6 +408,48 @@
         .wine-carte-scroll::-webkit-scrollbar { width: 5px; }
         .wine-carte-scroll::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.35); border-radius: 4px; }
 
+        #aperitif-home-wrap {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            max-width: 28rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* Sous le cadre blanc : contraste fort sur fond sombre, sans bordure (rappel du ton #fffefc / texte carte) */
+        #btn-aperitif-open {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-size: clamp(0.65rem, 2.1vw, 0.75rem);
+            line-height: 1.25;
+            color: #1a1210;
+            background: #fffcf8;
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            max-width: 11.5rem;
+            width: 100%;
+            cursor: pointer;
+            box-shadow:
+                0 2px 14px rgba(0, 0, 0, 0.2),
+                0 1px 0 rgba(255, 255, 255, 0.95) inset;
+            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+        }
+        #btn-aperitif-open:hover {
+            background: #ffffff;
+            color: #0a0605;
+            box-shadow:
+                0 4px 22px rgba(0, 0, 0, 0.28),
+                0 1px 0 #fff inset;
+            transform: translateY(-1px);
+        }
+        #btn-aperitif-open:focus-visible {
+            outline: 2px solid #eec153;
+            outline-offset: 3px;
+        }
+
         .wine-flash-overlay { z-index: 120; }
         .wine-gauge-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.45rem 0; font-family: 'Montserrat', sans-serif; font-size: 0.7rem; color: #4a2c20; }
         .wine-gauge-bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(0,0,0,0.08); overflow: hidden; }
@@ -495,20 +537,26 @@
 
     </div>
 
-    <footer class="mt-6 mb-8 space-y-4">
-        <p id="footer-quote" class="gold-gradient text-sm md:text-base font-[Cinzel] uppercase tracking-[0.2em] mb-4 font-bold opacity-90">L'excellence, sans la complexité.</p>
-        
-        <p id="copyright-text" class="text-[#d4c5a5]/60 text-[10px] uppercase tracking-[0.2em] font-sans">© 2026 Powered by French Sommelier. Tous droits réservés.</p>
-        <p id="legal-warning" class="text-[#d4c5a5]/40 text-[9px] uppercase tracking-widest font-sans mt-4">L'abus d'alcool est dangereux pour la santé, à consommer avec modération.</p>
-        
-        <div class="flex flex-col items-center gap-3 mt-4">
-            <button id="legal-btn" onclick="toggleLegalModal()" class="text-[11px] text-[#d4c5a5] tracking-[0.2em] font-bold hover:text-white transition-all pb-1 border-b border-transparent hover:border-[#d4af37]">mentions légales</button>
-            
-            <div class="demo-footer-bar">
-                <a onclick="toggleFakeAdmin()" class="demo-footer-link">ADMIN (DÉMO)</a>
-            </div>
+    <div id="app-below-card-chrome" class="w-full max-w-md mx-auto flex flex-col items-center">
+        <div id="aperitif-home-wrap" class="px-4 mt-3 mb-1 w-full flex justify-center">
+            <button type="button" id="btn-aperitif-open" onclick="startAperitifWizard()">Apéritif ?</button>
         </div>
-    </footer>
+
+        <footer class="mt-6 mb-8 space-y-4 w-full">
+            <p id="footer-quote" class="gold-gradient text-sm md:text-base font-[Cinzel] uppercase tracking-[0.2em] mb-4 font-bold opacity-90">L'excellence, sans la complexité.</p>
+            
+            <p id="copyright-text" class="text-[#d4c5a5]/60 text-[10px] uppercase tracking-[0.2em] font-sans">© 2026 Powered by French Sommelier. Tous droits réservés.</p>
+            <p id="legal-warning" class="text-[#d4c5a5]/40 text-[9px] uppercase tracking-widest font-sans mt-4">L'abus d'alcool est dangereux pour la santé, à consommer avec modération.</p>
+            
+            <div class="flex flex-col items-center gap-3 mt-4">
+                <button id="legal-btn" onclick="toggleLegalModal()" class="text-[11px] text-[#d4c5a5] tracking-[0.2em] font-bold hover:text-white transition-all pb-1 border-b border-transparent hover:border-[#d4af37]">mentions légales</button>
+                
+                <div class="demo-footer-bar">
+                    <a onclick="toggleFakeAdmin()" class="demo-footer-link">ADMIN (DÉMO)</a>
+                </div>
+            </div>
+        </footer>
+    </div>
 
     <div id="wine-list-panel" class="hidden fixed inset-0 z-[110] flex items-end justify-center sm:items-center p-0 sm:p-4" onclick="if(event.target===this)closeWineListPanel()">
         <div class="wine-list-sheet bg-[#fffefc] text-[#4a2c20] flex flex-col overflow-hidden border border-[#d4af37]/40" onclick="event.stopPropagation()">
@@ -532,10 +580,7 @@
             <div id="menu-modal-topbar" class="p-4 sm:p-5 border-b-2 border-[#d4af37]/30 bg-[#1a0f0a] shrink-0">
                 <div class="flex items-start justify-between gap-2">
                     <h2 id="modal-title" class="gold-gradient font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-lg sm:text-xl font-[Cinzel] leading-tight min-w-0 pr-1 pt-0.5">Votre Repas</h2>
-                    <div class="flex items-center gap-3 sm:gap-4 shrink-0">
-                        <button type="button" id="btn-aperitif-open" onclick="startAperitifWizard()" class="rounded-lg border-2 border-[#d4af37] bg-[#2a0303]/90 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-[#fceeb8] shadow-[0_0_18px_rgba(212,175,55,0.35)] hover:bg-[#4c0519] hover:text-white hover:border-[#f5d78a] transition-colors font-[Montserrat] whitespace-nowrap">Apéritif ?</button>
-                        <button type="button" onclick="closeMenuModal()" class="text-[#d4af37] text-2xl sm:text-3xl leading-none hover:text-white transition-colors px-0.5" aria-label="Fermer">&times;</button>
-                    </div>
+                    <button type="button" onclick="closeMenuModal()" class="text-[#d4af37] text-2xl sm:text-3xl leading-none hover:text-white transition-colors px-0.5 shrink-0" aria-label="Fermer">&times;</button>
                 </div>
             </div>
             <div id="menu-content" class="flex-1 overflow-y-auto p-6 text-left bg-[#2c1a12] min-h-0"></div>
@@ -608,7 +653,8 @@
                     <p id="wine-flash-ideal" class="text-sm font-[Montserrat] italic leading-relaxed text-[#5c3d2e]"></p>
                 </div>
             </div>
-            <button type="button" onclick="closeWineFlashModal()" id="wine-flash-close-btn" class="mt-8 w-full gold-btn py-3.5 rounded-xl font-[Cinzel] text-sm uppercase tracking-[0.2em] text-white">Fermer</button>
+            <button type="button" onclick="askWineAccordFromFlash()" id="wine-flash-accord-btn" class="mt-5 w-full rounded-xl border-2 border-[#800020] bg-[#fffefc] py-3 font-[Cinzel] text-xs uppercase tracking-[0.18em] text-[#4c0519] hover:bg-[#800020] hover:text-white transition-colors">Accord avec ce vin</button>
+            <button type="button" onclick="closeWineFlashModal()" id="wine-flash-close-btn" class="mt-3 w-full gold-btn py-3.5 rounded-xl font-[Cinzel] text-sm uppercase tracking-[0.2em] text-white">Fermer</button>
         </div>
     </div>
 
@@ -750,6 +796,7 @@
                 wine_profile_label: "Profil",
                 wine_criteria_label: "Critères",
                 wine_ideal_label: "Idéal avec…",
+                wine_accord_btn: "Accord avec ce vin",
                 wine_close: "Fermer",
                 wine_power: "Puissance",
                 wine_fruit: "Fruité",
@@ -902,6 +949,7 @@
                 wine_profile_label: "Profile",
                 wine_criteria_label: "Criteria",
                 wine_ideal_label: "Ideal with…",
+                wine_accord_btn: "Pairing for this wine",
                 wine_close: "Close",
                 wine_power: "Power",
                 wine_fruit: "Fruitiness",
@@ -1047,6 +1095,7 @@
                 wine_profile_label: "Perfil",
                 wine_criteria_label: "Criterios",
                 wine_ideal_label: "Ideal con…",
+                wine_accord_btn: "Maridaje con este vino",
                 wine_close: "Cerrar",
                 wine_power: "Potencia",
                 wine_fruit: "Fruidad",
@@ -1186,6 +1235,12 @@
         const legalModal = document.getElementById('legal-modal');
         const menuModal = document.getElementById('menu-modal');
         const adminModal = document.getElementById('admin-modal');
+
+        function setAppBelowCardChrome(visible) {
+            const el = document.getElementById('app-below-card-chrome');
+            if (!el) return;
+            el.classList.toggle('hidden', !visible);
+        }
         
         let currentLang = 'fr';
         let lastQuestionAsked = "";
@@ -1195,6 +1250,8 @@
         let adminEditingPlats = null;
         let adminEditingVins = null;
         let requestInProgress = false;
+        let aperitifSubmitLocked = false;
+        let lastClientMetaSent = null;
         let wineFlatList = [];
         let wineListPanelFilter = "rouge";
         let wineListBodyScrollY = 0;
@@ -1524,6 +1581,14 @@
         }
 
         function startAperitifWizard() {
+            if (menuModal && menuModal.classList.contains('hidden')) {
+                menuModal.classList.remove('hidden');
+                document.querySelectorAll('.menu-checkbox').forEach(cb => {
+                    cb.checked = false;
+                    const mi = cb.closest('.menu-item');
+                    if (mi) mi.style.display = 'flex';
+                });
+            }
             aperitifStep = 1;
             aperitifAnswers = { family: null, step2Id: null, criteria: {}, presetId: null };
             const mc = document.getElementById('menu-content');
@@ -1634,7 +1699,7 @@
             renderAperitifWizardStep();
         }
 
-        function buildAperitifQuery() {
+        function getAperitifStepsSummary() {
             const ap = getAperitifLang();
             const fam = ap.families.find((f) => f.id === aperitifAnswers.family);
             const opts = (ap.step2_options && ap.step2_options[aperitifAnswers.family]) || [];
@@ -1652,15 +1717,30 @@
                 const tail = crit.filter(Boolean).join(' - ');
                 if (tail) bits.push(tail);
             }
-            const summary = bits.join(' - ');
+            return bits.join(' - ');
+        }
+
+        function buildAperitifQuery() {
+            const ap = getAperitifLang();
+            const summary = getAperitifStepsSummary();
             return [ap.query_intro, summary, '', ap.query_suffix].join('\n');
         }
 
         function submitAperitifWizard() {
-            trackClientAction('aperitif_complete');
+            if (aperitifSubmitLocked) return;
+            aperitifSubmitLocked = true;
             const q = buildAperitifQuery();
             closeMenuModal();
-            setTimeout(() => demanderIA(null, null, q, { fromMenuCarte: true, fromAperitif: true }), 50);
+            const stepsSummary = getAperitifStepsSummary();
+            setTimeout(() => {
+                demanderIA(null, null, q, {
+                    fromMenuCarte: true,
+                    fromAperitif: true,
+                    mouchardAperitifSteps: stepsSummary
+                }).finally(() => {
+                    aperitifSubmitLocked = false;
+                });
+            }, 50);
         }
 
         function toggleFakeAdmin() {
@@ -1974,7 +2054,6 @@
             const wfm = document.getElementById("wine-flash-modal");
             if (!wfm || !wineFlatList[idx]) return;
             const { wine: w, cat } = wineFlatList[idx];
-            trackWineListBottleClick(cat, w.nom, w);
             wineFlashOpenIdx = idx;
             const d = langData[currentLang];
             const meta = deriveWineMeta(w, cat);
@@ -1993,6 +2072,8 @@
             document.getElementById("wine-flash-criteria-label").textContent = d.wine_criteria_label;
             document.getElementById("wine-flash-criteria").textContent = formatWineCriteria(w, cat, meta, d);
             document.getElementById("wine-flash-ideal-label").textContent = d.wine_ideal_label;
+            const wfa = document.getElementById("wine-flash-accord-btn");
+            if (wfa) wfa.textContent = d.wine_accord_btn || "";
             document.getElementById("wine-flash-close-btn").textContent = d.wine_close;
             wfm.classList.remove("hidden");
         }
@@ -2001,6 +2082,53 @@
             const wfm = document.getElementById("wine-flash-modal");
             if (wfm) wfm.classList.add("hidden");
             wineFlashOpenIdx = null;
+        }
+
+        function buildClientMetaPayload(demanderOpts) {
+            if (!demanderOpts) return null;
+            if (demanderOpts.fromAperitif) {
+                return { source: "aperitif", aperitif_steps: String(demanderOpts.mouchardAperitifSteps || "").trim().slice(0, 220) };
+            }
+            if (demanderOpts.mouchardWineList && typeof demanderOpts.mouchardWineList === "object") {
+                const w = demanderOpts.mouchardWineList;
+                return { source: "wine_list", wine_nom: String(w.nom || "").trim(), wine_cat: String(w.cat || "").trim() };
+            }
+            if (demanderOpts.fromMenuCarte && demanderOpts.mouchardMenu && typeof demanderOpts.mouchardMenu === "object") {
+                const m = demanderOpts.mouchardMenu;
+                return {
+                    source: "menu",
+                    menu: {
+                        entrees: Array.isArray(m.entrees) ? m.entrees : [],
+                        plats: Array.isArray(m.plats) ? m.plats : [],
+                        desserts: Array.isArray(m.desserts) ? m.desserts : [],
+                        prefs: Array.isArray(m.prefs) ? m.prefs : []
+                    }
+                };
+            }
+            if (demanderOpts.mouchardFlashLabel != null && String(demanderOpts.mouchardFlashLabel).trim()) {
+                return { source: "flash", flash_label: String(demanderOpts.mouchardFlashLabel).trim().slice(0, 120) };
+            }
+            if (demanderOpts.fromMenuCarte) {
+                return { source: "menu", menu: { entrees: [], plats: [], desserts: [], prefs: [] } };
+            }
+            return null;
+        }
+
+        function askWineAccordFromFlash() {
+            if (wineFlashOpenIdx == null || !wineFlatList[wineFlashOpenIdx]) return;
+            const { wine: w, cat } = wineFlatList[wineFlashOpenIdx];
+            const nom = String(w.nom || "").trim();
+            const catStr = String(cat || "").trim();
+            const tpl = {
+                fr: `Que me conseilles-tu comme accord avec le vin « ${nom} » (carte des vins${catStr ? ", " + catStr : ""}) ?`,
+                en: `What pairing do you suggest for « ${nom} » from our wine list${catStr ? " (" + catStr + ")" : ""}?`,
+                es: `¿Qué maridaje me recomiendas con « ${nom} » de la carta de vinos${catStr ? " (" + catStr + ")" : ""}?`
+            };
+            const q = tpl[currentLang] || tpl.fr;
+            trackWineListBottleClick(cat, w.nom, w);
+            closeWineFlashModal();
+            closeWineListPanel();
+            demanderIA(null, null, q, { mouchardWineList: { nom, cat: catStr } });
         }
 
         function adminAddPlat(cat) {
@@ -2072,23 +2200,27 @@
             const entries = [];
             const mains = [];
             const desserts = [];
+            const prefs = [];
+            const prefKey = prefCategoryKey[currentLang] || prefCategoryKey.fr;
             document.querySelectorAll('.menu-checkbox:checked').forEach(cb => selected.push(cb.value));
             if (selected.length === 0) {
                 const msg = currentLang === 'en' ? "Please select at least one dish!" : currentLang === 'es' ? "¡Por favor seleccione al menos un plato!" : "Veuillez sélectionner au moins un plat !";
                 alert(msg); return;
             }
 
-            // Priorité "Plats" : on regroupe les sélections par catégorie (Entrées/Plats/Desserts)
             document.querySelectorAll('.menu-checkbox:checked').forEach(cb => {
                 const categoryEl = cb.closest('.menu-category');
                 const heading = categoryEl ? categoryEl.querySelector('h3') : null;
-                const headTxt = heading && heading.innerText ? heading.innerText.toLowerCase() : '';
+                const headRaw = heading && heading.innerText ? heading.innerText.trim() : '';
+                const headTxt = headRaw.toLowerCase();
                 const v = cb.value;
-                if (headTxt.includes('entr') || headTxt.includes('starters') || headTxt.includes('entradas') || headTxt.includes('🫒')) entries.push(v);
+                if (headRaw === prefKey) prefs.push(v);
+                else if (headTxt.includes('entr') || headTxt.includes('starters') || headTxt.includes('entradas') || headTxt.includes('🫒')) entries.push(v);
                 else if (headTxt.includes('plats') || headTxt.includes('main courses') || headTxt.includes('platos principales') || headTxt.includes('🍽️')) mains.push(v);
                 else if (headTxt.includes('dess') || headTxt.includes('postres') || headTxt.includes('🧀')) desserts.push(v);
-                else mains.push(v); // fallback
+                else mains.push(v);
             });
+            const mouchardMenu = { entrees: entries, plats: mains, desserts, prefs };
             closeMenuModal();
             setTimeout(() => {
                 const prefix = currentLang === 'en' ? "I'm having: " : currentLang === 'es' ? "Voy a comer: " : "Je vais manger : ";
@@ -2097,8 +2229,11 @@
                 const en = `Starters: ${entries.join(", ")}. Main Courses: ${mains.join(", ")}. Desserts: ${desserts.join(", ")}.`;
                 const es = `Entradas: ${entries.join(", ")}. Platos Principales: ${mains.join(", ")}. Postres: ${desserts.join(", ")}.`;
                 const mealBlock = currentLang === 'en' ? en : currentLang === 'es' ? es : fr;
-                const query = prefix + mealBlock + suffix;
-                demanderIA(null, null, query, { fromMenuCarte: true });
+                const prefBlock = prefs.length
+                    ? (currentLang === 'en' ? ` Preferences: ${prefs.join(", ")}.` : currentLang === 'es' ? ` Preferencias: ${prefs.join(", ")}.` : ` Préférences: ${prefs.join(", ")}.`)
+                    : "";
+                const query = prefix + mealBlock + prefBlock + suffix;
+                demanderIA(null, null, query, { fromMenuCarte: true, mouchardMenu });
             }, 50);
         }
 
@@ -2157,6 +2292,8 @@
                 document.getElementById('wine-flash-aromas-label').textContent = data.wine_aromas_label;
                 document.getElementById('wine-flash-profile-label').textContent = data.wine_profile_label;
                 document.getElementById('wine-flash-criteria-label').textContent = data.wine_criteria_label;
+                const wfa = document.getElementById('wine-flash-accord-btn');
+                if (wfa) wfa.textContent = data.wine_accord_btn || '';
                 document.getElementById('wine-flash-close-btn').textContent = data.wine_close;
                 if (wineFlashOpenIdx != null && wineFlatList[wineFlashOpenIdx]) {
                     const { wine: w2, cat: c2 } = wineFlatList[wineFlashOpenIdx];
@@ -2175,7 +2312,9 @@
             const container = document.getElementById('quick-actions');
             let html = `<div class="grid grid-cols-3 gap-2 w-full">`;
             actions.forEach(action => {
-                html += `<button onclick="quickAction('${action.text}')" class="tag-btn w-full justify-center truncate">${action.label}</button>`;
+                const t = JSON.stringify(action.text);
+                const lab = JSON.stringify(action.label != null ? action.label : action.text);
+                html += `<button type="button" onclick='quickAction(${t}, ${lab})' class="tag-btn w-full justify-center truncate">${escapeHtml(action.label)}</button>`;
             });
             html += `</div>`;
             container.innerHTML = html;
@@ -2214,10 +2353,15 @@
                 if (type === 'prestige') suffix = lastRequestWasAperitif ? ' (Quiero la versión Prestigio para el mismo aperitivo)' : ' (Quiero una Versión Prestigio. Recomienda el mejor vino premium)';
             }
             const question = baseQ ? (baseQ + suffix) : suffix.trim();
-            demanderIA(null, null, question, lastRequestWasAperitif ? { fromAperitif: true } : null);
+            demanderIA(null, null, question, {
+                _reuseClientMeta: true,
+                fromAperitif: lastRequestWasAperitif
+            });
         }
 
-        function quickAction(text) { demanderIA(null, null, text); }
+        function quickAction(qText, flashLabel) {
+            demanderIA(null, null, qText, { mouchardFlashLabel: flashLabel != null ? flashLabel : qText });
+        }
 
         function getGlassSVG(filled) {
             if (filled) return `<svg xmlns="http://www.w3.org/2000/svg" class="glass-icon" viewBox="0 0 24 24" fill="#4c0519" stroke="none"><path d="M19.8 4.2A2.2 2.2 0 0 0 17.6 2h-11a2.2 2.2 0 0 0-2.2 2.2c0 3.8 2.3 7.1 5.6 8.4V18H7a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2h-3v-5.4c3.3-1.3 5.8-4.6 5.8-8.4z"/></svg>`;
@@ -2237,6 +2381,7 @@
             if (!question && !imageBase64) return;
             if (requestInProgress) return;
             requestInProgress = true;
+            setAppBelowCardChrome(false);
 
             quickActions.classList.add('hidden'); 
             avatarCircle.classList.add('pulse-gold'); loader.classList.remove('hidden'); photoBtn.classList.add('minimized'); contentArea.innerHTML = ""; card.classList.remove('visible'); 
@@ -2247,20 +2392,33 @@
 
             lastQuestionAsked = question;
             lastRequestWasAperitif = !!(demanderOpts && demanderOpts.fromAperitif);
-            if (!imageBase64 && !(demanderOpts && demanderOpts.fromMenuCarte)) trackClientAction('flash');
+            const skipFlashWineList =
+                !!(demanderOpts && demanderOpts.mouchardWineList) ||
+                !!(demanderOpts && demanderOpts._reuseClientMeta && lastClientMetaSent && lastClientMetaSent.source === "wine_list");
+            if (!imageBase64 && !(demanderOpts && demanderOpts.fromMenuCarte) && !skipFlashWineList) trackClientAction('flash');
+
+            let clientMeta = null;
+            if (demanderOpts && demanderOpts._reuseClientMeta) {
+                clientMeta = lastClientMetaSent;
+            } else {
+                clientMeta = buildClientMetaPayload(demanderOpts);
+                if (clientMeta) lastClientMetaSent = clientMeta;
+            }
 
             try {
                 const askUrl = '/ask' + (restoId ? ('?resto=' + encodeURIComponent(restoId)) : '');
+                const payload = {
+                    question: question,
+                    image: imageBase64,
+                    context: currentSession,
+                    lang: currentLang,
+                    aperitif: !!(demanderOpts && demanderOpts.fromAperitif)
+                };
+                if (clientMeta) payload.client_meta = clientMeta;
                 const res = await fetch(askUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        question: question,
-                        image: imageBase64,
-                        context: currentSession,
-                        lang: currentLang,
-                        aperitif: !!(demanderOpts && demanderOpts.fromAperitif)
-                    })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
                 
@@ -2347,7 +2505,13 @@
                     }
                 }, delay);
 
-            } catch (e) { console.error(e); alert("Erreur de connexion serveur."); avatarCircle.classList.remove('pulse-gold'); loader.classList.add('hidden'); }
+            } catch (e) {
+                console.error(e);
+                alert("Erreur de connexion serveur.");
+                avatarCircle.classList.remove('pulse-gold');
+                loader.classList.add('hidden');
+                setAppBelowCardChrome(true);
+            }
             finally {
                 requestInProgress = false;
             }

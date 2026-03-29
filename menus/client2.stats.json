@@ -17,6 +17,7 @@
     "carte_vins": 0,
     "aperitif_complete": 0
   },
+  "interaction_counts_by_month": {},
   "live_log": [],
   "error_log": [],
   "carte_vins_open_log": [],

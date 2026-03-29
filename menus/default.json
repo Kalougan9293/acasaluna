@@ -210,17 +210,6 @@
       "prix": "29",
       "type": "Autre",
       "pousser": false
-    },
-    {
-      "categorie": "Autres Vins",
-      "nom": "Lagavulin 16 ans - Lagavulin",
-      "domaine": "Lagavulin",
-      "annee": "",
-      "prix_bouteille": "",
-      "prix_verre": "",
-      "prix": "",
-      "type": "Autre",
-      "pousser": false
     }
   ]
 }

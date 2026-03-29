@@ -184,6 +184,61 @@ function getErrorLogQuestionKeyForTop(it) {
     return "(Sans détail)";
 }
 
+/** Métadonnées client pour mouchard live court (source + détails). */
+function normalizeClientMeta(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const source = String(raw.source || "").trim().toLowerCase();
+    if (!source) return null;
+    const o = { source };
+    if (source === "menu" && raw.menu && typeof raw.menu === "object") {
+        const pick = (a) => (Array.isArray(a) ? a.map((x) => String(x || "").trim()).filter(Boolean) : []);
+        o.menu = {
+            entrees: pick(raw.menu.entrees),
+            plats: pick(raw.menu.plats),
+            desserts: pick(raw.menu.desserts),
+            prefs: pick(raw.menu.prefs)
+        };
+    }
+    if (source === "flash") o.flash_label = String(raw.flash_label || "").trim().slice(0, 120);
+    if (source === "wine_list") {
+        o.wine_nom = String(raw.wine_nom || "").trim().slice(0, 120);
+        o.wine_cat = String(raw.wine_cat || "").trim().slice(0, 80);
+    }
+    if (source === "aperitif") o.aperitif_steps = String(raw.aperitif_steps || "").trim().slice(0, 220);
+    return o;
+}
+
+/** Clé courte pour agrégation « top demandes » (sans la suggestion). */
+function liveLogDemandeKey(meta, questionFallback) {
+    const qf = String(questionFallback || "").trim();
+    if (!meta || !meta.source) return qf.slice(0, 140);
+    if (meta.source === "menu" && meta.menu) {
+        const m = meta.menu;
+        const parts = [];
+        if (m.entrees && m.entrees.length) parts.push(`Entrées: ${m.entrees.join(", ")}`);
+        if (m.plats && m.plats.length) parts.push(`Plats: ${m.plats.join(", ")}`);
+        if (m.desserts && m.desserts.length) parts.push(`Desserts: ${m.desserts.join(", ")}`);
+        if (m.prefs && m.prefs.length) parts.push(`Préf: ${m.prefs.join(", ")}`);
+        return parts.length ? `Carte · ${parts.join(" · ")}`.slice(0, 220) : qf.slice(0, 140);
+    }
+    if (meta.source === "flash" && meta.flash_label) return `Flash · ${meta.flash_label}`.slice(0, 160);
+    if (meta.source === "wine_list" && meta.wine_nom) {
+        const c = meta.wine_cat ? `${meta.wine_cat} · ` : "";
+        return `Carte vins · ${c}${meta.wine_nom}`.slice(0, 200);
+    }
+    if (meta.source === "aperitif" && meta.aperitif_steps) return `Apéritif · ${meta.aperitif_steps}`.slice(0, 220);
+    if (meta.source === "aperitif") return "Apéritif";
+    return qf.slice(0, 140);
+}
+
+function liveMouchardLine(meta, questionFallback, vin, wineType) {
+    const left = liveLogDemandeKey(meta, questionFallback);
+    const v = String(vin || "").trim();
+    const t = String(wineType || "").trim();
+    const sug = v ? (t ? `${v} (${t})` : v) : "?";
+    return `${left} → ${sug}`.slice(0, 340);
+}
+
 /** Nom affiché pour les stats (clic bouteille) : wine_nom ou extrait de wine_key « Cat · Nom ». */
 function wineNomFromTrackBody(data) {
     let n = String(data.wine_nom || "").trim().slice(0, 220);
@@ -481,6 +536,47 @@ function normalizeTypeForStats(type) {
     if (t.includes("autre")) return "Autres";
     return "Autres";
 }
+
+/** Intent champagne / bulles / effervescent dans un texte client (question, étapes apéritif, préf. menu). */
+function userRequestedChampagneBulles(text) {
+    const t = normalizeVinName(text || "");
+    if (!t) return false;
+    if (
+        t.includes("champagne") ||
+        t.includes("cremant") ||
+        t.includes("mousseux") ||
+        t.includes("effervescent") ||
+        t.includes("petillant") ||
+        t.includes("prosecco") ||
+        t.includes("cava") ||
+        t.includes("bulles") ||
+        t.includes("sparkling") ||
+        t.includes("bubbles") ||
+        t.includes("espumoso") ||
+        t.includes("espumante") ||
+        t.includes("burbujas")
+    ) {
+        return true;
+    }
+    const tok = t.split(/\s+/).filter(Boolean);
+    if (tok.includes("bulle")) return true;
+    return false;
+}
+
+function champagneIntentFromClientMeta(clientMeta) {
+    if (!clientMeta || typeof clientMeta !== "object") return false;
+    if (clientMeta.source === "aperitif" && clientMeta.aperitif_steps) {
+        if (userRequestedChampagneBulles(clientMeta.aperitif_steps)) return true;
+    }
+    if (clientMeta.source === "menu" && clientMeta.menu && Array.isArray(clientMeta.menu.prefs)) {
+        for (const pref of clientMeta.menu.prefs) {
+            if (userRequestedChampagneBulles(pref)) return true;
+        }
+    }
+    return false;
+}
+
+const STATS_REASON_CHAMPAGNE_NOT_BULLES = "Demande champagne/bulles — suggestion hors catégorie bulles (écart)";
 
 function findWinePriceInMenu(carte_des_vins, suggestedName) {
     const target = normalizeVinName(suggestedName);
@@ -1113,6 +1209,22 @@ const server = http.createServer(async (req, res) => {
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 5);
 
+            const live_mouchard_recent = liveInRange
+                .filter((it) => it && it.ts)
+                .slice(0, 8)
+                .map((it) => {
+                    let line = String(it.line || "").trim();
+                    if (!line && (it.vin || it.type)) {
+                        const q = String(it.question || "").trim();
+                        const v = String(it.vin || "").trim();
+                        const t = String(it.type || "").trim();
+                        line = t ? `${q} → ${v} (${t})` : `${q} → ${v}`;
+                    }
+                    if (!line) line = String(it.question || "").trim();
+                    return { ts: it.ts, line: line.slice(0, 400) };
+                })
+                .filter((x) => x.line);
+
             const icAll = statsData.interaction_counts || {};
             const icSrc =
                 trends_month_applied === "all"
@@ -1160,6 +1272,7 @@ const server = http.createServer(async (req, res) => {
                 top_error_questions,
                 top_live_demands_5,
                 top_error_questions_5,
+                live_mouchard_recent,
                 tendances,
                 live_log: Array.isArray(statsData.live_log) ? statsData.live_log.slice(0, 20) : [],
                 error_log: Array.isArray(statsData.error_log) ? statsData.error_log.slice(0, 20) : [],
@@ -1466,13 +1579,15 @@ const server = http.createServer(async (req, res) => {
 
             // ---- Mouchards complets (brut) ----
             lines.push("");
-            lines.push("section,type,horodatage,question,vin_ou_message,type_vin,aperitif");
+            lines.push("section,type,horodatage,ligne_mouchard,question_cle,vin,type_vin,source,aperitif");
             for (const it of liveFull) {
                 const q = (it && it.question) || "";
                 const vin = (it && it.vin) || "";
                 const typ = (it && it.type) || "";
                 const ap = it && it.aperitif ? "oui" : "";
-                lines.push(["MOUCHARD_LIVE", "live", it && it.ts ? it.ts : "", q, vin, typ, ap].map(escCell).join(","));
+                const ln = (it && it.line) || "";
+                const src = (it && it.source) || "";
+                lines.push(["MOUCHARD_LIVE", "live", it && it.ts ? it.ts : "", ln, q, vin, typ, src, ap].map(escCell).join(","));
             }
             lines.push("");
             lines.push("section,type,horodatage,question,message,aperitif");
@@ -1617,7 +1732,7 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    /** Comptage interactions UI : flash, ouvrir_carte, aperitif_complete (+ interaction_counts_by_month) ; carte_vins = ouverture panneau (log uniquement, pas de compteur répartition) ; wine_list_row = clic bouteille (+ carte_vins global et mensuel) */
+    /** Comptage interactions UI : flash, ouvrir_carte, carte_vins (ouverture panneau + log + répartition), aperitif_complete (+ mois) ; wine_list_row = accord fiche (+ suggestion_counts / top vins ; type_counts via [SUGGESTION] après /ask) */
     if (req.method === "POST" && req.url.startsWith("/api/track")) {
         let body = "";
         req.on("data", chunk => {
@@ -1652,12 +1767,14 @@ const server = http.createServer(async (req, res) => {
                         ? stats.suggestion_counts
                         : {};
                     stats.suggestion_counts[vinLabel] = (Number(stats.suggestion_counts[vinLabel]) || 0) + 1;
-                    stats.type_counts = mergeTypeCountsFromDisk(stats.type_counts);
-                    const tKey = normalizeTypeForStats(String(data.wine_type || "").trim());
-                    stats.type_counts[tKey] = (Number(stats.type_counts[tKey]) || 0) + 1;
                     const mkTrack = getUtcMonthKey();
-                    bumpMonthlyTypeCounts(stats, mkTrack, tKey);
                     bumpMonthlySuggestionCounts(stats, mkTrack, vinLabel);
+                    saveStatsForResto(restoRaw);
+                    res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+                    res.end(JSON.stringify({ ok: true }));
+                    return;
+                }
+                if (action === "carte_vins") {
                     stats.interaction_counts = stats.interaction_counts || {
                         flash: 0,
                         ouvrir_carte: 0,
@@ -1665,13 +1782,7 @@ const server = http.createServer(async (req, res) => {
                         aperitif_complete: 0
                     };
                     stats.interaction_counts.carte_vins = (Number(stats.interaction_counts.carte_vins) || 0) + 1;
-                    bumpInteractionMonth(stats, mkTrack, "carte_vins");
-                    saveStatsForResto(restoRaw);
-                    res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
-                    res.end(JSON.stringify({ ok: true }));
-                    return;
-                }
-                if (action === "carte_vins") {
+                    bumpInteractionMonth(stats, getUtcMonthKey(), "carte_vins");
                     stats.carte_vins_open_log = Array.isArray(stats.carte_vins_open_log) ? stats.carte_vins_open_log : [];
                     stats.carte_vins_open_log.unshift({ ts: new Date().toISOString() });
                     if (stats.carte_vins_open_log.length > 300) stats.carte_vins_open_log = stats.carte_vins_open_log.slice(0, 300);
@@ -1709,8 +1820,9 @@ const server = http.createServer(async (req, res) => {
             req.on("data", chunk => { body += chunk; });
             req.on("end", async () => {
                 try {
-                    let { question, image, context, lang, aperitif } = JSON.parse(body);
-                    const isAperitifRequest = !!aperitif;
+                    let { question, image, context, lang, aperitif, client_meta: clientMetaRaw } = JSON.parse(body);
+                    const clientMeta = normalizeClientMeta(clientMetaRaw);
+                    const isAperitifRequest = Boolean(aperitif) || (clientMeta && clientMeta.source === "aperitif");
                     if (question && question.length > 500) question = question.substring(0, 500);
                     const targetLang = lang || "fr";
 
@@ -1727,6 +1839,17 @@ const server = http.createServer(async (req, res) => {
                             const dayKey = getDayKey();
                             const cleanMsg = strictStop.replace(/^\[STOP\]\s*/i, "").trim().slice(0, 220);
                             tenantStats.daily_clients[dayKey] = (tenantStats.daily_clients[dayKey] || 0) + 1;
+                            if (isAperitifRequest) {
+                                tenantStats.interaction_counts = tenantStats.interaction_counts || {
+                                    flash: 0,
+                                    ouvrir_carte: 0,
+                                    carte_vins: 0,
+                                    aperitif_complete: 0
+                                };
+                                tenantStats.interaction_counts.aperitif_complete =
+                                    (Number(tenantStats.interaction_counts.aperitif_complete) || 0) + 1;
+                                bumpInteractionMonth(tenantStats, getUtcMonthKey(), "aperitif_complete");
+                            }
                             tenantStats.error_log = Array.isArray(tenantStats.error_log) ? tenantStats.error_log : [];
                             tenantStats.error_reason_counts = (tenantStats.error_reason_counts && typeof tenantStats.error_reason_counts === "object") ? tenantStats.error_reason_counts : {};
                             if (cleanMsg) tenantStats.error_reason_counts[cleanMsg] = (tenantStats.error_reason_counts[cleanMsg] || 0) + 1;
@@ -2188,6 +2311,18 @@ STOCK, NO DISPONIBLE Y ALTERNATIVAS (aperitivo) :
                             const dayKey = getDayKey();
                             tenantStats.daily_clients[dayKey] = (tenantStats.daily_clients[dayKey] || 0) + 1;
 
+                            if (isAperitifRequest) {
+                                tenantStats.interaction_counts = tenantStats.interaction_counts || {
+                                    flash: 0,
+                                    ouvrir_carte: 0,
+                                    carte_vins: 0,
+                                    aperitif_complete: 0
+                                };
+                                tenantStats.interaction_counts.aperitif_complete =
+                                    (Number(tenantStats.interaction_counts.aperitif_complete) || 0) + 1;
+                                bumpInteractionMonth(tenantStats, getUtcMonthKey(), "aperitif_complete");
+                            }
+
                             const isStop = answer && typeof answer === "string" && (answer.trim().startsWith("[STOP]") || answer.includes("[ERREUR]"));
                             const suggestionMatch = answer ? answer.match(/\[SUGGESTION\]\s*:\s*(.+?)\s*\(([^)]+)\)/i) : null;
 
@@ -2197,23 +2332,45 @@ STOCK, NO DISPONIBLE Y ALTERNATIVAS (aperitivo) :
                             if (!isStop && suggestionMatch) {
                                 const extractVin = (suggestionMatch[1] || "").trim();
                                 const extractType = (suggestionMatch[2] || "").trim();
-
-                                tenantStats.suggestion_counts[extractVin] = (tenantStats.suggestion_counts[extractVin] || 0) + 1;
                                 const typeKey = normalizeTypeForStats(extractType);
-                                tenantStats.type_counts[typeKey] = (tenantStats.type_counts[typeKey] || 0) + 1;
-                                const mkAsk = getUtcMonthKey();
-                                bumpMonthlyTypeCounts(tenantStats, mkAsk, typeKey);
-                                bumpMonthlySuggestionCounts(tenantStats, mkAsk, extractVin);
-                                pruneMonthlyStatMaps(tenantStats);
+                                const askedChampagne =
+                                    userRequestedChampagneBulles(question) || champagneIntentFromClientMeta(clientMeta);
+                                const champagneOutsideBulles = askedChampagne && typeKey !== "ChampagneBulles";
 
-                                tenantStats.live_log.unshift({
-                                    ts: new Date().toISOString(),
-                                    question: (question || "").trim().slice(0, 140),
-                                    vin: extractVin,
-                                    type: extractType,
-                                    aperitif: !!isAperitifRequest
-                                });
-                                if (tenantStats.live_log.length > 60) tenantStats.live_log = tenantStats.live_log.slice(0, 60);
+                                if (champagneOutsideBulles) {
+                                    tenantStats.error_reason_counts = (tenantStats.error_reason_counts && typeof tenantStats.error_reason_counts === "object") ? tenantStats.error_reason_counts : {};
+                                    tenantStats.error_reason_counts[STATS_REASON_CHAMPAGNE_NOT_BULLES] =
+                                        (tenantStats.error_reason_counts[STATS_REASON_CHAMPAGNE_NOT_BULLES] || 0) + 1;
+                                    const demandeKey = liveLogDemandeKey(clientMeta, question);
+                                    const detailMsg = `${STATS_REASON_CHAMPAGNE_NOT_BULLES} · ${demandeKey.slice(0, 120)} → ${extractVin} (${extractType})`.slice(0, 220);
+                                    tenantStats.error_log.unshift({
+                                        ts: new Date().toISOString(),
+                                        question: demandeKey.slice(0, 140),
+                                        message: detailMsg,
+                                        aperitif: !!isAperitifRequest
+                                    });
+                                    if (tenantStats.error_log.length > 60) tenantStats.error_log = tenantStats.error_log.slice(0, 60);
+                                } else {
+                                    tenantStats.suggestion_counts[extractVin] = (tenantStats.suggestion_counts[extractVin] || 0) + 1;
+                                    tenantStats.type_counts[typeKey] = (tenantStats.type_counts[typeKey] || 0) + 1;
+                                    const mkAsk = getUtcMonthKey();
+                                    bumpMonthlyTypeCounts(tenantStats, mkAsk, typeKey);
+                                    bumpMonthlySuggestionCounts(tenantStats, mkAsk, extractVin);
+                                    pruneMonthlyStatMaps(tenantStats);
+
+                                    const demandeKey = liveLogDemandeKey(clientMeta, question);
+                                    const mouchardLine = liveMouchardLine(clientMeta, question, extractVin, extractType);
+                                    tenantStats.live_log.unshift({
+                                        ts: new Date().toISOString(),
+                                        question: demandeKey.slice(0, 220),
+                                        line: mouchardLine,
+                                        source: clientMeta && clientMeta.source ? clientMeta.source : "",
+                                        vin: extractVin,
+                                        type: extractType,
+                                        aperitif: !!isAperitifRequest
+                                    });
+                                    if (tenantStats.live_log.length > 60) tenantStats.live_log = tenantStats.live_log.slice(0, 60);
+                                }
                             } else {
                                 // Erreur / refus / réponse non structurée
                                 const cleanMsg = (answer || "")

@@ -302,9 +302,9 @@
                                 <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                                 <h2 class="text-sm font-semibold tracking-[0.18em] uppercase text-slate-200">Mouchard Live</h2>
                             </div>
-                            <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Top 5 questions</span>
+                            <span class="text-[10px] text-slate-500 uppercase tracking-[0.18em]">Dernières lignes</span>
                         </div>
-                        <ol id="top-live-demands-list" class="list-decimal list-inside space-y-1.5 text-[11px] text-emerald-100 mb-0 min-h-[6rem]">
+                        <ol id="top-live-demands-list" class="list-none space-y-2 text-[11px] text-emerald-100 mb-0 min-h-[6rem]">
                             <li class="text-slate-500">—</li>
                         </ol>
                         <pre id="live-log-list" class="hidden whitespace-pre-wrap leading-relaxed">[INIT]</pre>
@@ -872,11 +872,19 @@
                 if (autresBar) autresBar.style.width = `${Math.max(0, Math.min(100, au))}%`;
 
                 const tl5 = Array.isArray(data.top_live_demands_5) ? data.top_live_demands_5 : [];
+                const lm = Array.isArray(data.live_mouchard_recent) ? data.live_mouchard_recent : [];
                 const te5 = Array.isArray(data.top_error_questions_5) ? data.top_error_questions_5 : [];
                 if (topLiveDemandsEl) {
-                    topLiveDemandsEl.innerHTML = tl5.length
-                        ? tl5.map((it, i) => `<li><span class="text-emerald-200">${escapeHtml(it.question || '')}</span> <span class="text-slate-500">(${it.count || 0}×)</span></li>`).join('')
-                        : '<li class="text-slate-500 list-none">Aucune donnée sur la période.</li>';
+                    if (lm.length) {
+                        topLiveDemandsEl.innerHTML = lm.map((it) => {
+                            const ts = it.ts ? String(it.ts).replace('T', ' ').slice(0, 19) : '';
+                            return `<li class="text-left border-b border-white/5 pb-2 last:border-0"><span class="text-emerald-100/95 leading-snug">${escapeHtml(it.line || '')}</span>${ts ? `<span class="block text-[9px] text-slate-500 mt-1">${escapeHtml(ts)}</span>` : ''}</li>`;
+                        }).join('');
+                    } else if (tl5.length) {
+                        topLiveDemandsEl.innerHTML = tl5.map((it) => `<li><span class="text-emerald-200">${escapeHtml(it.question || '')}</span> <span class="text-slate-500">(${it.count || 0}×)</span></li>`).join('');
+                    } else {
+                        topLiveDemandsEl.innerHTML = '<li class="text-slate-500">Aucune donnée sur la période.</li>';
+                    }
                 }
                 if (topErrorDemandsEl) {
                     topErrorDemandsEl.innerHTML = te5.length
